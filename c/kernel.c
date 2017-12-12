@@ -2,24 +2,23 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 
 void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
+    // Declare as unused
+	(void) r0;
+	(void) r1;
+	(void) atags;
+
     printf("Welcome to the Kernel!\n");
 
-    char c;
-    char *ptr = NULL;
-    size_t alloc_size = 1;
-    do {
-        read(0, &c, 1);
-        printf("%d: %c\n", c, c);
-        
-        ptr = realloc(ptr, alloc_size);
-        if(ptr == NULL) {
-            puts("Out of memory!\nProgram halting.");
-            for(;;);
-        } else {
-            printf("new alloc of %d bytes at address 0x%X\n", alloc_size, (unsigned int)ptr);
-            alloc_size <<= 1;
-        }
-    } while (1);
+    char *buf = malloc(16 * sizeof(char));
+    char *buf2 = malloc(16 * sizeof(char));
+
+    printf("buf: 0x%X, buf2: 0x%X\n", buf, buf2);
+
+    while (1) {
+        read(0, buf, 1);
+        write(0, buf, 1);
+    }
 }

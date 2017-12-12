@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "aux.h"
+
 extern char *__text_start;
 extern char *__text_end;
 extern char *__data_start;
@@ -17,7 +19,10 @@ extern char *__stack_end;
 extern void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags );
 
 void bss_init() {
+    char *bss = (char*) &__bss_start;
 
+    while ( (unsigned long) bss < (unsigned long) &__bss_end )
+        *bss++ = 0;
 }
 
 void cstartup( uint32_t r0, uint32_t r1, uint32_t atags ) {
