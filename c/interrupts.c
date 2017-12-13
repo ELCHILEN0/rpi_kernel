@@ -7,14 +7,21 @@ __attribute__ ((interrupt ("UDEF"))) void interrupt_udef() {
     printf("UDEF\n");
 }
 
+typedef struct {
+    void (*handler)();
+} interrupt_descriptor_table_t, idt_t;
+
+extern interrupt_descriptor_table_t idt[256];
+
 void __attribute__ ((interrupt ("SWI"))) interrupt_swi() {
-    volatile unsigned int r0;
+    volatile unsigned int i_code;
 
-    asm("LDR r0, [lr, #-4]");
-    asm("BIC r0, #0xFF000000");
-    asm("MOV %0, r0":"=r"(r0):);
+    asm("ldr r0, [lr, #-4]");
+    asm("bic r0, #0xFF000000");
+    asm("mov %0, r0" : "=r"(i_code) : );
 
-    printf("SWI %x\n", r0);
+    printf("SWI %x %d\n", i_code, i_code);
+    idt[i_code].handler();
 }
 
 __attribute__ ((interrupt ("PABT"))) void interrupt_pabt() {
