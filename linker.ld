@@ -39,4 +39,8 @@ SECTIONS
     __stack_start = .;
     . = . + 0x10000;
     __stack_end = .;
+
+    __irq_stack_start = .;
+    . = . + 0x10000;
+    __irq_stack_end = .;
 }
