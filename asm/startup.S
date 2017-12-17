@@ -22,6 +22,8 @@
 /*
  * Interrupt Guides: http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0210c/CIHFJDDH.html
  * Each type of interrupt generally has different return semantics
+ *
+ * ARM Cortex-A53
  */
 
 /*
@@ -48,22 +50,29 @@ _vectors:
 
 /* Enter Execution in Supervisor Mode */
 _reset:
-    /* Disable interrupts TODO: Fix crash when SWI fired before enable */
-    bl disable_intrs 
-
-    /* Setup User Mode Stacks
-     * Modify these to point to MMU agnostic region later
+    /* Reconfigure the interrupt vector base, once MMU is active may need to move this to ROM.
+     * http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0344k/Bahfeedc.html
      */
-    cps     #CPSR_MODE_SVR
+    ldr     r4, =_vectors
+    mcr     p15, #0, r4, c12, c0, #0  
+
+    /* Disable interrupts TODO: Fix crash when SWI fired before enable
+    bl disable_intrs 
+    */
+    
+    /* Setup User Mode Stacks
+     * Modify these to point to MMU agnostic region later, see 0xC0000000
+     */
+    cpsid aif, #CPSR_MODE_SVR
     mov sp, #0x2000
 
-    cps     #CPSR_MODE_ABORT
+    cpsid aif, #CPSR_MODE_ABORT
     mov sp, #0x3000
 
-    cps     #CPSR_MODE_IRQ
+    cpsid aif, #CPSR_MODE_IRQ
     mov sp, #0x4000
 
-    cps     #CPSR_MODE_SYSTEM
+    cpsid aif, #CPSR_MODE_SYSTEM
     mov sp, #0x5000
 
     /* Finally start */
@@ -72,9 +81,10 @@ _reset:
 hang:
     b hang
 
-enable_intrs:
-    ldr     r4, =_vectors
-    mcr     p15, #0, r4, c12, c0, #0  
+/*
+ * TODO: Improve with inline void with inline asm
+ */
+enable_intrs:    
     cpsie aif
     bx lr
 

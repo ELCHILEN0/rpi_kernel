@@ -5,6 +5,9 @@
 #include <unistd.h>
 #include <stdbool.h>
 
+#include "aux.h"
+#include "timer.h"
+
 void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
     // Declare as unused
 	(void) r0;
@@ -23,6 +26,7 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
 
     printf("Interrupts...");
     enable_intrs();
+    // disable_intrs();
     printf(" enabled.\n");
 
     // enable_fiq();
@@ -31,9 +35,15 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
     asm("swi 0x10");
     asm("swi 0x20");
 
+    // timer_init();
+    // timer_wait(0x4000);
+    
+    // g_timer->control_status = 0x4000;
     char buf[16];
     while (1) {
+        printf("[%d] > ", timer_read());
+        fflush(0);
         read(0, buf, 1);
-        write(0, buf, 1);
+        printf("%s\n", buf);
     }
 }

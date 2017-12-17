@@ -11,7 +11,7 @@ typedef struct {
     void (*handler)();
 } interrupt_descriptor_table_t, idt_t;
 
-extern interrupt_descriptor_table_t idt[256];
+extern idt_t idt[256];
 
 void __attribute__ ((interrupt ("SWI"))) interrupt_swi() {
     volatile unsigned int i_code;
@@ -21,21 +21,22 @@ void __attribute__ ((interrupt ("SWI"))) interrupt_swi() {
     asm("mov %0, r0" : "=r"(i_code) : );
 
     printf("SWI %x %d\n", i_code, i_code);
-    idt[i_code].handler();
+    // idt[i_code].handler();
 }
 
 __attribute__ ((interrupt ("PABT"))) void interrupt_pabt() {
-
+    printf("PABT\n");
 }
 
 __attribute__ ((interrupt ("FIQ"))) void interrupt_fiq() {
-
+    printf("FIQ\n");
 }
 
 __attribute__ ((interrupt ("IRQ"))) void interrupt_irq() {
-
+    printf("IRQ\n");
+    while (1) {}
 }
 
 __attribute__ ((interrupt ("DABT"))) void interrupt_dabt() {
-
+    printf("DABT\n");
 }

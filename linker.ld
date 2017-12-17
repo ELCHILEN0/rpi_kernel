@@ -1,5 +1,3 @@
-ENTRY(_start)
-
 MEMORY
 {
     /* QEMU "raspi2" emulation may incorrectly load the kernel binaries at 0x10000 instead of 0x8000, so if you do not see any output, try adjusting the base address constant in the linker script.  */
