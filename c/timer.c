@@ -1,14 +1,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "aux.h"
 #include "timer.h"
-
-#define PMAP_BASE 0x3F000000
-#define TIMER_OFFSET 0x0000B400
-#define TIMER_SYS_OFFSET 0x00003000
-#define TIMER_BASE (PMAP_BASE|TIMER_OFFSET)
-#define TIMER_SYS_BASE (PMAP_BASE|TIMER_SYS_OFFSET)
+#include "peripheral.h"
 
 #define SYSTIMERCLO 0x3F003004
 #define GPFSEL3     0x3F20000C
@@ -18,18 +12,7 @@
 
 #define TIMER_BIT 0x00400000
 
-// typedef struct {
-//     volatile uint32_t control_status;
-//     volatile uint32_t counter_lo;
-//     volatile uint32_t counter_hi;
-//     volatile uint32_t compare0;
-//     volatile uint32_t compare1;
-//     volatile uint32_t compare2;
-//     volatile uint32_t compare3;
-// } timer_t;
-
-
-void timer_init( void ) {
+extern void timer_init( void ) {
     unsigned int ra;
 
     ra=mmio_read(GPFSEL4);
@@ -62,11 +45,12 @@ void timer_init( void ) {
         }
     }
 }
-unsigned int timer_read( void ) {
+
+extern unsigned int timer_read( void ) {
 
 }
 
-void timer_wait(unsigned int wait)
+extern void timer_wait(unsigned int wait)
 {
 
 }

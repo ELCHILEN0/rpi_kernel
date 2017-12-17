@@ -3,7 +3,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "aux.h"
+#include "uart.h"
 
 int uart_write( void *reent, int fd, const char *buf, int len ) {
     for (size_t i = 0; i < len; i++) {

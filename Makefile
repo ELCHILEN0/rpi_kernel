@@ -9,7 +9,7 @@ CCFLAGS = -O2 -Wall -nostartfiles -ffreestanding $(AARCH)
 BLD_DIR = ./build
 
 SOBJ = startup.o
-UOBJ = cstartup.o cstubs.o interrupts.o kernel.o aux.o timer.o
+UOBJ = cstartup.o cstubs.o peripheral.o interrupts.o kernel.o uart.o timer.o
 
 all: $(SOBJ) $(UOBJ) 
 	$(GNU_ARM)-gcc $(CCFLAGS) -T linker.ld $(addprefix $(BLD_DIR)/, $(SOBJ)) $(addprefix $(BLD_DIR)/, $(UOBJ)) -o $(BLD_DIR)/main.elf

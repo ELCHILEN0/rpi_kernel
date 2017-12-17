@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "aux.h"
+#include "uart.h"
 
 extern char *__text_start;
 extern char *__text_end;
