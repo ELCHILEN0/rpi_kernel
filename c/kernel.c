@@ -5,6 +5,8 @@
 #include <unistd.h>
 #include <stdbool.h>
 
+#include "peripheral.h"
+#include "gpio.h"
 #include "timer.h"
 
 void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
@@ -13,36 +15,25 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
 	(void) r1;
 	(void) atags;
 
-    printf("Welcome to the Kernel!\n");
-
-    if (false) {
-        // libc malloc test
-        char *buf = malloc(16 * sizeof(char));
-        char *buf2 = malloc(16 * sizeof(char));
-
-        printf("buf: 0x%X, buf2: 0x%X\n", buf, buf2);
-    }
-
-    printf("Interrupts...");
-    enable_intrs();
-    // disable_intrs();
-    printf(" enabled.\n");
-
-    // enable_fiq();
-    asm("swi 0x80");
-    asm("swi 0x90");
-    asm("swi 0x10");
-    asm("swi 0x20");
-
-    // timer_init();
-    // timer_wait(0x4000);
+    // PIN 18 for output 001.
+    gpio->sel[1] |= (1 << 24);
+    gpio->clr[0] = (1 << 18);
     
-    // g_timer->control_status = 0x4000;
-    char buf[16];
-    while (1) {
-        printf("[%d] > ", timer_read());
-        fflush(0);
-        read(0, buf, 1);
-        printf("%s\n", buf);
+    while(1);
+
+    while(1) {
+        volatile int i;
+
+        // pin low, turn OK on
+        gpio->clr[0] = (1 << 18);
+        // gpio->clr[0] = (1 << 17);
+
+        for (i = 0; i < 500000; i++);
+
+        // pin high, turn OK off
+        gpio->set[0] = (1 << 18);
+        // gpio->set[0] = (1 << 17);
+
+        for (i = 0; i < 500000; i++);        
     }
 }
