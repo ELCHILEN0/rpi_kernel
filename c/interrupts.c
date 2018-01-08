@@ -16,9 +16,9 @@ extern idt_t idt[256];
 void __attribute__ ((interrupt ("SWI"))) interrupt_swi() {
     volatile unsigned int i_code;
 
-    asm("ldr r0, [lr, #-4]");
-    asm("bic r0, #0xFF000000");
-    asm("mov %0, r0" : "=r"(i_code) : );
+    // asm("ldr r0, [lr, #-4]");
+    // asm("bic r0, #0xFF000000");
+    // asm("mov %0, r0" : "=r"(i_code) : );
 
     printf("SWI %x %d\n", i_code, i_code);
     // idt[i_code].handler();

@@ -21,3 +21,4 @@ hang:
 .globl dummy
 dummy:
     ret
+    
