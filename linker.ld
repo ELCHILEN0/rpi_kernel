@@ -1,9 +1,10 @@
+OUTPUT_ARCH(aarch64)
 ENTRY(_start)
 
 MEMORY
 {
     /* QEMU "raspi2" emulation may incorrectly load the kernel binaries at 0x10000 instead of 0x8000, so if you do not see any output, try adjusting the base address constant in the linker script.  */
-    RAM     (rwx)   : ORIGIN = 0x80000, LENGTH = 0x1000000
+    RAM     (rwx)   : ORIGIN = 0x80000, LENGTH = 0x8000000
     /* ROM     (rx)    : ORIGIN = 0x20000000, LENGTH = 512M */
 }
 

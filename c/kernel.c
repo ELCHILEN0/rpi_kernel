@@ -9,6 +9,12 @@
 #include "gpio.h"
 #include "timer.h"
 
+void busy_wait(int iters) {
+    volatile unsigned int i;
+
+    for (i = 0; i < iters; i++);
+}
+
 void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
     // Declare as unused
 	(void) r0;
@@ -16,24 +22,17 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
 	(void) atags;
 
     // PIN 18 for output 001.
-    gpio->sel[1] |= (1 << 24);
-    gpio->clr[0] = (1 << 18);
-    
-    while(1);
+    for (int i = 0; i < 32; i++) {
+        gpio_fsel(i, fsel_output);
+        gpio_write(i, true);
+    }
 
-    while(1) {
-        volatile int i;
+    gpio_fsel(4, fsel_output);
+    while (1) {
+        gpio_write(4, true);
+        busy_wait(3000000);
 
-        // pin low, turn OK on
-        gpio->clr[0] = (1 << 18);
-        // gpio->clr[0] = (1 << 17);
-
-        for (i = 0; i < 500000; i++);
-
-        // pin high, turn OK off
-        gpio->set[0] = (1 << 18);
-        // gpio->set[0] = (1 << 17);
-
-        for (i = 0; i < 500000; i++);        
+        gpio_write(4, false);
+        busy_wait(3000000);
     }
 }
