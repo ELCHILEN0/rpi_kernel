@@ -30,19 +30,42 @@ typedef volatile struct {
     uint8_t test; // TODO: 4 instead of 8
 } gpio_t;
 
-enum gpio_fsel_t {
-    fsel_input = 0b000,
-    fsel_output = 0b001,
-    fsel_alt0 = 0b100,
-    fsel_alt1 = 0b101,
-    fsel_alt2 = 0b110,
-    fsel_alt3 = 0b111,
-    fsel_alt4 = 0b011,
-    fsel_alt5 = 0b010
+enum gpio_sel_t {
+    sel_input = 0b000,
+    sel_output = 0b001,
+    sel_alt0 = 0b100,
+    sel_alt1 = 0b101,
+    sel_alt2 = 0b110,
+    sel_alt3 = 0b111,
+    sel_alt4 = 0b011,
+    sel_alt5 = 0b010
 };
 
 extern gpio_t *gpio;
 
-extern void gpio_fsel(unsigned int pin, enum gpio_fsel_t sel);
-extern bool gpio_read(unsigned int pin);
-extern void gpio_write(unsigned int pin, bool val);
+/**
+ * \brief Assign a pin function selector.
+ * \param pin - a pin to set
+ * \param sel - a gpio selector function
+ * \return 0 on success
+ * \return -1 on error
+ */
+extern int gpio_fsel(unsigned int pin, enum gpio_sel_t sel);
+
+/**
+ * \brief Read a pin status
+ * \param pin - a pin to read
+ * \return 0 on LOW
+ * \return 1 on HIGH
+ * \return -1 on error
+ */
+extern int gpio_read(unsigned int pin);
+
+/**
+ * \brief Write a  a pin status
+ * \param pin - a pin to read
+ * \param high - a new pin state
+ * \return 0 on success
+ * \return -1 on error
+ */
+extern int gpio_write(unsigned int pin, bool high);
