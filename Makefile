@@ -1,28 +1,51 @@
-TOOLCHAIN = /root/x-tools/aarch64-rpi3-linux-gnueabi/bin/aarch64-rpi3-linux-gnueabi
-DOCKER_IMAGE = toolchain
-DOCKER_DIR = /root/build
+# The ARM toolchain prefix
+TOOLCHAIN = arm-none-eabi
+# TOOLCHAIN = /root/x-tools/aarch64-rpi3-linux-gnueabi/bin/aarch64-rpi3-linux-gnueabi
 
-AARCH = -march=armv6 
-CCFLAGS = -O2 -Wall -nostartfiles -ffreestanding $(AARCH)
+AARCH = 
+CCFLAGS = -nostartfiles -ffreestanding
 
-BLD_DIR = ./build
+# AARCH = -march=armv6 
+# CCFLAGS = -O2 -Wall -nostartfiles -ffreestanding $(AARCH)
 
-SOBJ = startup.o
-UOBJ = cstartup.o cstubs.o peripheral.o interrupts.o kernel.o gpio.o uart.o timer.o
+TARGET = kernel
+BUILD = build
+SOURCE = src
 
-all: $(SOBJ) $(UOBJ) 
-	$(TOOLCHAIN)-gcc $(CCFLAGS) -T linker.ld $(addprefix $(BLD_DIR)/, $(SOBJ)) $(addprefix $(BLD_DIR)/, $(UOBJ)) -o $(BLD_DIR)/kernel.elf
-	$(TOOLCHAIN)-objdump -D $(BLD_DIR)/kernel.elf > $(BLD_DIR)/kernel.list
-	$(TOOLCHAIN)-objcopy -O binary  $(BLD_DIR)/kernel.elf $(BLD_DIR)/kernel8.img
+SOBJ = startup.o led.o mailbox.o
+UOBJ = cstartup.o peripheral.o gpio.o
+
+# SOBJ = startup.o
+# UOBJ = cstartup.o cstubs.o peripheral.o interrupts.o kernel.o gpio.o uart.o timer.o
+
+all: $(BUILD)/$(TARGET).img $(BUILD)/$(TARGET).list
+
+# ELF
+$(BUILD)/$(TARGET).elf: $(SOBJ) $(UOBJ)
+	$(TOOLCHAIN)-gcc $(CCFLAGS) -T $(SOURCE)/linker.ld $(addprefix $(BUILD)/, $(SOBJ)) $(addprefix $(BUILD)/, $(UOBJ)) -o $(BUILD)/$(TARGET).elf
+
+# ELF to LIST
+$(BUILD)/$(TARGET).list: $(BUILD)/$(TARGET).elf
+	$(TOOLCHAIN)-objdump -D $(BUILD)/$(TARGET).elf > $(BUILD)/$(TARGET).list
+
+# ELF to IMG
+$(BUILD)/$(TARGET).img: $(BUILD)/$(TARGET).elf
+	$(TOOLCHAIN)-objcopy -O binary $(BUILD)/$(TARGET).elf $(BUILD)/$(TARGET).img
 
 $(SOBJ):
-	$(TOOLCHAIN)-as ./asm/$(basename $@).S -o $(BLD_DIR)/$@
+	$(TOOLCHAIN)-as $(SOURCE)/asm/$(basename $@).s -o $(BUILD)/$@
 
 $(UOBJ):
-	$(TOOLCHAIN)-gcc -c ./c/$(basename $@).c -o $(BLD_DIR)/$@
+	$(TOOLCHAIN)-gcc -c $(SOURCE)/c/$(basename $@).c -o $(BUILD)/$@
+
+copy: all
+	cp $(BUILD)/$(TARGET).img /Volumes/boot/$(TARGET).img
 
 clean:
-	rm -f $(BLD_DIR)/*
+	rm -f $(BUILD)/*
 
+# Cross compile the binary using a container with the toolchain already built, when running in this environment, $(TOOLCHAIN) must point to the path within the cointainer
+DOCKER_IMAGE = toolchain
+DOCKER_BUILD = /root/build
 start-toolchain:
-	docker run --rm -it -v $(CURDIR):$(DOCKER_DIR) -w $(DOCKER_DIR) $(DOCKER_IMAGE)
+	docker run --rm -it -v $(CURDIR):$(DOCKER_BUILD) -w $(DOCKER_BUILD) $(DOCKER_IMAGE)
