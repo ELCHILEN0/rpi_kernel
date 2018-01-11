@@ -44,28 +44,35 @@ void blink(unsigned int times, unsigned int freq) {
 
 void cstartup( uint32_t r0, uint32_t r1, uint32_t atags ) {
     blink(2, 1);
+    // OK status
+    SetActLEDState(1);
 
-    if ((int) &gpio->sel[0] == 0x3F200000)
-        SetActLEDState(1);
-    else
-        SetActLEDState(0);
+    // for (int i = 0; i < 32; i++) {
+    //     gpio_fsel(i, fsel_output);
+    //     gpio_write(i, i % 2 == 0);
+    // }     
 
-    for (int i = 0; i < 32; i++) {
-        gpio_fsel(i, fsel_output);
-        gpio_write(i, i % 2 == 0);
+    gpio_fsel(5, fsel_input);
+    gpio_fsel(6, fsel_output);
+    gpio_fsel(13, fsel_output);
+
+    while(true) {
+        gpio_write(6, gpio_read(5));
+        gpio_write(13, gpio_read(5));
     }
 
+    // Error status
     SetActLEDState(0);
 
-    for (int i = 0; i < 32; i++) {
-        gpio_fsel(i, fsel_output);
-        if (gpio_read(i) == i % 2 == 0) {
-            SetActLEDState(1);
-            break;
-        } else {
-            SetActLEDState(0);
-        }
-    }
+    // for (int i = 0; i < 32; i++) {
+    //     gpio_fsel(i, fsel_output);
+    //     if (gpio_read(i) == i % 2 == 0) {
+    //         SetActLEDState(1);
+    //         break;
+    //     } else {
+    //         SetActLEDState(0);
+    //     }
+    // }
 
     // printf(".text:  [0x%.5X, 0x%.5X]\n", &__text_start, &__text_end);
     // printf(".data:  [0x%.5X, 0x%.5X]\n", &__data_start, &__data_end);
