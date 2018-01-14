@@ -2,7 +2,8 @@ ENTRY(_start)
 
 MEMORY
 {
-    RAM     (rwx)   : ORIGIN = 0x8000, LENGTH = 256M
+    /* Kernel boots at 0x8000 on 32 bit, 0x80000 on 64 bit.  Unless changed in config to 0x0. */
+    RAM     (rwx)   : ORIGIN = 0x80000, LENGTH = 256M
     ROM     (rx)    : ORIGIN = 0x20000000, LENGTH = 512M
 }
 

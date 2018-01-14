@@ -1,6 +1,6 @@
 # The ARM toolchain prefix
-TOOLCHAIN = arm-none-eabi
-# TOOLCHAIN = /root/x-tools/aarch64-rpi3-linux-gnueabi/bin/aarch64-rpi3-linux-gnueabi
+# TOOLCHAIN = arm-none-eabi
+TOOLCHAIN = /root/x-tools/aarch64-rpi3-linux-gnueabi/bin/aarch64-rpi3-linux-gnueabi
 
 AARCH = 
 CCFLAGS = -nostartfiles -ffreestanding
