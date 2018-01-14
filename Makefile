@@ -1,6 +1,6 @@
-# The ARM toolchain prefix
-# TOOLCHAIN = arm-none-eabi
-TOOLCHAIN = /root/x-tools/aarch64-rpi3-linux-gnueabi/bin/aarch64-rpi3-linux-gnueabi
+# The ARM toolchain prefix (32 bit = arm-...-eabi, 64 bit = aarch64-...-gnueabi)
+TOOLCHAIN = arm-none-eabi
+# TOOLCHAIN = /root/x-tools/aarch64-rpi3-linux-gnueabi/bin/aarch64-rpi3-linux-gnueabi
 
 AARCH = 
 CCFLAGS = -nostartfiles -ffreestanding
@@ -11,6 +11,8 @@ CCFLAGS = -nostartfiles -ffreestanding
 TARGET = kernel
 BUILD = build
 SOURCE = src
+
+COPY = /Volumes/boot
 
 SOBJ = startup.o
 UOBJ = cstartup.o kernel.o peripheral.o gpio.o mailbox.o
@@ -39,7 +41,7 @@ $(UOBJ): %.o: $(SOURCE)/c/%.c
 	$(TOOLCHAIN)-gcc -c $(SOURCE)/c/$(basename $@).c -o $(BUILD)/$@
 
 copy: all
-	cp $(BUILD)/$(TARGET).img /Volumes/boot/$(TARGET).img
+	cp $(BUILD)/$(TARGET).img $(COPY)/$(TARGET).img
 
 clean:
 	rm -f $(BUILD)/*
@@ -48,4 +50,4 @@ clean:
 DOCKER_IMAGE = toolchain
 DOCKER_BUILD = /root/build
 start-toolchain:
-	docker run --rm -it -v $(CURDIR):$(DOCKER_BUILD) -w $(DOCKER_BUILD) $(DOCKER_IMAGE)
+	docker run --rm -it -v $(CURDIR):$(DOCKER_BUILD) -v $(COPY):$(COPY) -w $(DOCKER_BUILD) $(DOCKER_IMAGE)
