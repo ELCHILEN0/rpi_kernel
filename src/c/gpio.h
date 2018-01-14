@@ -30,16 +30,16 @@ typedef volatile struct {
     uint8_t test; // TODO: 4 instead of 8
 } gpio_t;
 
-enum gpio_sel_t {
-    sel_input = 0b000,
-    sel_output = 0b001,
-    sel_alt0 = 0b100,
-    sel_alt1 = 0b101,
-    sel_alt2 = 0b110,
-    sel_alt3 = 0b111,
-    sel_alt4 = 0b011,
-    sel_alt5 = 0b010
-};
+typedef enum {
+    SEL_INPUT = 0b000,
+    SEL_OUTPUT = 0b001,
+    SEL_ALT0 = 0b100,
+    SEL_ALT1 = 0b101,
+    SEL_ALT2 = 0b110,
+    SEL_ALT3 = 0b111,
+    SEL_ALT4 = 0b011,
+    SEL_ALT5 = 0b010
+} gpio_sel_t;
 
 extern gpio_t *gpio;
 
@@ -50,7 +50,7 @@ extern gpio_t *gpio;
  * \return 0 on success
  * \return -1 on error
  */
-extern int gpio_fsel(unsigned int pin, enum gpio_sel_t sel);
+extern int gpio_fsel(unsigned int pin, gpio_sel_t sel);
 
 /**
  * \brief Read a pin status

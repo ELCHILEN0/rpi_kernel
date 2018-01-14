@@ -7,7 +7,7 @@ bool valid_pin(unsigned int pin) {
     return pin >= 0 && pin <= 53;
 }
 
-extern int gpio_fsel(unsigned int pin, enum gpio_sel_t sel) {
+extern int gpio_fsel(unsigned int pin, gpio_sel_t sel) {
     if (!valid_pin) return -1;
 
     gpio->sel[pin / 10] &= ~(0b111 << (3 * (pin % 10)));

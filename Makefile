@@ -12,8 +12,8 @@ TARGET = kernel
 BUILD = build
 SOURCE = src
 
-SOBJ = startup.o led.o mailbox.o
-UOBJ = cstartup.o peripheral.o gpio.o
+SOBJ = startup.o
+UOBJ = cstartup.o kernel.o peripheral.o gpio.o mailbox.o
 
 # SOBJ = startup.o
 # UOBJ = cstartup.o cstubs.o peripheral.o interrupts.o kernel.o gpio.o uart.o timer.o

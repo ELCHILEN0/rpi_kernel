@@ -2,6 +2,7 @@
 .global _start
 
 _start:
+@; TODO: setup interrupts, setup interrupt stacks, setup core stacks
   mov sp, #0x8000
   b main
 

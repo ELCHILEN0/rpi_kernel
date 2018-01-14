@@ -15,6 +15,7 @@ SECTIONS {
     .text : {
         *(.text)
     } > RAM
+    . = ALIGN(8);
     __text_end = .;
 
     __data_start = .;
@@ -22,6 +23,7 @@ SECTIONS {
         *(.rodata)
         *(.data)
     } > RAM
+    . = ALIGN(8);
     __data_end = .;
 
     __bss_start = .;
@@ -29,14 +31,21 @@ SECTIONS {
         *(.bss)
         *(COMMON)
     } > RAM
+    . = ALIGN(8);
     __bss_end = .;
 
     __heap_start = .;
+    . = . + 0x1000;
+    . = ALIGN(8);
     __heap_end = .;
 
     __stack_start = .;
+    . = . + 0x1000;    
+    . = ALIGN(8);
     __stack_end = .;
 
     __irq_stack_start = .;
+    . = . + 0x1000;    
+    . = ALIGN(8);
     __irq_stack_end = .;
 }
