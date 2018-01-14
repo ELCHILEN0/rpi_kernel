@@ -18,24 +18,29 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
 	(void) r1;
 	(void) atags;
 
-    // OK status
+    // OK status (use till GPIO working)
     act_message[6] = 1;
     mailbox_write(mailbox0, MB0_PROPERTY_TAGS_ARM_TO_VC, (uint32_t) &act_message);
 
     gpio_fsel(5, SEL_INPUT);
     gpio_fsel(6, SEL_OUTPUT);
     gpio_fsel(13, SEL_OUTPUT);
+    gpio_fsel(21, SEL_OUTPUT);
+
+    // OK status
+    gpio_write(21, true);
+    gpio_write(13, true);
 
     while(true) {
         bool state = gpio_read(5);
         
         gpio_write(6, state);
-        gpio_write(13, state);
 
         while (state == gpio_read(5));
     }
 
     // Error status
-    act_message[6] = 0;
-    mailbox_write(mailbox0, MB0_PROPERTY_TAGS_ARM_TO_VC, (uint32_t) &act_message);
+    gpio_write(21, false);
+    // act_message[6] = 0;
+    // mailbox_write(mailbox0, MB0_PROPERTY_TAGS_ARM_TO_VC, (uint32_t) &act_message);
 }

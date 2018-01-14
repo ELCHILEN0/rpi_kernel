@@ -26,9 +26,9 @@ extern int gpio_write(unsigned int pin, bool val) {
     if (!valid_pin) return -1;    
 
     if (val)
-        gpio->clr[pin / 32] |= (1 << (pin % 32));
+        gpio->set[pin / 32] = (1 << (pin % 32));
     else
-        gpio->set[pin / 32] |= (1 << (pin % 32));     
+        gpio->clr[pin / 32] = (1 << (pin % 32));     
 
     return 0;
 }
