@@ -1,7 +1,7 @@
 #include "gpio.h"
 #include "peripheral.h"
 
-extern gpio_t *gpio = (gpio_t *) GPIO_BASE;
+gpio_t *gpio = (gpio_t *) GPIO_BASE;
 
 bool valid_pin(unsigned int pin) {
     return pin >= 0 && pin <= 53;

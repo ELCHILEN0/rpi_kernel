@@ -1,7 +1,7 @@
 #include "mailbox.h"
 #include "peripheral.h"
 
-extern mailbox_t *mailbox0 = (mailbox_t *) MAILBOX_BASE;
+mailbox_t *mailbox0 = (mailbox_t *) MAILBOX_BASE;
 
 /*
  * With the exception of the property tags mailbox channel, when passing memory addresses

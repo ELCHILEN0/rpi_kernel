@@ -32,10 +32,10 @@ $(BUILD)/$(TARGET).list: $(BUILD)/$(TARGET).elf
 $(BUILD)/$(TARGET).img: $(BUILD)/$(TARGET).elf
 	$(TOOLCHAIN)-objcopy -O binary $(BUILD)/$(TARGET).elf $(BUILD)/$(TARGET).img
 
-$(SOBJ):
+$(SOBJ): %.o: $(SOURCE)/asm/%.s
 	$(TOOLCHAIN)-as $(SOURCE)/asm/$(basename $@).s -o $(BUILD)/$@
 
-$(UOBJ):
+$(UOBJ): %.o: $(SOURCE)/c/%.c
 	$(TOOLCHAIN)-gcc -c $(SOURCE)/c/$(basename $@).c -o $(BUILD)/$@
 
 copy: all
