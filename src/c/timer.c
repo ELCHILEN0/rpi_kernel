@@ -4,46 +4,25 @@
 #include "timer.h"
 #include "peripheral.h"
 
-#define SYSTIMERCLO 0x3F003004
-#define GPFSEL3     0x3F20000C
-#define GPFSEL4     0x3F200010
-#define GPSET1      0x3F200020
-#define GPCLR1      0x3F20002C
+local_timer_t *local_timer = (local_timer_t *) 0x40000024;
 
-#define TIMER_BIT 0x00400000
+extern void timer_reset( unsigned int reload ) {
+    local_timer->control_status &= ~(1 << 29);
+    local_timer->control_status &= ~(1 << 28);
+    local_timer->irq_clear_reload = 1 << 31;
 
-extern void timer_init( void ) {
-    unsigned int ra;
+    local_timer->control_status |= 1 << 28;  
+    local_timer->control_status |= 1 << 29; 
+    local_timer->control_status |= reload; 
+}
 
-    ra=mmio_read(GPFSEL4);
-    ra&=~(7<<21);
-    ra|=1<<21;
-    mmio_write(GPFSEL4,ra);
+extern void timer_init( unsigned int reload ) {
+    local_timer->interrupt_routing = 0x000; // route to core 0
 
-    ra=mmio_read(GPFSEL3);
-    ra&=~(7<<15);
-    ra|=1<<15;
-    mmio_write(GPFSEL3,ra);
-
-
-    while(1)
-    {
-        mmio_write(GPSET1,1<<(47-32));
-        mmio_write(GPCLR1,1<<(35-32));
-        while(1)
-        {
-            ra=mmio_read(SYSTIMERCLO);
-            // printf("%d, %d\n", ra, ra & TIMER_BIT);
-            if((ra&=TIMER_BIT)==TIMER_BIT) break;
-        }
-        mmio_write(GPCLR1,1<<(47-32));
-        mmio_write(GPSET1,1<<(35-32));
-        while(1)
-        {
-            ra=mmio_read(SYSTIMERCLO);
-            if((ra&=TIMER_BIT)==0) break;
-        }
-    }
+    local_timer->control_status |= 1 << 29;
+    local_timer->control_status |= 1 << 28;
+    local_timer->irq_clear_reload &= 0xF0000000;
+    local_timer->irq_clear_reload |= reload;
 }
 
 extern unsigned int timer_read( void ) {

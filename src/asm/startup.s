@@ -26,7 +26,7 @@ _vectors:
     nop
     nop
     nop
-    nop
+    b interrupt_handler_irq
     nop
 
 _reset:

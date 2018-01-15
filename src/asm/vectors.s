@@ -11,4 +11,4 @@ interrupt_handler_irq:
   push {r0-r12, lr}
   bl interrupt_irq
   pop {r0-r12, lr}
-  eret
+  subs pc, lr, #4

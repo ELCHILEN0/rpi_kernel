@@ -4,6 +4,7 @@
 #include <stdbool.h>
 
 #include "gpio.h"
+#include "timer.h"
 
 // __attribute__ ((interrupt ("UDEF"))) void interrupt_udef() {
 //     printf("UDEF\n");
@@ -25,7 +26,7 @@ void __attribute__ ((interrupt ("SWI"))) interrupt_swi() {
     // printf("SWI %x %d\n", i_code, i_code);
     // idt[i_code].handler();
     if (i_code != 0x80) {
-        gpio_write(13, true);
+        // gpio_write(13, true);
     }
 }
 
@@ -39,7 +40,8 @@ void __attribute__ ((interrupt ("SWI"))) interrupt_swi() {
 
 __attribute__ ((interrupt ("IRQ"))) void interrupt_irq() {
     // printf("IRQ\n");
-    while (1) {}
+    timer_reset(0x038FFFF);
+    gpio_write(13, !gpio_read(13));
 }
 
 // __attribute__ ((interrupt ("DABT"))) void interrupt_dabt() {

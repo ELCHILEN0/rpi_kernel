@@ -28,6 +28,7 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
     gpio_fsel(21, SEL_OUTPUT);
 
     enable_intrs();
+    timer_init(0x0FFFFFF);
 
     // OK status
     gpio_write(21, true);
