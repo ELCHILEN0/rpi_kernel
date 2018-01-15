@@ -21,23 +21,21 @@
 
 _vectors:
     b _reset
-    b _undef_intr
-    b interrupt_handler
-    b _undef_intr
-    b _undef_intr
-    b _undef_intr
-    b _undef_intr
-    b _undef_intr
+    nop
+    b interrupt_handler_swi
+    nop
+    nop
+    nop
+    nop
+    nop
 
 _reset:
   ldr     r4, =_vectors
   mcr     p15, #0, r4, c12, c0, #0
 
-  // We start on hypervisor mode. Switch back to SVC
-  mrs r0, cpsr
-  bic r0, r0, #CPSR_MODE_SYSTEM
-  orr r0, r0, #CPSR_MODE_SVR
-  msr spsr_cxsf,  r0
+  // We start on hypervisor mode. Switch back to SVR
+  mov r0, #(CPSR_MODE_SVR | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
+  msr spsr_c,   r0
   add r0, pc, #4
   msr ELR_hyp,  r0
   eret
@@ -73,9 +71,6 @@ main:
 hang:
   b hang
 
-_undef_intr:
-  bx lr
-
 .global enable_intrs
 enable_intrs:
   cpsie aif
@@ -86,9 +81,3 @@ disable_intrs:
   cpsid aif
   bx lr
 
-interrupt_handler:
-  push {r0-r12, lr}
-  bl interrupt_swi
-  pop {r0-r12, lr}
-  cpsie aif
-  bx lr

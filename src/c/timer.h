@@ -11,6 +11,13 @@ typedef struct {
 } timer_gen_t;
 
 
+typedef volatile struct {
+    uint32_t interrupt_routing;
+    uint32_t _RESERVED_0[(0x34 - 0x24) / sizeof(uint32_t) - 1];
+    uint32_t control_status;
+    uint32_t irq_clear_reload;
+} local_timer_t;
+
 extern void timer_init( void );
 extern unsigned int timer_read( void );
 extern void timer_wait(unsigned int wait);
