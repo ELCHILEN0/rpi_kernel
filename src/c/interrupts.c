@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#include "gpio.h"
+
 // __attribute__ ((interrupt ("UDEF"))) void interrupt_udef() {
 //     printf("UDEF\n");
 // }
@@ -13,16 +15,17 @@
 
 // extern idt_t idt[256];
 
-// void __attribute__ ((interrupt ("SWI"))) interrupt_swi() {
-//     volatile unsigned int i_code;
+void __attribute__ ((interrupt ("SWI"))) interrupt_swi() {
+    volatile unsigned int i_code;
 
-//     // asm("ldr r0, [lr, #-4]");
-//     // asm("bic r0, #0xFF000000");
-//     // asm("mov %0, r0" : "=r"(i_code) : );
+    // asm("ldr r0, [lr, #-4]");
+    // asm("bic r0, #0xFF000000");
+    // asm("mov %0, r0" : "=r"(i_code) : );
 
-//     printf("SWI %x %d\n", i_code, i_code);
-//     // idt[i_code].handler();
-// }
+    // printf("SWI %x %d\n", i_code, i_code);
+    // idt[i_code].handler();
+    gpio_write(13, true);
+}
 
 // __attribute__ ((interrupt ("PABT"))) void interrupt_pabt() {
 //     printf("PABT\n");

@@ -27,14 +27,17 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
     gpio_fsel(13, SEL_OUTPUT);
     gpio_fsel(21, SEL_OUTPUT);
 
+    enable_intrs();
+
     // OK status
     gpio_write(21, true);
-    gpio_write(13, true);
 
     while(true) {
         bool state = gpio_read(5);
         
         gpio_write(6, state);
+        // interrupt_swi();
+        asm("swi 0x80");
 
         while (state == gpio_read(5));
     }
