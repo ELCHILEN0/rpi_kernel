@@ -11,4 +11,5 @@ interrupt_handler_irq:
   push {r0-r12, lr}
   bl interrupt_irq
   pop {r0-r12, lr}
+  cpsie aif
   subs pc, lr, #4
