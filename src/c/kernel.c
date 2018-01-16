@@ -20,7 +20,7 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
 
     // OK status (use till GPIO working)
     act_message[6] = 1;
-    mailbox_write(mailbox0, MB0_PROPERTY_TAGS_ARM_TO_VC, (uint32_t) &act_message);
+    // mailbox_write(mailbox0, MB0_PROPERTY_TAGS_ARM_TO_VC, (uint32_t) &act_message);
 
     gpio_fsel(5, SEL_INPUT);
     gpio_fsel(6, SEL_OUTPUT);
@@ -28,17 +28,19 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
     gpio_fsel(21, SEL_OUTPUT);
 
     enable_intrs();
-    timer_init(0x0FFFFFF);
+    // timer_init(0x0FFFFFF);
+
+    asm("swi 0x80");
+    asm("swi 0x80");
 
     // OK status
-    gpio_write(21, true);
+    // gpio_write(21, true);
 
     while(true) {
         bool state = gpio_read(5);
         
         gpio_write(6, state);
         // interrupt_swi();
-        asm("swi 0x80");
 
         while (state == gpio_read(5));
     }

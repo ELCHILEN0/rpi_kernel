@@ -4,6 +4,7 @@ interrupt_handler_swi:
   push {r0-r12, lr} // TODO: This should be implicit by ARM interrupt... (possible stack problem)
   bl interrupt_swi
   pop {r0-r12, lr}
+  //cpsie aif
   eret
 
 .global interrupt_handler_irq
