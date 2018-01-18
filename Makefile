@@ -3,7 +3,7 @@ TOOLCHAIN = arm-none-eabi
 # TOOLCHAIN = /root/x-tools/aarch64-rpi3-linux-gnueabi/bin/aarch64-rpi3-linux-gnueabi
 
 AARCH = 
-CCFLAGS = -nostartfiles -ffreestanding
+CCFLAGS = -nostartfiles -ffreestanding -mfpu=vfp
 
 # AARCH = -march=armv6 
 # CCFLAGS = -O2 -Wall -nostartfiles -ffreestanding $(AARCH)

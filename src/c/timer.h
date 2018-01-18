@@ -18,8 +18,11 @@ typedef volatile struct {
     uint32_t irq_clear_reload;
 } local_timer_t;
 
+extern void timer_routing( unsigned int mode );
 extern void timer_init( unsigned int reload );
-extern void timer_reset( unsigned int reload );
+extern void timer_reset( void );
+
+
 extern unsigned int timer_read( void );
 extern void timer_wait(unsigned int wait);
 

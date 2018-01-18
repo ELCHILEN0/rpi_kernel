@@ -1,5 +1,4 @@
 .section .init
-.global _vectors
 
 // See ARM section A2.2 (Processor Modes)
 .equ    CPSR_MODE_USER,         0x10
@@ -19,36 +18,35 @@
 .equ	SCTLR_ENABLE_BRANCH_PREDICTION, 0x800
 .equ	SCTLR_ENABLE_INSTRUCTION_CACHE, 0x1000
 
+.global _vectors
 _vectors:
     b _reset
-    nop
+    b interrupt_handler_undef
     b interrupt_handler_swi
-    nop
-    nop
+    b interrupt_handler_pftch
+    b interrupt_handler_abt
     nop
     b interrupt_handler_irq
-    nop
+    b interrupt_handler_fiq
 
 _reset:
+  bl __disable_interrupts
+
   ldr     r4, =_vectors
+  mov sp, #(60 * 1024 * 1024)
   mcr     p15, #0, r4, c12, c0, #0
 
-  // We start on hypervisor mode. Switch back to SVR
-  mov r0, #(CPSR_MODE_SVR | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
-  msr spsr_c,   r0
+  /**
+   * Hypervisor mode uses different interrupt vector entries; therefore, we
+   * switch back to SVR for predictable execution.
+   */
+  mrs r0, cpsr
+  bic r0, r0, #CPSR_MODE_SYSTEM
+  orr r0, r0, #CPSR_MODE_SVR
+  msr spsr_cxsf,   r0
   add r0, pc, #4
   msr ELR_hyp,  r0
   eret
-
-/*
-  // Copy interrupt vectors to 0x0
-  mov     r0, #_vectors
-  mov     r1, #0x0000
-  ldmia   r0!,{r2, r3, r4, r5, r6, r7, r8, r9}
-  stmia   r1!,{r2, r3, r4, r5, r6, r7, r8, r9}
-  ldmia   r0!,{r2, r3, r4, r5, r6, r7, r8, r9}
-  stmia   r1!,{r2, r3, r4, r5, r6, r7, r8, r9}
-*/
 
   mov r0, #(CPSR_MODE_IRQ | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
   msr cpsr_c, r0
@@ -71,13 +69,13 @@ main:
 hang:
   b hang
 
-.global enable_intrs
-enable_intrs:
-  cpsie aif
+.global __enable_interrupts
+__enable_interrupts:
+  cpsie i
   bx lr
 
-.global enable_intrs
-disable_intrs:
+.global __disable_interrupts
+__disable_interrupts:
   cpsid aif
   bx lr
 
