@@ -1,4 +1,4 @@
-.section .init
+.section .text
 
 // See ARM section A2.2 (Processor Modes)
 .equ    CPSR_MODE_USER,         0x10
@@ -34,9 +34,10 @@ _reset:
 
   /**
    * Instead of copying the vector table to 0x0, update the vector base register
+     mov sp, #(60 * 1024 * 1024)
+
    */
   ldr     r4, =_vectors
-  mov sp, #(60 * 1024 * 1024)
   mcr     p15, #0, r4, c12, c0, #0
 
   /**
@@ -51,6 +52,10 @@ _reset:
   msr ELR_hyp,  r0
   eret
 
+  /**
+   * Setup exception level stacks, careful memory layout should be used, and
+   * these addresses should be made available to the memory allocator.
+   */
   mov r0, #(CPSR_MODE_IRQ | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
   msr cpsr_c, r0
   mov sp, #(62 * 1024 * 1024)
@@ -63,20 +68,29 @@ _reset:
   msr cpsr_c, r0
   mov sp, #(64 * 1024 * 1024)
 
-  b main
-
-.section .text
-main:
+  /**
+   * Finally branch to higher level c routines.
+   */
   bl cstartup
 
+/**
+ * Execution should never reach here, continuing will cause undefined behaivour, 
+ * hang until a core reset is performed.
+ */
 hang:
   b hang
 
+/**
+ * __enable_interrupts()
+ */
 .global __enable_interrupts
 __enable_interrupts:
-  cpsie i
+  cpsie aif
   bx lr
 
+/**
+ * __disable_interrupts()
+ */
 .global __disable_interrupts
 __disable_interrupts:
   cpsid aif
