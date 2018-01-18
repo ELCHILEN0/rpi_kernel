@@ -32,6 +32,9 @@ _vectors:
 _reset:
   bl __disable_interrupts
 
+  /**
+   * Instead of copying the vector table to 0x0, update the vector base register
+   */
   ldr     r4, =_vectors
   mov sp, #(60 * 1024 * 1024)
   mcr     p15, #0, r4, c12, c0, #0

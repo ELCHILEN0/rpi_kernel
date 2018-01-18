@@ -25,12 +25,13 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
     mailbox_write(mailbox0, MB0_PROPERTY_TAGS_ARM_TO_VC, (uint32_t) &act_message);
 
     gpio_fsel(5, SEL_INPUT);
-    gpio_fsel(6, SEL_OUTPUT); // GPIO working
-    gpio_fsel(13, SEL_OUTPUT); // SWI working
-    gpio_fsel(21, SEL_OUTPUT); // 
+    gpio_fsel(6, SEL_OUTPUT);
+    gpio_fsel(13, SEL_OUTPUT);
+    gpio_fsel(21, SEL_OUTPUT);
 
-    timer_routing(0);
-    timer_init(0x038FFFF);
+    local_timer_interrupt_routing(0);
+    local_timer_start(0x038FFFF);
+
     __enable_interrupts();
 
     // asm("swi 0x80"); // Does it work once
@@ -42,6 +43,7 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
         bool state = gpio_read(5);
         
         gpio_write(6, state);
+        asm("swi 0x80");
 
         while (state == gpio_read(5));
     }
