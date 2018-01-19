@@ -3,27 +3,36 @@
 #include <stdio.h>
 #include <stdbool.h>
 
+#include "interrupts.h"
+
 #include "gpio.h"
 #include "timer.h"
 #include "peripheral.h"
 
-/**
- * Higher level c-function interrupt methods.
- */
+// TODO: Unhandled exceptions to begin...
+interrupt_vector_t vector_table_svc[256];
+interrupt_vector_t vector_table_irq[26];
 
+void trap() {
+    printf("[interrupt] Unhandled Interrupt\r\n");
+}
 
-// typedef struct {
-//     void (*handler)();
-// } interrupt_descriptor_table_t, idt_t;
+void init_vector_tables() {
+    for (int i = 0; i < 256; i++) {
+        if (i < 26) register_interrupt_handler(vector_table_irq, i, &trap);
+        register_interrupt_handler(vector_table_svc, i, &trap);
+    }
+}
 
-// extern idt_t idt[256];
+void register_interrupt_handler(interrupt_vector_t vector_table[], unsigned int i, void (*handler)()) {
+    vector_table[i].handler = handler;
+}
 
 void interrupt_svc(int code) {
     printf("[interrupt] Supvervisor Call (0x%X)\r\n", code);
 
-    static bool next_blinker_state = true;
-    gpio_write(21, next_blinker_state);
-    next_blinker_state = !next_blinker_state;
+    interrupt_vector_t vector = vector_table_svc[code];
+    vector.handler();
 }
 
 void interrupt_irq() {
@@ -31,19 +40,25 @@ void interrupt_irq() {
 
     // __disable_interrupts();
 
-    static bool next_blinker_state = true;
 
     uint32_t irq_src = mmio_read(0x40000060);
 
+    for (int code = 0; code < 26; code++) {
+        if ((irq_src & (1 << code)) != 0) {
+            interrupt_vector_t vector = vector_table_irq[code];
+            vector.handler();
+        }
+    }
+
     if (irq_src == (1 << 11)) {
+        static bool next_blinker_state = true;
+
         local_timer_reset();
 
         gpio_write(13, next_blinker_state);
         next_blinker_state = !next_blinker_state;
     } else {
-        gpio_write(13, true);
-        gpio_write(21, true);
-        return;
+        printf("[interupt] Unhandled IRQ\r\n");
     }
 
     // __enable_interrupts();    

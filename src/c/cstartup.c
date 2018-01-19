@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "interrupts.h"
+
 extern char *__text_start;
 extern char *__text_end;
 extern char *__data_start;
@@ -18,7 +20,7 @@ extern char *__irq_stack_end;
 
 extern void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags );
 
-void bss_init() {
+void init_bss() {
     char *bss = (char*) &__bss_start;
 
     while ( (unsigned long) bss < (unsigned long) &__bss_end )
@@ -26,7 +28,8 @@ void bss_init() {
 }
 
 void cstartup( uint32_t r0, uint32_t r1, uint32_t atags ) {
-    bss_init();
+    init_bss();
+    init_vector_tables();
 
     // printf(".text:  [0x%.5X, 0x%.5X]\n", &__text_start, &__text_end);
     // printf(".data:  [0x%.5X, 0x%.5X]\n", &__data_start, &__data_end);
@@ -34,8 +37,6 @@ void cstartup( uint32_t r0, uint32_t r1, uint32_t atags ) {
     // printf(".heap:  [0x%.5X, 0x%.5X]\n", &__heap_start, &__heap_end);
     // printf(".stack: [0x%.5X, 0x%.5X]\n", &__stack_start, &__stack_end);
     // printf(".irq_s: [0x%.5X, 0x%.5X]\n", &__irq_stack_start, &__irq_stack_end);
-
-    // uart_init();
 
     kernel_main( r0, r1, atags );
     
