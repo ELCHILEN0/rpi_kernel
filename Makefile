@@ -15,7 +15,7 @@ SOURCE = src
 COPY = /Volumes/boot
 
 SOBJ = startup.o vectors.o
-UOBJ = cstartup.o kernel.o peripheral.o gpio.o mailbox.o interrupts.o timer.o
+UOBJ = cstartup.o kernel.o peripheral.o gpio.o mailbox.o interrupts.o timer.o uart.o
 
 # SOBJ = startup.o
 # UOBJ = cstartup.o cstubs.o peripheral.o interrupts.o kernel.o gpio.o uart.o timer.o
@@ -51,3 +51,8 @@ DOCKER_IMAGE = toolchain
 DOCKER_BUILD = /root/build
 start-toolchain:
 	docker run --rm -it -v $(CURDIR):$(DOCKER_BUILD) -v $(COPY):$(COPY) -w $(DOCKER_BUILD) $(DOCKER_IMAGE)
+
+SERIAL_DEVICE = /dev/tty.usbserial-AH069DMB
+SERIAL_BAUD_RATE = 9600
+serial-screen:
+	screen $(SERIAL_DEVICE) $(SERIAL_BAUD_RATE)

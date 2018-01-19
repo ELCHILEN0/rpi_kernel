@@ -1,48 +1,41 @@
 #include "uart.h"
 #include "peripheral.h"
 
-extern uart_t *uart0 = (uart_t *) UART0_BASE;
+#include "gpio.h"
 
-// TODO: If issues start to occur look at the GPIO CLK logic in the original reference.
-void uart_init() {
-    // Disable UART0.
-	uart0->cr = 0x00000000;
- 
-	// Clear pending interrupts.
-	uart0->icr = 0x7FF;
- 
-	// Set integer & fractional part of baud rate.
-	// Divider = UART_CLOCK/(16 * Baud)
-	// Fraction part register = (Fractional part * 64) + 0.5
-	// UART_CLOCK = 3000000; Baud = 115200.
- 
-	// Divider = 3000000 / (16 * 115200) = 1.627 = ~1.
-	// Fractional part register = (.627 * 64) + 0.5 = 40.6 = ~40.
-	uart0->ibrd = 1;
-	uart0->fbrd = 40;
- 
-	// Enable FIFO & 8 bit data transmission (1 stop bit, no parity).
-	// uart0->lcrh = (1 << 4) | (1 << 5) | (1 << 6);
- 
-	// Mask all interrupts.
-	// uart0->imsc =	(1 << 1) | (1 << 4) | (1 << 5) | (1 << 6) |
-	//               	(1 << 7) | (1 << 8) | (1 << 9) | (1 << 10);
- 
-	// Enable UART0, receive & transfer part of UART.
-	uart0->cr = (1 << 0) | (1 << 8) | (1 << 9);
+aux_t *aux = (aux_t *) AUX_BASE;
+// uart_t *uart0 = (uart_t *) UART0_BASE;
+
+void uart_init( unsigned int baudrate ) {
+	aux->enables &= ~(AUX_ENABLES_SP1 | AUX_ENABLES_SP2);
+	
+	gpio_fsel(14, SEL_ALT5);
+	gpio_fsel(15, SEL_ALT5);
+
+	aux->uart1.iir |= MU_IIR_SEND_FIFO_CLR | MU_IIR_RECV_FIFO_CLR;
+	aux->uart1.lcr |= MU_LCR_8_BIT;
+	aux->uart1.ier |= MU_IER_SEND | MU_IER_RECV;
+	aux->uart1.baud = baudrate & MU_BAUD_MASK;
+
+	aux->enables |= AUX_ENABLES_MU;
 }
 
 // TODO: Make dependent
 void uart_putc(unsigned char c)
 {
 	// Wait for UART to become ready to transmit.
-	while ( uart0->fr & (1 << 5) ) { }
-	uart0->dr = c;
+	while ((aux->uart1.lsr & MU_LSR_SEND_EMPTY) == 0) { }
+	aux->uart1.io = c & MU_IO_MASK;
+
+	// while ( uart0->fr & (1 << 5) ) { }
+	// uart0->dr = c;
 }
 
 unsigned char uart_getc()
 {    
     // Wait for UART to have received something.
-	while ( uart0->fr & (1 << 4) ) { }
-	return uart0->dr;
+
+
+	// while ( uart0->fr & (1 << 4) ) { }
+	// return uart0->dr;
 }
