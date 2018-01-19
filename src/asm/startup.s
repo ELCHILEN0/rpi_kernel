@@ -21,10 +21,10 @@
 .global _vectors
 _vectors:
     b _reset
-    b interrupt_handler_undef
-    b interrupt_handler_swi
-    b interrupt_handler_pftch
-    b interrupt_handler_abt
+    b interrupt_handler_udef
+    b interrupt_handler_svc
+    b interrupt_handler_pabt
+    b interrupt_handler_dabt
     nop
     b interrupt_handler_irq
     b interrupt_handler_fiq

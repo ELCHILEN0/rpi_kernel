@@ -41,7 +41,7 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
     printf("[kernel] Interrupts enabled.\r\n");
 
     printf("[kernel] Jumping to interrupt 0x80.\r\n");
-    asm("SWI 0x80");
+    asm("SVC 0x80");
     printf("[kernel] Returned from interrupt.\r\n");
 
     bool output_state = true;
@@ -50,7 +50,7 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
         gpio_write(6, output_state);
         output_state = !output_state;
 
-        asm("SWI 0x81");
+        asm("SVC 0x81");
 
         bool input_state = gpio_read(5);
         while (input_state == gpio_read(5)); // Poll till pressed

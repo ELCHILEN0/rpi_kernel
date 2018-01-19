@@ -18,27 +18,17 @@
 
 // extern idt_t idt[256];
 
-// void interrupt_udef() {
-//     printf("UDEF\n");
-// }
-
-void interrupt_swi(int code) {
-    printf("[interrupt] SWI(0x%X)\r\n", code);
+void interrupt_svc(int code) {
+    printf("[interrupt] Supvervisor Call (0x%X)\r\n", code);
 
     static bool next_blinker_state = true;
     gpio_write(21, next_blinker_state);
     next_blinker_state = !next_blinker_state;
 }
 
-// void interrupt_pabt() {
-//     printf("PABT\n");
-// }
-
-// void interrupt_fiq() {
-//     printf("FIQ\n");
-// }
-
 void interrupt_irq() {
+    // printf("[interrupt] IRQ\r\n");
+
     // __disable_interrupts();
 
     static bool next_blinker_state = true;
@@ -59,11 +49,18 @@ void interrupt_irq() {
     // __enable_interrupts();    
 }
 
-void interrupt_irq_other() {
-    gpio_write(13, true);
-    gpio_write(21, true);
+void interrupt_fiq() {
+    printf("[interrupt] FIQ\r\n");
 }
 
-// void interrupt_dabt() {
-//     printf("DABT\n");
-// }
+void interrupt_udef() {
+    printf("[interrupt] Undefined Instruction\r\n");
+}
+
+void interrupt_pabt() {
+    printf("[interrupt] Prefetch Abort\r\n");
+}
+
+void interrupt_dabt() {
+    printf("[interrupt] Data Abort\r\n");
+}
