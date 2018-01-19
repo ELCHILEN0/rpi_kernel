@@ -15,7 +15,7 @@ SOURCE = src
 COPY = /Volumes/boot
 
 SOBJ = startup.o vectors.o
-UOBJ = cstartup.o kernel.o peripheral.o gpio.o mailbox.o interrupts.o timer.o uart.o
+UOBJ = cstartup.o cstubs.o kernel.o peripheral.o gpio.o mailbox.o interrupts.o timer.o uart.o
 
 # SOBJ = startup.o
 # UOBJ = cstartup.o cstubs.o peripheral.o interrupts.o kernel.o gpio.o uart.o timer.o

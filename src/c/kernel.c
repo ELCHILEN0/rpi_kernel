@@ -34,28 +34,27 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
     local_timer_interrupt_routing(0);
     local_timer_start(0x038FFFF);
 
-    __enable_interrupts();
-
     uart_init(9600);
-    // asm("swi 0x80"); // Does it work once
-    // asm("swi 0x80"); // Does it work again...
 
-    // OK status
+    printf("[kernel] Enabling interrupts...\r\n");
+    __enable_interrupts();
+    printf("[kernel] Interrupts enabled.\r\n");
+
+    printf("[kernel] Jumping to interrupt 0x80.\r\n");
+    asm("SWI 0x80");
+    printf("[kernel] Returned from interrupt.\r\n");
+
+    bool output_state = true;
 
     while(true) {
-        bool state = gpio_read(5);
-        
-        uart_putc('H');
-        uart_putc('e');
-        uart_putc('l');
-        uart_putc('l');
-        uart_putc('o');
-        uart_putc('\r');
-        uart_putc('\n');
-        gpio_write(6, state);
-        asm("swi 0x80");
+        gpio_write(6, output_state);
+        output_state = !output_state;
 
-        while (state == gpio_read(5));
+        asm("SWI 0x81");
+
+        bool input_state = gpio_read(5);
+        while (input_state == gpio_read(5)); // Poll till pressed
+        while (input_state != gpio_read(5)); // Poll till unpressed
     }
 
     // Error status

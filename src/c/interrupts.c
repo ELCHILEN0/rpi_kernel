@@ -22,16 +22,10 @@
 //     printf("UDEF\n");
 // }
 
-void interrupt_swi() {
+void interrupt_swi(int code) {
+    printf("[interrupt] SWI(0x%X)\r\n", code);
+
     static bool next_blinker_state = true;
-    // volatile unsigned int i_code; // TODO: FIX
-
-    // asm("ldr r0, [lr, #-4]");
-    // asm("bic r0, #0xFF000000");
-    // asm("mov %0, r0" : "=r"(i_code) : );
-
-    // printf("SWI %x %d\n", i_code, i_code);
-    // idt[i_code].handler();
     gpio_write(21, next_blinker_state);
     next_blinker_state = !next_blinker_state;
 }

@@ -13,7 +13,9 @@
  */
 
 interrupt_handler_swi:
-  push {r0-r12, lr} // TODO: This should be implicit by ARM interrupt... (possible stack problem)
+  push {r0-r12, lr}
+  ldr r0, [lr, #-4]
+  bic r0, #0xFF000000
   bl interrupt_swi
   pop {r0-r12, lr}
   MOVS PC, lr
