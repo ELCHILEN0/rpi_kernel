@@ -36,8 +36,7 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
 
     __enable_interrupts();
 
-    
-    uart_init(3254);
+    uart_init(9600);
     // asm("swi 0x80"); // Does it work once
     // asm("swi 0x80"); // Does it work again...
 

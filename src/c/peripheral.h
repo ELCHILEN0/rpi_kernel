@@ -14,6 +14,7 @@
 #define VC_MMU_BASE 0x40000000 // L2 caching enabled
 // #define VC_MMU_BASE 0xC0000000 // L2 caching disabled
 
+#define SYS_FREQ    250000000
 
 // Memory-Mapped I/O
 extern void mmio_write(uint32_t reg, uint32_t data);

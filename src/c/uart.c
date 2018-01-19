@@ -15,7 +15,7 @@ void uart_init( unsigned int baudrate ) {
 	aux->uart1.iir |= MU_IIR_SEND_FIFO_CLR | MU_IIR_RECV_FIFO_CLR;
 	aux->uart1.lcr |= MU_LCR_8_BIT;
 	aux->uart1.ier |= MU_IER_SEND | MU_IER_RECV;
-	aux->uart1.baud = baudrate & MU_BAUD_MASK;
+	aux->uart1.baud = ((SYS_FREQ / (8 * baudrate)) - 1) & MU_BAUD_MASK;
 
 	aux->enables |= AUX_ENABLES_MU;
 }
