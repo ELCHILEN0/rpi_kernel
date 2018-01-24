@@ -11,17 +11,18 @@ uint32_t get_core_id( void ) {
 
 #define CORE0_MBOX3_SET             0x4000008C
 #define CORE1_MBOX3_R               0x400000DC
+#define CORE2_MBOX3_R               0x400000EC
+#define CORE3_MBOX3_R               0x400000FC
 
 void core_enable(uint32_t core, uint32_t addr)
 {
-    printf("[core] Enabling 0x%X -> (0x%X)\r\n", CORE0_MBOX3_SET + 0x10 * core, addr);
     mmio_write(CORE0_MBOX3_SET + 0x10 * core, addr);
-    // *(uint32_t*)(0x4000008C + 0x10 * core) = addr;
 
-    printf("[core] Value @ 0x%X = (0x%X)\r\n", CORE1_MBOX3_R, mmio_read(CORE1_MBOX3_R));
+    // printf("[core] Enabling 0x%X -> (0x%X)\r\n", CORE0_MBOX3_SET + 0x10 * core, addr);
+    // printf("[core1] Value @ 0x%X = (0x%X)\r\n", CORE1_MBOX3_R, mmio_read(CORE1_MBOX3_R));
+    // printf("[core2] Value @ 0x%X = (0x%X)\r\n", CORE1_MBOX3_R, mmio_read(CORE2_MBOX3_R));
+    // printf("[core3] Value @ 0x%X = (0x%X)\r\n", CORE1_MBOX3_R, mmio_read(CORE3_MBOX3_R));
+    // printf("--------\r\n");
     asm("SEV");
-    // volatile uint32_t *p;
-    // p = (uint32_t*)(CORE0_MBOX3_SET + 0x10 * core);
-     
-    // *p = addr;
+
 }

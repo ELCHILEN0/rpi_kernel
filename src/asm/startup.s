@@ -30,12 +30,8 @@ _vectors:
     b interrupt_handler_fiq
 
 _reset:
-  bl __disable_interrupts
-
   /**
    * Instead of copying the vector table to 0x0, update the vector base register
-     mov sp, #(60 * 1024 * 1024)
-
    */
   ldr     r4, =_vectors
   mcr     p15, #0, r4, c12, c0, #0
@@ -86,16 +82,13 @@ _reset_core_1:
   msr cpsr_c, r0
   mov sp, #(52 * 1024 * 1024)
 
-  mov r0, #(CPSR_MODE_ABORT | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
+  mov r0, #(CPSR_MODE_SVR | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
   msr cpsr_c, r0
   mov sp, #(53 * 1024 * 1024)
 
-  mov r0, #(CPSR_MODE_SVR | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
-  msr cpsr_c, r0
-  mov sp, #(54 * 1024 * 1024)
-
   bl other_core
-
+  b hang
+  
 /*
   mov r0,#0x8000
   MCR p15, 4, r0, c12, c0, 0

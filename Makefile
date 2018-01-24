@@ -8,13 +8,13 @@ CCFLAGS = -nostartfiles -ffreestanding -mfpu=vfp -mcpu=cortex-a53
 # AARCH = -march=armv6 
 # CCFLAGS = -O2 -Wall -nostartfiles -ffreestanding $(AARCH)
 
-TARGET = kernel
+TARGET = kernel8-32
 BUILD = build
 SOURCE = src
 
 COPY = /Volumes/boot
 
-SOBJ = startup.o vectors.o
+SOBJ = bootcode.o vectors.o
 UOBJ = cstartup.o cstubs.o kernel.o peripheral.o gpio.o mailbox.o interrupts.o timer.o uart.o multicore.o
 
 # SOBJ = startup.o

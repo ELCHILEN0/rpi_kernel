@@ -36,23 +36,10 @@ _vectors:
 
 _reset:
     /**
-     * Place the other cores in a spin loop until they can be woken
-         mov r0, #1
-    ldr r1, =#CORE_1_MBOX_3_SET
-    b _spin_core
-    mov r0, #2
-    ldr r1, =#CORE_2_MBOX_3_SET
-    b _spin_core
-    mov r0, #3
-    ldr r1, =#CORE_3_MBOX_3_SET
-    b _spin_core
-     */
-    
-
-    /**
     * Hypervisor mode uses different interrupt vector entries; therefore, we
     * switch back to SVR for predictable execution.
     */
+    
     mrs r0, cpsr
     bic r0, r0, #CPSR_MODE_SYSTEM
     orr r0, r0, #CPSR_MODE_SVR
@@ -60,6 +47,7 @@ _reset:
     add r0, pc, #4
     msr ELR_hyp,  r0
     eret
+    
 
     /**
     * Setup exception level stacks, careful memory layout should be used, and
@@ -78,8 +66,102 @@ _reset:
     */
     bl cstartup
 
-_hang:
-    b _hang
+hang:
+    b hang
+
+/**
+ * On startup the armstub runs which is located from 0x0 - 0x100
+ * TODO (Optional): Rewite armstub to follow https://www.kernel.org/doc/Documentation/arm64/booting.txt semantics
+ *
+ * armstubs: https://github.com/raspberrypi/tools/tree/master/armstubs
+ * - HYP
+ * - Core 0 jumps to 0x8000, 0x80000 on aarch64
+ * - Cores 1-3 are stuck in a WFE loop
+ * - On SVR they jump to the address in mailbox 3
+
+ * Therefore common startup code should:
+ * - HYP -> SVR (no need for virtualization extensions)
+ * - Setup execution level stacks (this varies on aarch64)
+
+ * Proposed design simplification is to do as follows:
+ * - HYP -> SVR
+ * - Stack setup
+ * - iif core != 0; then WFE loop (repeat initialization loop)
+ * - On SVR jump to the address in mailbox 3, this time with proper execution modes
+ */
+
+.global _reset_test
+_reset_test:
+    mrs r0, cpsr
+    bic r0, r0, #CPSR_MODE_SYSTEM
+    orr r0, r0, #CPSR_MODE_SVR
+    msr spsr_cxsf,   r0
+    add r0, pc, #4
+    msr ELR_hyp,  r0
+    eret
+
+.global _reset_core_1
+_reset_core_1:
+    mrs r0, cpsr
+    bic r0, r0, #CPSR_MODE_SYSTEM
+    orr r0, r0, #CPSR_MODE_SVR
+    msr spsr_cxsf,   r0
+    add r0, pc, #4
+    msr ELR_hyp,  r0
+    eret
+
+  mov r0, #(CPSR_MODE_IRQ | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
+  msr cpsr_c, r0
+  mov sp, #(50 * 1024 * 1024)
+
+  mov r0, #(CPSR_MODE_SVR | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
+  msr cpsr_c, r0
+  mov sp, #(51 * 1024 * 1024)
+
+  bl other_core
+  b hang
+
+.global _reset_core_2
+_reset_core_2:
+    mrs r0, cpsr
+    bic r0, r0, #CPSR_MODE_SYSTEM
+    orr r0, r0, #CPSR_MODE_SVR
+    msr spsr_cxsf,   r0
+    add r0, pc, #4
+    msr ELR_hyp,  r0
+    eret
+
+  mov r0, #(CPSR_MODE_IRQ | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
+  msr cpsr_c, r0
+  mov sp, #(52 * 1024 * 1024)
+
+  mov r0, #(CPSR_MODE_SVR | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
+  msr cpsr_c, r0
+  mov sp, #(53 * 1024 * 1024)
+
+  bl other_core
+  b hang
+
+.global _reset_core_3
+_reset_core_3:
+    mrs r0, cpsr
+    bic r0, r0, #CPSR_MODE_SYSTEM
+    orr r0, r0, #CPSR_MODE_SVR
+    msr spsr_cxsf,   r0
+    add r0, pc, #4
+    msr ELR_hyp,  r0
+    eret
+
+  mov r0, #(CPSR_MODE_IRQ | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
+  msr cpsr_c, r0
+  mov sp, #(54 * 1024 * 1024)
+
+  mov r0, #(CPSR_MODE_SVR | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
+  msr cpsr_c, r0
+  mov sp, #(55 * 1024 * 1024)
+
+  bl other_core
+  b hang
 
 
 /**
