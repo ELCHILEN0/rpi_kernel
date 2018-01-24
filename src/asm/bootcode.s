@@ -18,11 +18,6 @@
 .equ	SCTLR_ENABLE_BRANCH_PREDICTION, 0x800
 .equ	SCTLR_ENABLE_INSTRUCTION_CACHE, 0x1000
 
-.equ    CORE_0_MBOX_3_SET, 0x4000008C
-.equ    CORE_1_MBOX_3_SET, 0x4000009C
-.equ    CORE_2_MBOX_3_SET, 0x400000AC
-.equ    CORE_3_MBOX_3_SET, 0x400000BC
-
 .global _vectors
 _vectors:
     b _reset
@@ -36,10 +31,15 @@ _vectors:
 
 _reset:
     /**
+    * Instead of copying the vector table to 0x0, update the vector base register
+    */
+    ldr     r4, =_vectors
+    mcr     p15, #0, r4, c12, c0, #0
+
+    /**
     * Hypervisor mode uses different interrupt vector entries; therefore, we
     * switch back to SVR for predictable execution.
     */
-    
     mrs r0, cpsr
     bic r0, r0, #CPSR_MODE_SYSTEM
     orr r0, r0, #CPSR_MODE_SVR
@@ -48,7 +48,6 @@ _reset:
     msr ELR_hyp,  r0
     eret
     
-
     /**
     * Setup exception level stacks, careful memory layout should be used, and
     * these addresses should be made available to the memory allocator.
@@ -82,16 +81,17 @@ hang:
  * Therefore common startup code should:
  * - HYP -> SVR (no need for virtualization extensions)
  * - Setup execution level stacks (this varies on aarch64)
+ * - Jump to execution code
 
  * Proposed design simplification is to do as follows:
- * - HYP -> SVR
- * - Stack setup
- * - iif core != 0; then WFE loop (repeat initialization loop)
- * - On SVR jump to the address in mailbox 3, this time with proper execution modes
+ * - HYP -> SVR (all cores)
+ * - Jump to core specific initialization
+ * - Core specific initialization sets up stacks then jumps to execution
  */
 
-.global _reset_test
-_reset_test:
+.global _init_core
+_init_core: // _reset_
+    // HYP -> SVR
     mrs r0, cpsr
     bic r0, r0, #CPSR_MODE_SYSTEM
     orr r0, r0, #CPSR_MODE_SVR
@@ -100,16 +100,35 @@ _reset_test:
     msr ELR_hyp,  r0
     eret
 
-.global _reset_core_1
-_reset_core_1:
-    mrs r0, cpsr
-    bic r0, r0, #CPSR_MODE_SYSTEM
-    orr r0, r0, #CPSR_MODE_SVR
-    msr spsr_cxsf,   r0
-    add r0, pc, #4
-    msr ELR_hyp,  r0
-    eret
+    // Core details...
+    mrc     p15, 0, r0, c0, c0, 5
+    ubfx    r0, r0, #0, #2 
 
+    // Jump to the initialization code
+    ldr pc, [r0, _core_vectors]
+.global _core_vectors
+_core_vectors:
+    b _init_core_0
+    b _init_core_1
+    b _init_core_2
+    b _init_core_3
+
+// Core Initialization Code
+.global _init_core_0
+_init_core_0:
+    mov r0, #(CPSR_MODE_IRQ | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
+    msr cpsr_c, r0
+    mov sp, #(62 * 1024 * 1024)
+
+    mov r0, #(CPSR_MODE_SVR | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
+    msr cpsr_c, r0
+    mov sp, #(64 * 1024 * 1024)
+
+  bl cstartup
+  b hang
+
+.global _init_core_1
+_init_core_1:
   mov r0, #(CPSR_MODE_IRQ | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
   msr cpsr_c, r0
   mov sp, #(50 * 1024 * 1024)
@@ -118,11 +137,11 @@ _reset_core_1:
   msr cpsr_c, r0
   mov sp, #(51 * 1024 * 1024)
 
-  bl other_core
+  bl slave_core
   b hang
 
-.global _reset_core_2
-_reset_core_2:
+.global _init_core_2
+_init_core_2:
     mrs r0, cpsr
     bic r0, r0, #CPSR_MODE_SYSTEM
     orr r0, r0, #CPSR_MODE_SVR
@@ -139,11 +158,11 @@ _reset_core_2:
   msr cpsr_c, r0
   mov sp, #(53 * 1024 * 1024)
 
-  bl other_core
+  bl slave_core
   b hang
 
-.global _reset_core_3
-_reset_core_3:
+.global _init_core_3
+_init_core_3:
     mrs r0, cpsr
     bic r0, r0, #CPSR_MODE_SYSTEM
     orr r0, r0, #CPSR_MODE_SVR
@@ -160,27 +179,9 @@ _reset_core_3:
   msr cpsr_c, r0
   mov sp, #(55 * 1024 * 1024)
 
-  bl other_core
+  bl slave_core
   b hang
 
-
-/**
- * _spin_core(r0 = core_to_spin, r1 = addr_to_watch)
- */
-_spin_core:
-    mcr p15, 0, r2, c0, c0, 5
-    bic r2, #0x3    
-    cmp r0, r2  // spin_core == current_core
-    bne _spin_core_exit
-
-_spin_core_loop:
-    ldr r0, [r1]
-    cmp r0, #0
-    beq _spin_core_loop
-
-_spin_core_exit:
-    ldr pc, [r0]
-    
 /**
  * __enable_interrupts()
  */

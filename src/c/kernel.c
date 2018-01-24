@@ -19,11 +19,11 @@ uint32_t act_message[] = {32, 0, 0x00038041, 8, 0, 130, 0, 0};
 extern void __enable_interrupts(void);
 extern void __disable_interrupts(void);
 
-extern void _reset_core_1(void);
-extern void _reset_core_2(void);
-extern void _reset_core_3(void);
+extern void _init_core_1(void);
+extern void _init_core_2(void);
+extern void _init_core_3(void);
 
-void other_core() {
+void slave_core() {
     switch (get_core_id()) {
         case 1:
             gpio_write(13, true);
@@ -65,11 +65,10 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
 
     printf("[kernel] Running on core %d\r\n", get_core_id());
     gpio_write(6, true);
-    core_enable(1, (uint32_t) _reset_core_1);
-    core_enable(2, (uint32_t) _reset_core_2);
-    core_enable(3, (uint32_t) _reset_core_3);
+    core_enable(1, (uint32_t) _init_core_1);
+    core_enable(2, (uint32_t) _init_core_2);
+    core_enable(3, (uint32_t) _init_core_3);
 
-    asm volatile ("wfe");
     printf("[kernel] ........\r\n");
     while (true);
 
