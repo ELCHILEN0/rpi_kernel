@@ -3,19 +3,19 @@ TOOLCHAIN = arm-none-eabi
 # TOOLCHAIN = /root/x-tools/aarch64-rpi3-linux-gnueabi/bin/aarch64-rpi3-linux-gnueabi
 
 AARCH = 
-CCFLAGS = -nostartfiles -ffreestanding -mfpu=vfp
+CCFLAGS = -nostartfiles -ffreestanding -mfpu=vfp -mcpu=cortex-a53
 
 # AARCH = -march=armv6 
 # CCFLAGS = -O2 -Wall -nostartfiles -ffreestanding $(AARCH)
 
-TARGET = kernel
+TARGET = kernel8-32
 BUILD = build
 SOURCE = src
 
 COPY = /Volumes/boot
 
-SOBJ = startup.o vectors.o
-UOBJ = cstartup.o cstubs.o kernel.o peripheral.o gpio.o mailbox.o interrupts.o timer.o uart.o
+SOBJ = bootcode.o vectors.o
+UOBJ = cstartup.o cstubs.o kernel.o peripheral.o gpio.o mailbox.o interrupts.o timer.o uart.o multicore.o
 
 # SOBJ = startup.o
 # UOBJ = cstartup.o cstubs.o peripheral.o interrupts.o kernel.o gpio.o uart.o timer.o
@@ -38,7 +38,7 @@ $(SOBJ): %.o: $(SOURCE)/asm/%.s
 	$(TOOLCHAIN)-as $(SOURCE)/asm/$(basename $@).s -o $(BUILD)/$@
 
 $(UOBJ): %.o: $(SOURCE)/c/%.c
-	$(TOOLCHAIN)-gcc -c $(SOURCE)/c/$(basename $@).c -o $(BUILD)/$@
+	$(TOOLCHAIN)-gcc $(CCFLAGS) -c $(SOURCE)/c/$(basename $@).c -o $(BUILD)/$@
 
 copy: all
 	cp $(BUILD)/$(TARGET).img $(COPY)/$(TARGET).img

@@ -12,10 +12,35 @@
 #include "interrupts.h"
 
 #include "mailbox.h"
+#include "multicore.h"
 
 uint32_t act_message[] = {32, 0, 0x00038041, 8, 0, 130, 0, 0};
 
 extern void __enable_interrupts(void);
+extern void __disable_interrupts(void);
+extern void _init_core(void);
+
+void slave_core() {
+    switch (get_core_id()) {
+        case 1:
+            gpio_write(13, true);
+            break;
+
+        case 2:
+            gpio_write(19, true);
+            break;
+
+        case 3:
+            gpio_write(21, true);
+            break;
+
+        default:
+            printf("????????????");
+            break;
+    }
+    
+    while (true);
+}
 
 void context_switch() {
     static bool next_blinker_state = true;
@@ -43,20 +68,26 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
     gpio_fsel(5, SEL_INPUT);
     gpio_fsel(6, SEL_OUTPUT);
     gpio_fsel(13, SEL_OUTPUT);
+    gpio_fsel(19, SEL_OUTPUT);
     gpio_fsel(21, SEL_OUTPUT);
 
     uart_init(9600);
 
-    local_timer_interrupt_routing(0);
-    local_timer_start(0x038FFFF);
+    gpio_write(6, true);
+    printf("[kernel] Running on CORE %d\r\n", get_core_id());
 
-    printf("[kernel] Enabling interrupts...\r\n");
-    __enable_interrupts();
-    printf("[kernel] Interrupts enabled.\r\n");
+    core_enable(1, (uint32_t) _init_core);
+    core_enable(2, (uint32_t) _init_core);
+    core_enable(3, (uint32_t) _init_core);
 
     register_interrupt_handler(vector_table_svc, 0x80, &context_switch);
     register_interrupt_handler(vector_table_svc, 0x81, context_switch);
     register_interrupt_handler(vector_table_irq, 11, time_slice);
+
+    local_timer_interrupt_routing(0);
+    local_timer_start(0x038FFFF);
+
+    __enable_interrupts();
 
     printf("[kernel] Jumping to interrupt 0x80.\r\n");
     asm("SVC 0x80");
