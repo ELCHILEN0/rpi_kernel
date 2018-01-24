@@ -42,6 +42,20 @@ void slave_core() {
     while (true);
 }
 
+void context_switch() {
+    static bool next_blinker_state = true;
+    gpio_write(21, next_blinker_state);
+    next_blinker_state = !next_blinker_state;
+}
+
+void time_slice() {
+    local_timer_reset();
+
+    static bool next_blinker_state = true;
+    gpio_write(13, next_blinker_state);
+    next_blinker_state = !next_blinker_state;
+}
+
 void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
 	(void) r0;
 	(void) r1;
@@ -51,7 +65,6 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
     act_message[6] = 1;
     mailbox_write(mailbox0, MB0_PROPERTY_TAGS_ARM_TO_VC, (uint32_t) &act_message);
 
-    /* Initialization */
     gpio_fsel(5, SEL_INPUT);
     gpio_fsel(6, SEL_OUTPUT);
     gpio_fsel(13, SEL_OUTPUT);
@@ -67,8 +80,31 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
     core_enable(2, (uint32_t) _init_core);
     core_enable(3, (uint32_t) _init_core);
 
-    printf("[kernel] Looping forever...\r\n");
-    while (true);
+    register_interrupt_handler(vector_table_svc, 0x80, &context_switch);
+    register_interrupt_handler(vector_table_svc, 0x81, context_switch);
+    register_interrupt_handler(vector_table_irq, 11, time_slice);
+
+    local_timer_interrupt_routing(0);
+    local_timer_start(0x038FFFF);
+
+    __enable_interrupts();
+
+    printf("[kernel] Jumping to interrupt 0x80.\r\n");
+    asm("SVC 0x80");
+    printf("[kernel] Returned from interrupt.\r\n");
+
+    bool output_state = true;
+
+    while(true) {
+        gpio_write(6, output_state);
+        output_state = !output_state;
+
+        asm("SVC 0x81");
+
+        bool input_state = gpio_read(5);
+        while (input_state == gpio_read(5)); // Poll till pressed
+        while (input_state != gpio_read(5)); // Poll till unpressed
+    }
 
     // Error status
     act_message[6] = 0;
