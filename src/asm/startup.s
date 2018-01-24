@@ -80,6 +80,27 @@ _reset:
 hang:
   b hang
 
+.global _reset_core_1
+_reset_core_1:
+  mov r0, #(CPSR_MODE_IRQ | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
+  msr cpsr_c, r0
+  mov sp, #(52 * 1024 * 1024)
+
+  mov r0, #(CPSR_MODE_ABORT | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
+  msr cpsr_c, r0
+  mov sp, #(53 * 1024 * 1024)
+
+  mov r0, #(CPSR_MODE_SVR | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
+  msr cpsr_c, r0
+  mov sp, #(54 * 1024 * 1024)
+
+  bl other_core
+
+/*
+  mov r0,#0x8000
+  MCR p15, 4, r0, c12, c0, 0
+*/
+
 /**
  * __enable_interrupts()
  */
@@ -95,4 +116,3 @@ __enable_interrupts:
 __disable_interrupts:
   cpsid aif
   bx lr
-

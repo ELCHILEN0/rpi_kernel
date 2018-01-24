@@ -12,10 +12,29 @@
 #include "interrupts.h"
 
 #include "mailbox.h"
+#include "multicore.h"
 
 uint32_t act_message[] = {32, 0, 0x00038041, 8, 0, 130, 0, 0};
 
 extern void __enable_interrupts(void);
+extern void __disable_interrupts(void);
+
+// extern void _reset_core_1(void);
+
+void other_core() {
+    printf("[kernel] other_core()!!!!! %d\r\n", get_core_id);
+    // gpio_write(21, true);
+
+    // _init_core();
+
+    gpio->set[19 / 32] = (1 << (19 % 32));
+    gpio_write(19, true);
+    printf("[kernel] other_core()!!!!! %d\r\n", get_core_id);
+
+    // printf("[kernel] Another core running %d\r\n", get_core_id());
+    
+    while (true);
+}
 
 void context_switch() {
     static bool next_blinker_state = true;
@@ -43,9 +62,18 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
     gpio_fsel(5, SEL_INPUT);
     gpio_fsel(6, SEL_OUTPUT);
     gpio_fsel(13, SEL_OUTPUT);
+    gpio_fsel(19, SEL_OUTPUT);
     gpio_fsel(21, SEL_OUTPUT);
 
     uart_init(9600);
+
+    __enable_interrupts();
+    printf("[kernel] Running on core %d\r\n", get_core_id());
+    // core_enable(1, (uint32_t) _reset_core_1);
+    // core_enable(2, (uint32_t) other_core);
+    // core_enable(3, (uint32_t) other_core);
+    __disable_interrupts();
+
 
     local_timer_interrupt_routing(0);
     local_timer_start(0x038FFFF);
