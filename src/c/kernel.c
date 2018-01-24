@@ -18,10 +18,7 @@ uint32_t act_message[] = {32, 0, 0x00038041, 8, 0, 130, 0, 0};
 
 extern void __enable_interrupts(void);
 extern void __disable_interrupts(void);
-
-extern void _init_core_1(void);
-extern void _init_core_2(void);
-extern void _init_core_3(void);
+extern void _init_core(void);
 
 void slave_core() {
     switch (get_core_id()) {
@@ -63,13 +60,14 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
 
     uart_init(9600);
 
-    printf("[kernel] Running on core %d\r\n", get_core_id());
     gpio_write(6, true);
-    core_enable(1, (uint32_t) _init_core_1);
-    core_enable(2, (uint32_t) _init_core_2);
-    core_enable(3, (uint32_t) _init_core_3);
+    printf("[kernel] Running on CORE %d\r\n", get_core_id());
 
-    printf("[kernel] ........\r\n");
+    core_enable(1, (uint32_t) _init_core);
+    core_enable(2, (uint32_t) _init_core);
+    core_enable(3, (uint32_t) _init_core);
+
+    printf("[kernel] Looping forever...\r\n");
     while (true);
 
     // Error status

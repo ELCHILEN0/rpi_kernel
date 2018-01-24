@@ -20,7 +20,7 @@
 
 .global _vectors
 _vectors:
-    b _reset
+    b _init_core
     b interrupt_handler_udef
     b interrupt_handler_svc
     b interrupt_handler_pabt
@@ -28,42 +28,6 @@ _vectors:
     nop
     b interrupt_handler_irq
     b interrupt_handler_fiq
-
-_reset:
-    /**
-    * Instead of copying the vector table to 0x0, update the vector base register
-    */
-    ldr     r4, =_vectors
-    mcr     p15, #0, r4, c12, c0, #0
-
-    /**
-    * Hypervisor mode uses different interrupt vector entries; therefore, we
-    * switch back to SVR for predictable execution.
-    */
-    mrs r0, cpsr
-    bic r0, r0, #CPSR_MODE_SYSTEM
-    orr r0, r0, #CPSR_MODE_SVR
-    msr spsr_cxsf,   r0
-    add r0, pc, #4
-    msr ELR_hyp,  r0
-    eret
-    
-    /**
-    * Setup exception level stacks, careful memory layout should be used, and
-    * these addresses should be made available to the memory allocator.
-    */
-    mov r0, #(CPSR_MODE_IRQ | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
-    msr cpsr_c, r0
-    mov sp, #(62 * 1024 * 1024)
-
-    mov r0, #(CPSR_MODE_SVR | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
-    msr cpsr_c, r0
-    mov sp, #(64 * 1024 * 1024)
-
-    /**
-    * Finally branch to higher level c routines.
-    */
-    bl cstartup
 
 hang:
     b hang
@@ -83,14 +47,14 @@ hang:
  * - Setup execution level stacks (this varies on aarch64)
  * - Jump to execution code
 
- * Proposed design simplification is to do as follows:
+ * Initialization routine is as follows:
  * - HYP -> SVR (all cores)
- * - Jump to core specific initialization
- * - Core specific initialization sets up stacks then jumps to execution
+ * - Jump to core vector to perform core specific initialization
+ * - Jump to core execution
  */
 
 .global _init_core
-_init_core: // _reset_
+_init_core:
     // HYP -> SVR
     mrs r0, cpsr
     bic r0, r0, #CPSR_MODE_SYSTEM
@@ -100,22 +64,31 @@ _init_core: // _reset_
     msr ELR_hyp,  r0
     eret
 
-    // Core details...
+    /**
+     * Jump to addr = _core_vectors + (core_id * 4)
+     */
     mrc     p15, 0, r0, c0, c0, 5
     ubfx    r0, r0, #0, #2 
 
-    // Jump to the initialization code
-    ldr pc, [r0, _core_vectors]
-.global _core_vectors
-_core_vectors:
-    b _init_core_0
-    b _init_core_1
-    b _init_core_2
-    b _init_core_3
+    adr r1, _core_vectors
+    mov r2, #4
+    mla r1, r0, r2, r1
+    ldr pc, [r1]
+    b hang
 
-// Core Initialization Code
-.global _init_core_0
+_core_vectors:
+    .word _init_core_0
+    .word _init_core_1
+    .word _init_core_2
+    .word _init_core_3
+
 _init_core_0:
+    /**
+    * Instead of copying the vector table to 0x0, update the vector base register
+    */
+    ldr     r4, =_vectors
+    mcr     p15, #0, r4, c12, c0, #0
+
     mov r0, #(CPSR_MODE_IRQ | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
     msr cpsr_c, r0
     mov sp, #(62 * 1024 * 1024)
@@ -124,10 +97,12 @@ _init_core_0:
     msr cpsr_c, r0
     mov sp, #(64 * 1024 * 1024)
 
-  bl cstartup
-  b hang
+    /**
+    * Finally branch to higher level c routines.
+    */
+    bl cstartup
+    b hang
 
-.global _init_core_1
 _init_core_1:
   mov r0, #(CPSR_MODE_IRQ | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
   msr cpsr_c, r0
@@ -140,16 +115,7 @@ _init_core_1:
   bl slave_core
   b hang
 
-.global _init_core_2
 _init_core_2:
-    mrs r0, cpsr
-    bic r0, r0, #CPSR_MODE_SYSTEM
-    orr r0, r0, #CPSR_MODE_SVR
-    msr spsr_cxsf,   r0
-    add r0, pc, #4
-    msr ELR_hyp,  r0
-    eret
-
   mov r0, #(CPSR_MODE_IRQ | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
   msr cpsr_c, r0
   mov sp, #(52 * 1024 * 1024)
@@ -161,16 +127,7 @@ _init_core_2:
   bl slave_core
   b hang
 
-.global _init_core_3
 _init_core_3:
-    mrs r0, cpsr
-    bic r0, r0, #CPSR_MODE_SYSTEM
-    orr r0, r0, #CPSR_MODE_SVR
-    msr spsr_cxsf,   r0
-    add r0, pc, #4
-    msr ELR_hyp,  r0
-    eret
-
   mov r0, #(CPSR_MODE_IRQ | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
   msr cpsr_c, r0
   mov sp, #(54 * 1024 * 1024)

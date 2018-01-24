@@ -5,9 +5,12 @@
 
 uint32_t get_core_id( void ) {
     uint32_t core_id;
-    asm("mrc p15, 0, %0, c0, c0,  5" : "=r" (core_id));
-    return core_id & 0b11;
+    asm("mrc     p15, 0, %0, c0, c0, 5; \
+        ubfx    %0, %0, #0, #2" : "=r" (core_id));
+
+    return core_id;
 }
+
 
 #define CORE0_MBOX3_SET             0x4000008C
 #define CORE1_MBOX3_R               0x400000DC
