@@ -5,9 +5,7 @@
 
 uint32_t l1_page_table[4096];
 
-void enable_mmu(void)
-{
-    // TODO: Move to different func...
+void init_linear_addr_map() {
     for (int base = 0; base < 4096; base++) {
         if ((base << 20) < PERIPHERAL_BASE) {
             l1_page_table[base] = base << 20 | L1_NORMAL_001_11 | L1_PRW_URW | L1_SECTION ;
@@ -15,7 +13,10 @@ void enable_mmu(void)
             l1_page_table[base] = base << 20 | L1_DEVICE_SHARE | L1_PRW_URW | L1_SECTION;
         }
     }
+}
 
+void enable_mmu(void)
+{    
     // http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0344k/Bahfeedc.html
     uint32_t control;
     asm volatile("MRC p15, 0, %0, c1, c0, 0" : "=r" (control));

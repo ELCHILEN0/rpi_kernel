@@ -36,7 +36,7 @@ enum {
     L1_NORMAL_111_10 = 0x00007c0a, // outer and inner write-back, no write-allocate
 } memory_type_t;
 
-// extern void init_linear_addr_map();
+extern void init_linear_addr_map();
 extern void enable_mmu(void);
 
 extern uint32_t __attribute__((aligned(0x4000))) l1_page_table[4096];

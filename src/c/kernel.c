@@ -44,10 +44,6 @@ void slave_core() {
         case 3:
             gpio_write(21, true);
             break;
-
-        default:
-            printf("????????????");
-            break;
     }
 
     while (true);
@@ -101,7 +97,7 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
     uart_init(9600);
 
     printf("[kernel] Kernel started on core %d\r\n", get_core_id());
-    // init_linear_addr_map();
+    init_linear_addr_map();
     enable_mmu();
     printf("[kernel] MMU enabled\r\n");
     // __enable_interrupts();
