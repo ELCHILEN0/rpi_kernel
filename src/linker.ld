@@ -44,20 +44,40 @@ SECTIONS {
 
     .stack_core_0 : {
         . = ALIGN(8);
-        __svc_stack_start_core_0 = .;
+        __user_stack_start_core_0 = .;
         . = . + 0x1000;    
-        __svc_stack_end_core_0 = .;
+        __user_stack_end_core_0 = .;
 
+        __fiq_stack_start_core_0 = .;
+        . = . + 0x1000;    
+        __fiq_stack_end_core_0 = .;
+        
         __irq_stack_start_core_0 = .;
         . = . + 0x1000;    
         __irq_stack_end_core_0 = .;
+
+        __svr_stack_start_core_0 = .;
+        . = . + 0x1000;    
+        __svr_stack_end_core_0 = .;
+
+        __abt_stack_start_core_0 = .;
+        . = . + 0x1000;    
+        __abt_stack_end_core_0 = .;
+
+        __udef_stack_start_core_0 = .;
+        . = . + 0x1000;    
+        __udef_stack_end_core_0 = .;
+        
+        __sys_stack_start_core_0 = .;
+        . = . + 0x1000;    
+        __sys_stack_end_core_0 = .;
     }
 
     .stack_core_1 : {
         . = ALIGN(8);
-        __svc_stack_start_core_1 = .;
+        __svr_stack_start_core_1 = .;
         . = . + 0x1000;    
-        __svc_stack_end_core_1 = .;
+        __svr_stack_end_core_1 = .;
 
         __irq_stack_start_core_1 = .;
         . = . + 0x1000;    
@@ -66,9 +86,9 @@ SECTIONS {
 
     .stack_core_2 : {
         . = ALIGN(8);
-        __svc_stack_start_core_2 = .;
+        __svr_stack_start_core_2 = .;
         . = . + 0x1000;    
-        __svc_stack_end_core_2 = .;
+        __svr_stack_end_core_2 = .;
 
         __irq_stack_start_core_2 = .;
         . = . + 0x1000;    
@@ -77,9 +97,9 @@ SECTIONS {
 
     .stack_core_3 : {
         . = ALIGN(8);
-        __svc_stack_start_core_3 = .;
+        __svr_stack_start_core_3 = .;
         . = . + 0x1000;    
-        __svc_stack_end_core_3 = .;
+        __svr_stack_end_core_3 = .;
 
         __irq_stack_start_core_3 = .;
         . = . + 0x1000;    

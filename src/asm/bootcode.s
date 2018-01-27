@@ -64,6 +64,18 @@ _init_core:
     msr ELR_hyp,  r0
     eret
 
+/*
+    // R0 = System Control Register
+    mrc p15,0,r0,c1,c0,0
+	
+    // Enable caches and branch prediction
+    orr r0,#SCTLR_ENABLE_BRANCH_PREDICTION
+    orr r0,#SCTLR_ENABLE_DATA_CACHE
+    orr r0,#SCTLR_ENABLE_INSTRUCTION_CACHE
+
+    // System Control Register = R0
+    mcr p15,0,r0,c1,c0,0
+  */
     /**
      * Jump to addr = _core_vectors + (core_id * 4)
      */
@@ -91,11 +103,23 @@ _init_core_0:
 
     mov r0, #(CPSR_MODE_IRQ | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
     msr cpsr_c, r0
-    mov sp, #(62 * 1024 * 1024)
+    ldr sp, =__irq_stack_end_core_0
+
+    mov r0, #(CPSR_MODE_FIQ | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
+    msr cpsr_c, r0
+    ldr sp, =__fiq_stack_end_core_0
+
+    mov r0, #(CPSR_MODE_ABORT | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
+    msr cpsr_c, r0
+    ldr sp, =__abt_stack_end_core_0
+
+    mov r0, #(CPSR_MODE_UNDEFINED | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
+    msr cpsr_c, r0
+    ldr sp, =__udef_stack_end_core_0
 
     mov r0, #(CPSR_MODE_SVR | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
     msr cpsr_c, r0
-    mov sp, #(64 * 1024 * 1024)
+    ldr sp, =__svr_stack_end_core_0
 
     /**
     * Finally branch to higher level c routines.
@@ -106,11 +130,11 @@ _init_core_0:
 _init_core_1:
   mov r0, #(CPSR_MODE_IRQ | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
   msr cpsr_c, r0
-  mov sp, #(50 * 1024 * 1024)
+  ldr sp, =__irq_stack_end_core_1
 
   mov r0, #(CPSR_MODE_SVR | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
   msr cpsr_c, r0
-  mov sp, #(51 * 1024 * 1024)
+  ldr sp, =__svr_stack_end_core_1
 
   bl slave_core
   b hang
@@ -118,11 +142,11 @@ _init_core_1:
 _init_core_2:
   mov r0, #(CPSR_MODE_IRQ | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
   msr cpsr_c, r0
-  mov sp, #(52 * 1024 * 1024)
+  ldr sp, =__irq_stack_end_core_2
 
   mov r0, #(CPSR_MODE_SVR | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
   msr cpsr_c, r0
-  mov sp, #(53 * 1024 * 1024)
+  ldr sp, =__svr_stack_end_core_2
 
   bl slave_core
   b hang
@@ -130,11 +154,11 @@ _init_core_2:
 _init_core_3:
   mov r0, #(CPSR_MODE_IRQ | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
   msr cpsr_c, r0
-  mov sp, #(54 * 1024 * 1024)
+  ldr sp, =__irq_stack_end_core_3
 
   mov r0, #(CPSR_MODE_SVR | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT )
   msr cpsr_c, r0
-  mov sp, #(55 * 1024 * 1024)
+  ldr sp, =__svr_stack_end_core_3
 
   bl slave_core
   b hang

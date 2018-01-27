@@ -12,6 +12,25 @@ uint32_t get_core_id( void ) {
 }
 
 
+// int test_and_set(volatile int *addr) {
+//     int old_value = swap_atomic(addr, 1);
+
+//     if (old_value == 0)
+//         return 0;
+
+//     return 1;
+// }
+
+// 18.5.2
+int __spin_lock(spinlock_t *lock) {
+    while (__sync_lock_test_and_set(&lock->flag, 1));
+    return 0;
+}
+
+void __spin_unlock(spinlock_t *lock) {
+    __sync_lock_release(&lock->flag);
+}
+
 #define CORE0_MBOX3_SET             0x4000008C
 #define CORE1_MBOX3_R               0x400000DC
 #define CORE2_MBOX3_R               0x400000EC
