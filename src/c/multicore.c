@@ -36,15 +36,13 @@ void __spin_unlock(spinlock_t *lock) {
 #define CORE2_MBOX3_R               0x400000EC
 #define CORE3_MBOX3_R               0x400000FC
 
+/*
+ * Signal the specified core to jump to the address at addr.  After signaling,
+ * the calling core goes into WFE mode until the target core signals SEV.  This
+ * is to ensure startup code can run.
+ */
 void core_enable(uint32_t core, uint32_t addr)
 {
     mmio_write(CORE0_MBOX3_SET + 0x10 * core, addr);
-
-    // printf("[core] Enabling 0x%X -> (0x%X)\r\n", CORE0_MBOX3_SET + 0x10 * core, addr);
-    // printf("[core1] Value @ 0x%X = (0x%X)\r\n", CORE1_MBOX3_R, mmio_read(CORE1_MBOX3_R));
-    // printf("[core2] Value @ 0x%X = (0x%X)\r\n", CORE1_MBOX3_R, mmio_read(CORE2_MBOX3_R));
-    // printf("[core3] Value @ 0x%X = (0x%X)\r\n", CORE1_MBOX3_R, mmio_read(CORE3_MBOX3_R));
-    // printf("--------\r\n");
     asm("SEV");
-
 }

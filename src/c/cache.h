@@ -24,6 +24,8 @@ enum {
     L1_DEVICE_NO_SHARE =        (0b010 << 12) | (0 << 3) | (0 << 2),
 
     // From arm_cache.s (https://www.dropbox.com/s/tq6y2yod3p26yui/arm_cache.s)
+    L1_DEVICE_010_00 = 0x00002c02,  // non-shareable device memory
+
     L1_NORMAL_000_10 = 0x00000c0a,	// outer and inner write-through, no write-allocate
     L1_NORMAL_000_11 = 0x00000c0e,	// outer and inner write-back, no write-allocate
     L1_NORMAL_001_11 = 0x00001c0e,	// outer and inner write-back, write-allocate

@@ -24,28 +24,32 @@ extern void _init_core(void);
 static spinlock_t slave_lock;
 
 void slave_core() {
+    // init_linear_addr_map(); // TODO: This may be required on each core...
     enable_mmu();
 
     int core_id = get_core_id();
+    int core_gpio[3] = { 6, 13, 19 };
 
-    __spin_lock(&slave_lock);
-    printf("[core] Code running on core %d\r\n", core_id);
-    __spin_unlock(&slave_lock);
+    // gpio_write(core_gpio[core_id - 1], true);
+    // __spin_lock(&slave_lock);
+    // printf("[core] Core %d\r\n", core_id);
+    // // for (int i = 0; i < 0x1000000; i++) { asm("nop"); }
+    // __spin_unlock(&slave_lock);
+    // gpio_write(core_gpio[core_id - 1], false);
 
-    switch (core_id) {
-        case 1:
-            gpio_write(13, true);
-            break;
+    while (true) {
+        for (int i = 0; i < 0x10000; i++);
+        gpio_write(core_gpio[core_id - 1], true);
+        // asm volatile ("dmb");
+        // asm volatile ("dsb");              
+        // asm volatile ("isb");
 
-        case 2:
-            gpio_write(19, true);
-            break;
-
-        case 3:
-            gpio_write(21, true);
-            break;
+        for (int i = 0; i < 0x10000; i++);
+        gpio_write(core_gpio[core_id - 1], false);
+        // asm volatile ("dmb");  
+        // asm volatile ("dsb");      
+        // asm volatile ("isb");        
     }
-
     while (true);
 }
 
@@ -65,17 +69,17 @@ void time_slice() {
 
 void init_jtag() {
     // JTAG
-    // gpio_fsel(22, SEL_ALT4);
-    // gpio_fsel(24, SEL_ALT4);
-    // gpio_fsel(25, SEL_ALT4);
-    // gpio_fsel(27, SEL_ALT4);
-    // gpio_fsel(4, SEL_ALT5);
+    gpio_fsel(22, SEL_ALT4);
+    gpio_fsel(24, SEL_ALT4);
+    gpio_fsel(25, SEL_ALT4);
+    gpio_fsel(27, SEL_ALT4);
+    gpio_fsel(4, SEL_ALT5);
 
     // gpio_fsel(22, SEL_ALT4); // TRST
     // gpio_fsel(23, SEL_ALT4); // RTCK
     // gpio_fsel(24, SEL_ALT4); // TDO
     // gpio_fsel(25, SEL_ALT4); // TCK
-    // gpio_fsel(26, SEL_ALT4); // TDI
+    gpio_fsel(26, SEL_ALT4); // TDI
     // gpio_fsel(27, SEL_ALT4); // TMS
 }
 
@@ -88,25 +92,26 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
     act_message[6] = 1;
     mailbox_write(mailbox0, MB0_PROPERTY_TAGS_ARM_TO_VC, (uint32_t) &act_message);
 
-    gpio_fsel(5, SEL_INPUT);
+    gpio_fsel(5, SEL_OUTPUT);
     gpio_fsel(6, SEL_OUTPUT);
     gpio_fsel(13, SEL_OUTPUT);
     gpio_fsel(19, SEL_OUTPUT);
-    gpio_fsel(21, SEL_OUTPUT);
+    gpio_fsel(21, SEL_INPUT);
 
     uart_init(9600);
+    //init_jtag();
 
     printf("[kernel] Kernel started on core %d\r\n", get_core_id());
     init_linear_addr_map();
-    enable_mmu();
-    printf("[kernel] MMU enabled\r\n");
     // __enable_interrupts();
 
     slave_lock.flag = 0;
     
-    core_enable(1, (uint32_t) _init_core);
-    core_enable(2, (uint32_t) _init_core);
-    core_enable(3, (uint32_t) _init_core);
+    // core_enable(1, (uint32_t) _init_core);
+    // core_enable(2, (uint32_t) _init_core);
+    // core_enable(3, (uint32_t) _init_core);
+
+    enable_mmu();
 
     register_interrupt_handler(vector_table_svc, 0x80, &context_switch);
     register_interrupt_handler(vector_table_svc, 0x81, context_switch);
@@ -119,15 +124,14 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
     // asm("SVC 0x80");
     // printf("[kernel] Returned from interrupt.\r\n");
 
-    bool output_state = true;
+    while (true) {
+        for (int i = 0; i < 0x10000; i++);
+        gpio_write(5, true);
+        // printf("[kernel] on\r\n");        
 
-    while(true) {
-        gpio_write(6, output_state);
-        output_state = !output_state;
-
-        bool input_state = gpio_read(5);
-        while (input_state == gpio_read(5)); // Poll till pressed
-        while (input_state != gpio_read(5)); // Poll till unpressed
+        for (int i = 0; i < 0x10000; i++);
+        gpio_write(5, false);
+        // printf("[kernel] off\r\n");  
     }
 
     // Error status
