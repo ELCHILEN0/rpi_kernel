@@ -1,10 +1,10 @@
 #include <stdint.h>
 
 enum {
-    L1_FAULT = 0b00,
-    L1_POINTER_L2 = 0b01,
-    L1_SECTION = (0 << 18) | (0b10),
-    L1_SUPERSECTION = (1 << 18) | (0b10),
+    L1_FAULT =                       0b00,
+    L1_POINTER_L2 =                  0b01,
+    L1_SECTION =        (0 << 18) | (0b10),
+    L1_SUPERSECTION =   (1 << 18) | (0b10),
 
     L2_FAULT = 0b00,
     L2_LARGE_PAGE = 0b01,
@@ -41,4 +41,4 @@ enum {
 extern void init_linear_addr_map();
 extern void enable_mmu(void);
 
-extern uint32_t __attribute__((aligned(0x4000))) l1_page_table[4096];
+// extern uint32_t __attribute__((aligned(0x4000))) l1_page_table[4096];

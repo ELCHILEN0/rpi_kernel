@@ -31,20 +31,20 @@ void slave_core() {
     int core_gpio[3] = { 6, 13, 19 };
 
     // gpio_write(core_gpio[core_id - 1], true);
-    // __spin_lock(&slave_lock);
-    // printf("[core] Core %d\r\n", core_id);
-    // // for (int i = 0; i < 0x1000000; i++) { asm("nop"); }
-    // __spin_unlock(&slave_lock);
+    __spin_lock(&slave_lock);
+    printf("[core] Started core %d\r\n", core_id);
+    // for (int i = 0; i < 0x1000000; i++) { asm("nop"); }
+    __spin_unlock(&slave_lock);
     // gpio_write(core_gpio[core_id - 1], false);
 
     while (true) {
-        for (int i = 0; i < 0x10000; i++);
+        for (int i = 0; i < 0x10000 * 3; i++);
         gpio_write(core_gpio[core_id - 1], true);
         // asm volatile ("dmb");
         // asm volatile ("dsb");              
         // asm volatile ("isb");
 
-        for (int i = 0; i < 0x10000; i++);
+        for (int i = 0; i < 0x10000 * 3; i++);
         gpio_write(core_gpio[core_id - 1], false);
         // asm volatile ("dmb");  
         // asm volatile ("dsb");      
@@ -126,20 +126,20 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
     gpio_fsel(19, SEL_OUTPUT);
     gpio_fsel(21, SEL_INPUT);
 
-    uart_init(9600);
+    uart_init(115200);
     init_jtag();
 
-    printf("[kernel] Kernel started on core %d\r\n", get_core_id());
+    printf("[kernel] Kernel started at 0x%X on core %d.\r\n", kernel_main, get_core_id());
     init_linear_addr_map();
+    enable_mmu();
+    printf("MMU Enabled\r\n");
     // __enable_interrupts();
 
     slave_lock.flag = 0;
     
-    // core_enable(1, (uint32_t) _init_core);
-    // core_enable(2, (uint32_t) _init_core);
-    // core_enable(3, (uint32_t) _init_core);
-
-    // enable_mmu();
+    core_enable(1, (uint32_t) _init_core);
+    core_enable(2, (uint32_t) _init_core);
+    core_enable(3, (uint32_t) _init_core);
 
     register_interrupt_handler(vector_table_svc, 0x80, &context_switch);
     register_interrupt_handler(vector_table_svc, 0x81, context_switch);
@@ -152,13 +152,21 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
     // asm("SVC 0x80");
     // printf("[kernel] Returned from interrupt.\r\n");
 
+    
+
     while (true) {
-        for (int i = 0; i < 0x10000; i++);
-        gpio_write(5, true);
+        mmio_write(0x3F20001C, 0x20);
+        // asm("dmb");
+        // asm("MCR p15, 0, Rd, c7, c10, 4");        
+        for (int i = 0; i < 0x10000 * 3; i++);
+        // gpio_write(5, true);
         // printf("[kernel] on\r\n");        
 
-        for (int i = 0; i < 0x10000; i++);
-        gpio_write(5, false);
+        mmio_write(0x3F200028, 0x20);
+        // asm("dmb");
+        for (int i = 0; i < 0x10000 * 3; i++);
+        // printf(".");
+        // gpio_write(5, false);
         // printf("[kernel] off\r\n");  
     }
 

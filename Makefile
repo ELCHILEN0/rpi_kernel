@@ -3,7 +3,7 @@ TOOLCHAIN = arm-none-eabi
 # TOOLCHAIN = /root/x-tools/aarch64-rpi3-linux-gnueabi/bin/aarch64-rpi3-linux-gnueabi
 
 AARCH = 
-CCFLAGS = -nostartfiles -ffreestanding -mfpu=vfp -mcpu=cortex-a53
+CCFLAGS = -nostartfiles -ffreestanding -mfpu=vfp -mcpu=cortex-a53 -ggdb
 
 # AARCH = -march=armv6 
 # CCFLAGS = -O2 -Wall -nostartfiles -ffreestanding $(AARCH)
@@ -53,6 +53,6 @@ start-toolchain:
 	docker run --rm -it -v $(CURDIR):$(DOCKER_BUILD) -v $(COPY):$(COPY) -w $(DOCKER_BUILD) $(DOCKER_IMAGE)
 
 SERIAL_DEVICE = /dev/tty.usbserial-AH069DMB
-SERIAL_BAUD_RATE = 9600
+SERIAL_BAUD_RATE = 115200
 serial-screen:
 	screen $(SERIAL_DEVICE) $(SERIAL_BAUD_RATE)
