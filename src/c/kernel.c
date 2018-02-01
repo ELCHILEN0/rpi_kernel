@@ -31,10 +31,10 @@ void slave_core() {
     int core_gpio[3] = { 6, 13, 19 };
 
     // gpio_write(core_gpio[core_id - 1], true);
-    __spin_lock(&slave_lock);
-    printf("[core] Started core %d\r\n", core_id);
+    // __spin_lock(&slave_lock);
+    // printf("[core] Started core %d\r\n", core_id);
     // for (int i = 0; i < 0x1000000; i++) { asm("nop"); }
-    __spin_unlock(&slave_lock);
+    // __spin_unlock(&slave_lock);
     // gpio_write(core_gpio[core_id - 1], false);
 
     while (true) {
@@ -137,9 +137,9 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
 
     slave_lock.flag = 0;
     
-    core_enable(1, (uint32_t) _init_core);
-    core_enable(2, (uint32_t) _init_core);
-    core_enable(3, (uint32_t) _init_core);
+    // core_enable(1, (uint32_t) _init_core);
+    // core_enable(2, (uint32_t) _init_core);
+    // core_enable(3, (uint32_t) _init_core);
 
     register_interrupt_handler(vector_table_svc, 0x80, &context_switch);
     register_interrupt_handler(vector_table_svc, 0x81, context_switch);
@@ -155,14 +155,12 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
     
 
     while (true) {
-        mmio_write(0x3F20001C, 0x20);
         // asm("dmb");
         // asm("MCR p15, 0, Rd, c7, c10, 4");        
         for (int i = 0; i < 0x10000 * 3; i++);
         // gpio_write(5, true);
         // printf("[kernel] on\r\n");        
 
-        mmio_write(0x3F200028, 0x20);
         // asm("dmb");
         for (int i = 0; i < 0x10000 * 3; i++);
         // printf(".");

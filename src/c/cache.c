@@ -10,16 +10,24 @@ void init_linear_addr_map() {
     // asm("MRC p15, 1, %0, c15, c3, 0" :: "r" (pbase));
     // printf("PBASE = 0x%X\r\n");
 
+    // @ 31                 20 19  18  17  16 15  14   12 11 10  9  8     5   4    3 2   1 0
+    // @ |section base address| 0  0  |nG| S |AP2|  TEX  |  AP | P | Domain | XN | C B | 1 0|
+
     uint32_t base;
     for (base = 0; base < 1024 - 16; base++) {
         // l1_page_table[base] = base << 20 | L1_NORMAL_001_11 | L1_PRW_URW | L1_SECTION;
         // TODO: outer and inner write-back, write-allocate
-        l1_page_table[base] = base << 20 | (1 << 12) | (1 << 2) | L1_PRW_URW | L1_SECTION;
+        l1_page_table[base] = base << 20 | L1_PRW_URW | L1_SECTION;
+        l1_page_table[base] |= (1 << 12) | (1 << 2);    // TEX[0] C B = 101
+        l1_page_table[base] |= (1 << 16);               // S = 1
     }
 
     for (; base < 1025; base++) {
         // l1_page_table[base] = base << 20 | L1_DEVICE_010_00 | L1_PRW_URW | L1_SECTION;
         l1_page_table[base] = base << 20 | L1_PRW_URW | L1_SECTION;
+        // l1_page_table[base] |= (1 << 12) | (1 << 2);    // TEX[0] C B = 101
+        l1_page_table[base] |= (1 << 16);               // S = 1
+        l1_page_table[base] |= (1 << 4);                // XN = 1
     }
 
     // for (int base = 0; base < 4096; base++) {
@@ -37,8 +45,7 @@ void init_linear_addr_map() {
 }
 
 /*
-@ 31                 20 19  18  17  16 15  14   12 11 10  9  8     5   4    3 2   1 0
-@ |section base address| 0  0  |nG| S |AP2|  TEX  |  AP | P | Domain | XN | C B | 1 0|
+
 @
 @ Bits[31:20]   - Top 12 bits of VA is pointer into table
 @ nG[17]=0      - Non global, enables matching against ASID in the TLB when set.
@@ -101,7 +108,7 @@ void enable_mmu(void)
     asm volatile("isb");
 
     asm volatile("MRC p15, 0, %0, c1, C0, 0" : "=r" (control));
-    printf("CTRL: 0x%X\r\n", control);
+    // printf("CTRL: 0x%X\r\n", control);
     control |= (1 << 0);    // Set M to enable MMU
     control |= (1 << 2);    // Set C to enable D Cache
     // control |= (1 << 12);   // Set I to enable I Cache
