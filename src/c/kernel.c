@@ -36,10 +36,10 @@ void slave_core() {
     __spin_unlock(&slave_lock);
 
     while (true) {
-        for (int i = 0; i < 0x10000 * core_id * 10; i++);
+        for (int i = 0; i < 0x10000 * (core_id + 1) * 30; i++);
         gpio_write(core_gpio[core_id - 1], true);
 
-        for (int i = 0; i < 0x10000 * core_id * 10; i++);
+        for (int i = 0; i < 0x10000 * (core_id + 1) * 30; i++);
         gpio_write(core_gpio[core_id - 1], false);
   
     }
@@ -59,18 +59,7 @@ void time_slice() {
     next_blinker_state = !next_blinker_state;
 }
 
-// #define GPPUD					(PERIPHERAL_BASE + 0x00200094)
-// #define GPPUDCLK0				(PERIPHERAL_BASE + 0x00200098)
-// #define GPPUDCLK1				(PERIPHERAL_BASE + 0x0020009C)
-
 void init_jtag() {
-    // gpio->pud = 0;
-    // mmio_write(GPPUD, 0);
-	// for(int i = 0; i < 150; i++) asm("nop");
-	// mmio_write(GPPUDCLK0, (1 << 22) | (1 << 24) | (1 << 25) | (1 << 26) | (1 << 27));
-	// for(int i = 0; i < 150; i++) asm("nop");
-	// mmio_write(GPPUDCLK0, 0);
-
     gpio_pull(22, false, true);
     gpio_pull(24, false, true);
     gpio_pull(25, false, true);
@@ -132,10 +121,10 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
     // printf("[kernel] Returned from interrupt.\r\n");
 
     while (true) {
-        for (int i = 0; i < 0x10000 * 3; i++);
+        for (int i = 0; i < 0x10000 * 30; i++);
         gpio_write(5, true);
 
-        for (int i = 0; i < 0x10000 * 3; i++);
+        for (int i = 0; i < 0x10000 * 30; i++);
         gpio_write(5, false);
     }
 

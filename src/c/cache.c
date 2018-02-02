@@ -3,7 +3,8 @@
 
 #include <stdbool.h>
 
-static volatile __attribute__ ((aligned (0x4000))) uint32_t l1_page_table[4096];
+// static volatile __attribute__ ((aligned (0x4000))) uint32_t l1_page_table[4096];
+uint32_t l1_page_table[4096];
 
 // typedef volatile struct {
 //     uint8_t 
@@ -24,7 +25,7 @@ void init_linear_addr_map() {
         l1_page_table[base] |= (1 << 16);               // S = 1
     }
 
-    // TODO: Automatically
+    // TODO: Determine from system registers...
     for (; base < 1025; base++) {
         l1_page_table[base] = base << 20 | L1_PRW_URW | L1_SECTION;
         l1_page_table[base] |= (0b000 << 12) | (0b01 << 2); // NO REMAP
