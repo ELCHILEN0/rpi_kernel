@@ -1,19 +1,19 @@
 #include <stdint.h>
 
 enum {
-    L1_FAULT =                       0b00,
-    L1_POINTER_L2 =                  0b01,
-    L1_SECTION =        (0 << 18) | (0b10),
-    L1_SUPERSECTION =   (1 << 18) | (0b10),
+    L1_FAULT =                      0x0,
+    L1_POINTER_L2 =                 0x1,
+    L1_SECTION =        (0x0 << 18) | 0x2,
+    L1_SUPERSECTION =   (0x1 << 18) | 0x2,
 
-    L2_FAULT = 0b00,
-    L2_LARGE_PAGE = 0b01,
-    L2_SMALL_PAGE = 0b10,
+    L2_FAULT = 0x0,
+    L2_LARGE_PAGE = 0x1,
+    L2_SMALL_PAGE = 0x2,
 } translation_table_entry_t;
 
 enum {
-    L1_PRW_URW = (0 << 15) | (0b11 << 10),
-} access_permission_t;
+    L1_PRW_URW = (0x0 << 15) | (0x3 << 10),
+} access_permission_t; 
 
 /**
  * Memory region attributes defined in

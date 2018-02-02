@@ -16,6 +16,7 @@ COPY = /Volumes/boot
 
 SOBJ = bootcode.o vectors.o
 UOBJ = cstartup.o cstubs.o kernel.o peripheral.o gpio.o mailbox.o interrupts.o timer.o uart.o multicore.o cache.o
+HOBJ = cache.h gpio.h interrupts.h mailbox.h multicore.h peripheral.h timer.h uart.h
 
 all: $(BUILD)/$(TARGET).img $(BUILD)/$(TARGET).list
 
@@ -31,10 +32,10 @@ $(BUILD)/$(TARGET).list: $(BUILD)/$(TARGET).elf
 $(BUILD)/$(TARGET).img: $(BUILD)/$(TARGET).elf
 	$(TOOLCHAIN)-objcopy -O binary $(BUILD)/$(TARGET).elf $(BUILD)/$(TARGET).img
 
-$(addprefix $(BUILD)/, $(SOBJ)): $(BUILD)/%.o: $(SOURCE)/asm/%.s
+$(addprefix $(BUILD)/, $(SOBJ)): $(BUILD)/%.o: $(SOURCE)/asm/%.s $(addprefix $(SOURCE)/c/, $(HOBJ))
 	$(TOOLCHAIN)-as $(SOURCE)/asm/$(basename $(@F)).s -o $@
 
-$(addprefix $(BUILD)/, $(UOBJ)): $(BUILD)/%.o: $(SOURCE)/c/%.c
+$(addprefix $(BUILD)/, $(UOBJ)): $(BUILD)/%.o: $(SOURCE)/c/%.c $(addprefix $(SOURCE)/c/, $(HOBJ))
 	$(TOOLCHAIN)-gcc $(CCFLAGS) -c $(SOURCE)/c/$(basename $(@F)).c -o $@
 
 copy: all

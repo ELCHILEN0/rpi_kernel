@@ -136,7 +136,7 @@ _init_core_1:
   msr cpsr_c, r0
   ldr sp, =__svr_stack_end_core_1
 
-  bl slave_core
+  bl cinit_core
   b hang
 
 _init_core_2:
@@ -148,7 +148,7 @@ _init_core_2:
   msr cpsr_c, r0
   ldr sp, =__svr_stack_end_core_2
 
-  bl slave_core
+  bl cinit_core
   b hang
 
 _init_core_3:
@@ -160,7 +160,7 @@ _init_core_3:
   msr cpsr_c, r0
   ldr sp, =__svr_stack_end_core_3
 
-  bl slave_core
+  bl cinit_core
   b hang
 
 /**
