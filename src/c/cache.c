@@ -3,7 +3,6 @@
 
 #include <stdbool.h>
 
-// static volatile __attribute__ ((aligned (0x4000))) uint32_t l1_page_table[4096];
 uint32_t l1_page_table[4096];
 
 // typedef volatile struct {
@@ -17,21 +16,17 @@ void init_linear_addr_map() {
 
     uint32_t base;
     for (base = 0; base < 1024 - 16; base++) {
-        // l1_page_table[base] = base << 20 | L1_NORMAL_001_11 | L1_PRW_URW | L1_SECTION;
-        // TODO: outer and inner write-back, write-allocate
         l1_page_table[base] = base << 20 | L1_PRW_URW | L1_SECTION;
-        l1_page_table[base] |= (0b001 << 12) | (0b10 << 2); // NO REMAP
-        // l1_page_table[base] |= (1 << 12) | (1 << 2);    // TEX[0] C B = 101
-        l1_page_table[base] |= (1 << 16);               // S = 1
+        l1_page_table[base] |= L1_NORMAL_001_10;
+        l1_page_table[base] |= (1 << 16);               
     }
 
     // TODO: Determine from system registers...
     for (; base < 1025; base++) {
         l1_page_table[base] = base << 20 | L1_PRW_URW | L1_SECTION;
-        l1_page_table[base] |= (0b000 << 12) | (0b01 << 2); // NO REMAP
-        
-        l1_page_table[base] |= (1 << 16);               // S = 1
-        l1_page_table[base] |= (1 << 4);                // XN = 1
+        l1_page_table[base] |= L1_DEVICE_000_01; 
+        l1_page_table[base] |= (1 << 16);               
+        l1_page_table[base] |= (1 << 4);                
     }
 
     for (; base < 4096; base++) {
@@ -41,12 +36,6 @@ void init_linear_addr_map() {
 
 void enable_mmu(void)
 {    
-    uint32_t prrr;
-    asm volatile("MRC p15, 0, %0, c10, c2, 0" : "=r" (prrr));
-    // printf("PRRR=0x%X\r\n", prrr);
-    asm volatile("MCR p15, 0, %0, c10, c2, 0" :: "r" (prrr));
-
-    // http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0344k/Bahfeedc.html
     uint32_t control;
     asm volatile("MRC p15, 0, %0, c1, c0, 0" : "=r" (control));
     control &= ~(1 << 0);   // Clear M to disable MMU
@@ -62,7 +51,7 @@ void enable_mmu(void)
 
     unsigned auxctrl;
     asm volatile ("mrc p15, 0, %0, c1, c0,  1" : "=r" (auxctrl));
-    auxctrl |= (1 << 6); // Enable SMP
+    auxctrl |= (1 << 6); // Enable SMP (Should be unused...)
     asm volatile ("mcr p15, 0, %0, c1, c0,  1" :: "r" (auxctrl));
 
     asm volatile ("mcr p15, 0, %0, c2, c0, 2" :: "r" (0)); // TTBR0
@@ -76,7 +65,7 @@ void enable_mmu(void)
     control |= (1 << 2);    // Set C to enable D Cache
     control |= (1 << 12);   // Set I to enable I Cache
     control |= (1 << 11);   // Set Z to enable branch prediction
-    // control |= (1 << 28);   // TEX REMAP TEX[0] + C + B
+    // control |= (1 << 28);   // TEX_REMAP = TEX[0] + C + B instead of TEX[2:0] + C + B
     asm volatile("MCR p15, 0, %0, C1, C0, 0" :: "r" (control));
     asm volatile("isb");
 }
