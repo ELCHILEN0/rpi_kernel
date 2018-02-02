@@ -17,11 +17,14 @@ COPY = /Volumes/boot
 SOBJ = bootcode.o vectors.o
 UOBJ = cstartup.o cstubs.o init.o peripheral.o gpio.o mailbox.o interrupts.o timer.o uart.o multicore.o cache.o
 HOBJ = cache.h gpio.h interrupts.h mailbox.h multicore.h peripheral.h timer.h uart.h
+KOBJ = kinit.o create.o
+
+HOBJ += kernel/kernel.h kernel/list.h
 
 all: $(BUILD)/$(TARGET).img $(BUILD)/$(TARGET).list
 
 # ELF
-$(BUILD)/$(TARGET).elf: $(addprefix $(BUILD)/, $(SOBJ)) $(addprefix $(BUILD)/, $(UOBJ))
+$(BUILD)/$(TARGET).elf: $(addprefix $(BUILD)/, $(SOBJ)) $(addprefix $(BUILD)/, $(UOBJ)) $(addprefix $(BUILD)/, $(KOBJ))
 	$(TOOLCHAIN)-gcc $(CCFLAGS) -T $(SOURCE)/linker.ld $^ -o $(BUILD)/$(TARGET).elf
 
 # ELF to LIST
@@ -37,6 +40,9 @@ $(addprefix $(BUILD)/, $(SOBJ)): $(BUILD)/%.o: $(SOURCE)/asm/%.s $(addprefix $(S
 
 $(addprefix $(BUILD)/, $(UOBJ)): $(BUILD)/%.o: $(SOURCE)/c/%.c $(addprefix $(SOURCE)/c/, $(HOBJ))
 	$(TOOLCHAIN)-gcc $(CCFLAGS) -c $(SOURCE)/c/$(basename $(@F)).c -o $@
+
+$(addprefix $(BUILD)/, $(KOBJ)): $(BUILD)/%.o: $(SOURCE)/c/kernel/%.c $(addprefix $(SOURCE)/c/, $(HOBJ))
+	$(TOOLCHAIN)-gcc $(CCFLAGS) -c $(SOURCE)/c/kernel/$(basename $(@F)).c -o $@
 
 copy: all
 	cp $(BUILD)/$(TARGET).img $(COPY)/$(TARGET).img
@@ -54,3 +60,17 @@ SERIAL_DEVICE = /dev/tty.usbserial-AH069DMB
 SERIAL_BAUD_RATE = 115200
 serial-screen:
 	screen $(SERIAL_DEVICE) $(SERIAL_BAUD_RATE)
+
+gdb-core-0:
+	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -ex="target remote :3333" -ex=continue
+
+gdb-core-1:
+	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -ex="target remote :3334" -ex=continue
+	
+gdb-core-2:
+	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -ex="target remote :3335" -ex=continue
+	
+gdb-core-3:
+	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -ex="target remote :3336" -ex=continue
+
+

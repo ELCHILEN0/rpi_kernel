@@ -15,13 +15,15 @@
 #include "multicore.h"
 #include "cache.h"
 
+#include "kernel/kernel.h"
+
 uint32_t act_message[] = {32, 0, 0x00038041, 8, 0, 130, 0, 0};
 
 extern void __enable_interrupts(void);
 extern void __disable_interrupts(void);
 extern void _init_core(void);
 
-static spinlock_t print_lock;
+spinlock_t print_lock;
 
 void context_switch() {
     static bool next_blinker_state = true;
@@ -67,6 +69,8 @@ void master_core () {
     // asm("SVC 0x80");
     // printf("[kernel] Returned from interrupt.\r\n");
 
+    kernel_init();
+
     while (true) {
         for (int i = 0; i < 0x10000 * 30; i++);
         gpio_write(5, true);
@@ -81,7 +85,7 @@ void slave_core() {
     int core_gpio[3] = { 6, 13, 19 };
 
     __spin_lock(&print_lock);
-    printf("[core%d] Executing from 0x%X\r\n", core_id, slave_core);
+    printf("[core%d] Executing from 0x%X!\r\n", core_id, slave_core);
     for (int i = 0; i < 0x1000000; i++) { asm("nop"); }
     __spin_unlock(&print_lock);
 

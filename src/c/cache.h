@@ -1,3 +1,5 @@
+#ifndef CACHE_H
+#define CACHE_H
 #include <stdint.h>
 
 enum {
@@ -35,3 +37,4 @@ extern void init_linear_addr_map();
 extern void enable_mmu(void);
 
 extern uint32_t __attribute__((aligned(0x4000))) l1_page_table[4096];
+#endif

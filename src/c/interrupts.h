@@ -1,4 +1,5 @@
-
+#ifndef INTERRUPTS_H
+#define INTERRUPTS_H
 
 typedef struct {
     void (*handler)(void);
@@ -9,3 +10,4 @@ extern void register_interrupt_handler(interrupt_vector_t vector_table[], unsign
 
 extern interrupt_vector_t vector_table_svc[];
 extern interrupt_vector_t vector_table_irq[];
+#endif

@@ -1,3 +1,6 @@
+#ifndef MAILBOX_H
+#define MAILBOX_H
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -61,3 +64,4 @@ extern void mailbox_write(mailbox_t *mailbox, mailbox0_channel_t channel, uint32
 
 // TODO: Verify it works...
 extern uint32_t mailbox_read_beta(mailbox_t *mailbox, mailbox0_channel_t channel);
+#endif
