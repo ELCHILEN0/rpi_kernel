@@ -62,10 +62,20 @@ extern int gpio_fsel(unsigned int pin, gpio_sel_t sel);
 extern int gpio_read(unsigned int pin);
 
 /**
- * \brief Write a  a pin status
+ * \brief Write a pin status
  * \param pin - a pin to read
  * \param high - a new pin state
  * \return 0 on success
  * \return -1 on error
  */
 extern int gpio_write(unsigned int pin, bool high);
+
+/**
+ * \brief Control the actuation of internal pull-up/down on the respective GPIO pins.
+ * \param pin - a pin to set
+ * \param up - pull up or down
+ * \param off - if true override the previous param, disables pull up or down
+ * \return 0 on success
+ * \return -1 on error
+ */
+extern int gpio_pull(unsigned int pin, bool up, bool off);

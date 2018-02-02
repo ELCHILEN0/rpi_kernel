@@ -5,18 +5,14 @@
 
 static volatile __attribute__ ((aligned (0x4000))) uint32_t l1_page_table[4096];
 
+// typedef volatile struct {
+//     uint8_t 
+// } l1_section;
+
 void init_linear_addr_map() {
 
     // @ 31                 20 19  18  17  16 15  14   12 11 10  9  8     5   4    3 2   1 0
     // @ |section base address| 0  0  |nG| S |AP2|  TEX  |  AP | P | Domain | XN | C B | 1 0|
-
-/*
-The SCU is enabled, through its control register located in the private memory region. The SCU has configurable access control, restricting which processors can configure it.
-The MMU is enabled.
-The page being accessed is marked as Normal Shareable, with a cache policy of write-back, write-allocate.
-Device and Strongly-ordered memory, however, are not cacheable, and write-through caches behave like uncached
-memory from the point of view of the core.
-*/
 
     uint32_t base;
     for (base = 0; base < 1024 - 16; base++) {

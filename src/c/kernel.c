@@ -59,16 +59,23 @@ void time_slice() {
     next_blinker_state = !next_blinker_state;
 }
 
-#define GPPUD					(PERIPHERAL_BASE + 0x00200094)
-#define GPPUDCLK0				(PERIPHERAL_BASE + 0x00200098)
-#define GPPUDCLK1				(PERIPHERAL_BASE + 0x0020009C)
+// #define GPPUD					(PERIPHERAL_BASE + 0x00200094)
+// #define GPPUDCLK0				(PERIPHERAL_BASE + 0x00200098)
+// #define GPPUDCLK1				(PERIPHERAL_BASE + 0x0020009C)
 
 void init_jtag() {
-    mmio_write(GPPUD, 0);
-	for(int i = 0; i < 150; i++) asm("nop");
-	mmio_write(GPPUDCLK0, (1 << 22) | (1 << 24) | (1 << 25) | (1 << 26) | (1 << 27));
-	for(int i = 0; i < 150; i++) asm("nop");
-	mmio_write(GPPUDCLK0, 0);
+    // gpio->pud = 0;
+    // mmio_write(GPPUD, 0);
+	// for(int i = 0; i < 150; i++) asm("nop");
+	// mmio_write(GPPUDCLK0, (1 << 22) | (1 << 24) | (1 << 25) | (1 << 26) | (1 << 27));
+	// for(int i = 0; i < 150; i++) asm("nop");
+	// mmio_write(GPPUDCLK0, 0);
+
+    gpio_pull(22, false, true);
+    gpio_pull(24, false, true);
+    gpio_pull(25, false, true);
+    gpio_pull(26, false, true);
+    gpio_pull(27, false, true);
 
     gpio_fsel(22, SEL_ALT4); // TRST
     gpio_fsel(24, SEL_ALT4); // TDO
@@ -97,11 +104,6 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
 
     printf("[kernel] Kernel started at 0x%X on core %d.\r\n", kernel_main, get_core_id());
     
-    uint32_t prrr;
-    asm volatile("MRC p15, 0, %0, c10, c2, 0" : "=r" (prrr));
-    printf("PRRR=0x%X\r\n", prrr);
-    asm volatile("MCR p15, 0, %0, c10, c2, 0" :: "r" (prrr));
-
     init_linear_addr_map();
     enable_mmu();
     printf("MMU Enabled\r\n");
@@ -113,12 +115,6 @@ void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
     __spin_lock(&slave_lock);
     printf("locked\r\n");
     __spin_unlock(&slave_lock);
-
-    // __spin_lock(&slave_lock);
-    // printf("locked\r\n");
-    // __spin_lock(&slave_lock);
-    // printf("locked\r\n");
-
     
     core_enable(1, (uint32_t) _init_core);
     core_enable(2, (uint32_t) _init_core);
