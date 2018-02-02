@@ -70,37 +70,11 @@ void init_jtag() {
 	for(int i = 0; i < 150; i++) asm("nop");
 	mmio_write(GPPUDCLK0, 0);
 
-    /*
-    // 
-    gpfsel2 = readl(GPFSEL2);
-	gpfsel2 &= ~(GPFSEL_PIN_MASK	<<  6);	// Gpio22
-	gpfsel2 |=  (GPFSEL_ALT_4		<<  6);	// Alt4: ARM_TRST
-
-	gpfsel2 &= ~(GPFSEL_PIN_MASK	<< 12);	// Gpio24
-	gpfsel2 |=  (GPFSEL_ALT_4		<< 12);	// Alt4: ARM_TDO
-	gpfsel2 &= ~(GPFSEL_PIN_MASK	<< 15);	// Gpio25
-	gpfsel2 |=  (GPFSEL_ALT_4		<< 15);	// Alt4: ARM_TCK
-	gpfsel2 &= ~(GPFSEL_PIN_MASK	<< 18);	// Gpio26
-	gpfsel2 |=  (GPFSEL_ALT_4		<< 18);	// Alt4: ARM_TDI
-	gpfsel2 &= ~(GPFSEL_PIN_MASK	<< 21);	// Gpio27
-	gpfsel2 |=  (GPFSEL_ALT_4		<< 21);	// Alt4: ARM_TMS
-    */
-
-
-    // JTAG
-    gpio_fsel(22, SEL_ALT4);
-    gpio_fsel(24, SEL_ALT4);
-    gpio_fsel(25, SEL_ALT4);
-    gpio_fsel(26, SEL_ALT4);
-    gpio_fsel(27, SEL_ALT4);
-    // gpio_fsel(4, SEL_ALT5);
-
-    // gpio_fsel(22, SEL_ALT4); // TRST
-    // gpio_fsel(23, SEL_ALT4); // RTCK
-    // gpio_fsel(24, SEL_ALT4); // TDO
-    // gpio_fsel(25, SEL_ALT4); // TCK
+    gpio_fsel(22, SEL_ALT4); // TRST
+    gpio_fsel(24, SEL_ALT4); // TDO
+    gpio_fsel(25, SEL_ALT4); // TCK
     gpio_fsel(26, SEL_ALT4); // TDI
-    // gpio_fsel(27, SEL_ALT4); // TMS
+    gpio_fsel(27, SEL_ALT4); // TMS
 }
 
 void kernel_main ( uint32_t r0, uint32_t r1, uint32_t atags ) {
