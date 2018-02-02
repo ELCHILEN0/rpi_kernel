@@ -42,30 +42,29 @@ void enable_mmu(void)
     control &= ~(1 << 2);   // Clear C to disable D Cache
     control &= ~(1 << 12);  // Clear I to disable I Cache
     control &= ~(1 << 11);  // Clear Z to disable branch prediction
-    asm volatile("mcr p15, 0, %0, c1, c0, 0" :: "r" (control));
+    asm volatile("MCR p15, 0, %0, c1, c0, 0" :: "r" (control));
     
     // Flush L1 Cache, TLB, Branch Prediction
-    asm("MCR p15, 0, %0, c7, c5, 0" :: "r" (0));
-    asm("MCR p15, 0, %0, c7, c5, 6" :: "r" (0));
-    asm("MCR p15, 0, %0, c8, c7, 0" :: "r" (0));
+    asm("MCR p15, 0, %0, c7, c5, 0" :: "r" (0)); // Invalidate I Cache
+    asm("MCR p15, 0, %0, c7, c5, 6" :: "r" (0)); // Invalidate branch prediction
+    asm("MCR p15, 0, %0, c8, c7, 0" :: "r" (0)); // Invalidate D Cache
 
     unsigned auxctrl;
-    asm volatile ("mrc p15, 0, %0, c1, c0,  1" : "=r" (auxctrl));
+    asm volatile ("MRC p15, 0, %0, c1, c0,  1" : "=r" (auxctrl));
     auxctrl |= (1 << 6); // Enable SMP (Should be unused...)
-    asm volatile ("mcr p15, 0, %0, c1, c0,  1" :: "r" (auxctrl));
+    asm volatile ("MCR p15, 0, %0, c1, c0,  1" :: "r" (auxctrl));
 
-    asm volatile ("mcr p15, 0, %0, c2, c0, 2" :: "r" (0)); // TTBR0
-    // http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0360f/CHDGIJFB.html
-    asm volatile ("mcr p15, 0, %0, c2, c0, 0" :: "r" ((uint32_t) l1_page_table) : "memory");
-    asm volatile ("mcr p15, 0, %0, c3, c0, 0" :: "r" (~0)); // DACR (allow everyone)
-    asm volatile("isb");
+    asm volatile ("MCR p15, 0, %0, c2, c0, 2" :: "r" (0)); // TTBR0
+    asm volatile ("MCR p15, 0, %0, c2, c0, 0" :: "r" ((uint32_t) l1_page_table) : "memory");
+    asm volatile ("MCR p15, 0, %0, c3, c0, 0" :: "r" (~0)); // DACR (allow everyone)
+    asm volatile("ISB");
 
-    asm volatile("MRC p15, 0, %0, c1, C0, 0" : "=r" (control));
+    asm volatile("MRC p15, 0, %0, c1, c0, 0" : "=r" (control));
     control |= (1 << 0);    // Set M to enable MMU
     control |= (1 << 2);    // Set C to enable D Cache
     control |= (1 << 12);   // Set I to enable I Cache
     control |= (1 << 11);   // Set Z to enable branch prediction
     // control |= (1 << 28);   // TEX_REMAP = TEX[0] + C + B instead of TEX[2:0] + C + B
-    asm volatile("MCR p15, 0, %0, C1, C0, 0" :: "r" (control));
-    asm volatile("isb");
+    asm volatile("MCR p15, 0, %0, c1, c0, 0" :: "r" (control));
+    asm volatile("ISB");
 }
