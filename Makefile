@@ -17,14 +17,11 @@ COPY = /Volumes/boot
 SOBJ = bootcode.o vectors.o
 UOBJ = cstartup.o cstubs.o kernel.o peripheral.o gpio.o mailbox.o interrupts.o timer.o uart.o multicore.o cache.o
 
-# SOBJ = startup.o
-# UOBJ = cstartup.o cstubs.o peripheral.o interrupts.o kernel.o gpio.o uart.o timer.o
-
 all: $(BUILD)/$(TARGET).img $(BUILD)/$(TARGET).list
 
 # ELF
-$(BUILD)/$(TARGET).elf: $(SOBJ) $(UOBJ)
-	$(TOOLCHAIN)-gcc $(CCFLAGS) -T $(SOURCE)/linker.ld $(addprefix $(BUILD)/, $(SOBJ)) $(addprefix $(BUILD)/, $(UOBJ)) -o $(BUILD)/$(TARGET).elf
+$(BUILD)/$(TARGET).elf: $(addprefix $(BUILD)/, $(SOBJ)) $(addprefix $(BUILD)/, $(UOBJ))
+	$(TOOLCHAIN)-gcc $(CCFLAGS) -T $(SOURCE)/linker.ld $^ -o $(BUILD)/$(TARGET).elf
 
 # ELF to LIST
 $(BUILD)/$(TARGET).list: $(BUILD)/$(TARGET).elf
@@ -34,11 +31,11 @@ $(BUILD)/$(TARGET).list: $(BUILD)/$(TARGET).elf
 $(BUILD)/$(TARGET).img: $(BUILD)/$(TARGET).elf
 	$(TOOLCHAIN)-objcopy -O binary $(BUILD)/$(TARGET).elf $(BUILD)/$(TARGET).img
 
-$(SOBJ): %.o: $(SOURCE)/asm/%.s
-	$(TOOLCHAIN)-as $(SOURCE)/asm/$(basename $@).s -o $(BUILD)/$@
+$(addprefix $(BUILD)/, $(SOBJ)): $(BUILD)/%.o: $(SOURCE)/asm/%.s
+	$(TOOLCHAIN)-as $(SOURCE)/asm/$(basename $(@F)).s -o $@
 
-$(UOBJ): %.o: $(SOURCE)/c/%.c
-	$(TOOLCHAIN)-gcc $(CCFLAGS) -c $(SOURCE)/c/$(basename $@).c -o $(BUILD)/$@
+$(addprefix $(BUILD)/, $(UOBJ)): $(BUILD)/%.o: $(SOURCE)/c/%.c
+	$(TOOLCHAIN)-gcc $(CCFLAGS) -c $(SOURCE)/c/$(basename $(@F)).c -o $@
 
 copy: all
 	cp $(BUILD)/$(TARGET).img $(COPY)/$(TARGET).img
