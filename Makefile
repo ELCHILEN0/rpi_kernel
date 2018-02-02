@@ -15,7 +15,7 @@ SOURCE = src
 COPY = /Volumes/boot
 
 SOBJ = bootcode.o vectors.o
-UOBJ = cstartup.o cstubs.o kernel.o peripheral.o gpio.o mailbox.o interrupts.o timer.o uart.o multicore.o cache.o
+UOBJ = cstartup.o cstubs.o init.o peripheral.o gpio.o mailbox.o interrupts.o timer.o uart.o multicore.o cache.o
 HOBJ = cache.h gpio.h interrupts.h mailbox.h multicore.h peripheral.h timer.h uart.h
 
 all: $(BUILD)/$(TARGET).img $(BUILD)/$(TARGET).list
