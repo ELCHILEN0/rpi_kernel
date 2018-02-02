@@ -38,17 +38,9 @@ int create(void (*func)(void), int stack_size) {
 
     // Ran out of pid_t to allocate
     if (next_pid == 0 && !list_empty(&process_list))
-        return -1;
-
-    __spin_lock(&print_lock);
-    printf("TEST\r\n");
-    __spin_unlock(&print_lock);    
+        return -1; 
 
     void *stack_pointer = malloc(stack_size); // TODO: Unsafe...
-    __spin_lock(&print_lock);
-    printf("sp=0x%X\r\n", stack_pointer);
-    __spin_unlock(&print_lock);    
-
     if (!stack_pointer)
         return -1;
 
@@ -78,14 +70,17 @@ int create(void (*func)(void), int stack_size) {
     for (int i = 0; i < 12; i++) {
         process->frame->reg[i] = 0;
     }
-    process->frame->sp = (uint32_t) process->frame;
+
+    process->frame->sp = (uint32_t) &process->frame->stack_slots;
     process->frame->lr = (uint32_t) func;
     process->frame->pc = (uint32_t) func;
-    process->frame->cpsr = 0; // TODO: Copy or set to user mode...
+    asm("MRS %0, CPSR" :: "r" (process->frame->cpsr));
     
     //process->state = READY;
     process->pid = next_pid++;
     process->stack_size = stack_size;
+
+    context_switch(process);
 
     // Process list entries
     // INIT_LIST_HEAD(&process->process_list);

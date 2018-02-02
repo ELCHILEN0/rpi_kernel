@@ -25,10 +25,14 @@ extern void _init_core(void);
 
 spinlock_t print_lock;
 
-void context_switch() {
+extern void _InterruptEntryPoint(void);
+
+void interrupt_handler() {
     static bool next_blinker_state = true;
     gpio_write(21, next_blinker_state);
     next_blinker_state = !next_blinker_state;
+
+    _InterruptEntryPoint();
 }
 
 void time_slice() {
@@ -58,16 +62,12 @@ void master_core () {
     printf("[core%d] Executing from 0x%X\r\n", get_core_id(), master_core);
     __spin_unlock(&print_lock);
 
-    register_interrupt_handler(vector_table_svc, 0x80, &context_switch);
-    register_interrupt_handler(vector_table_svc, 0x81, context_switch);
+    register_interrupt_handler(vector_table_svc, 0x80, &interrupt_handler);
+    register_interrupt_handler(vector_table_svc, 0x81, interrupt_handler);
     register_interrupt_handler(vector_table_irq, 11, time_slice);
 
     local_timer_interrupt_routing(0);
     local_timer_start(0x038FFFF);
- 
-    // printf("[kernel] Jumping to interrupt 0x80.\r\n");
-    // asm("SVC 0x80");
-    // printf("[kernel] Returned from interrupt.\r\n");
 
     kernel_init();
 

@@ -17,7 +17,7 @@ COPY = /Volumes/boot
 SOBJ = bootcode.o vectors.o
 UOBJ = cstartup.o cstubs.o init.o peripheral.o gpio.o mailbox.o interrupts.o timer.o uart.o multicore.o cache.o
 HOBJ = cache.h gpio.h interrupts.h mailbox.h multicore.h peripheral.h timer.h uart.h
-KOBJ = kinit.o create.o
+KOBJ = kinit.o create.o ctsw.o
 
 HOBJ += kernel/kernel.h kernel/list.h
 
@@ -62,7 +62,7 @@ serial-screen:
 	screen $(SERIAL_DEVICE) $(SERIAL_BAUD_RATE)
 
 gdb-core-0:
-	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -ex="target remote :3333" -ex=continue
+	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -tui -ex="target remote :3333" -ex=continue
 
 gdb-core-1:
 	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -ex="target remote :3334" -ex=continue

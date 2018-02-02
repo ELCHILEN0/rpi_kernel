@@ -2,29 +2,26 @@
  */
 
 #include <stdarg.h>
-#include <xeroskernel.h>
-#include <i386.h>
-#include "../h/kbd.h"
 
-int getCPUtimes(process_t *p, process_status_t *ps);
+// int getCPUtimes(process_t *p, process_status_t *ps);
 
 struct list_head process_list;
-struct list_head ready_queues[IDLE + 1];
-struct list_head block_queue;
-struct list_head sleep_queue;
+// struct list_head ready_queues[IDLE + 1];
+// struct list_head block_queue;
+// struct list_head sleep_queue;
 
 /* Your code goes here */
 /**
  * Initialize the process table and schedule lists.
  */
 void disp_init() {
-    int i;
-    for (i = 0; i <= IDLE; i++) {
-        INIT_LIST_HEAD(&ready_queues[i]);
-    }
+    // int i;
+    // for (i = 0; i <= IDLE; i++) {
+    //     INIT_LIST_HEAD(&ready_queues[i]);
+    // }
 
-    INIT_LIST_HEAD(&block_queue);
-    INIT_LIST_HEAD(&sleep_queue);
+    // INIT_LIST_HEAD(&block_queue);
+    // INIT_LIST_HEAD(&sleep_queue);
 }
 
 /**
@@ -53,14 +50,14 @@ process_t *next( void ) {
  * priority ready queue, at the end.
  */
 void ready( process_t *process ) {
-    process->state = READY;
-    process->block_state = NONE;
+    // process->state = READY;
+    // process->block_state = NONE;
 
-    struct list_head *ready_queue = &ready_queues[process->current_priority];
+    // struct list_head *ready_queue = &ready_queues[process->current_priority];
 
-    list_del_init(&process->block_list);
-    list_del_init(&process->sched_list);
-    list_add_tail(&process->sched_list, ready_queue);
+    // list_del_init(&process->block_list);
+    // list_del_init(&process->sched_list);
+    // list_add_tail(&process->sched_list, ready_queue);
 }
 
 /*
@@ -69,11 +66,11 @@ void ready( process_t *process ) {
  * removed from any existing scheduler queues.
  */
 void block( process_t *process, enum blocked_state reason ) {
-    process->state = BLOCKED;
-    process->block_state = reason;
+    // process->state = BLOCKED;
+    // process->block_state = reason;
 
-    list_del_init(&process->sched_list);
-    list_add_tail(&process->sched_list, &block_queue);
+    // list_del_init(&process->sched_list);
+    // list_add_tail(&process->sched_list, &block_queue);
 }
 
 /*

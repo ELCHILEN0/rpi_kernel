@@ -73,9 +73,63 @@ void interrupt_udef() {
 }
 
 void interrupt_pabt() {
-    printf("[interrupt] Prefetch Abort\r\n");
+    uint32_t ifsr;
+    asm("MRC p15, 0, %0, c5, c0, 1" :: "r" (ifsr));
+
+    char *fault_status[16] = {
+        "No function, reset value",
+        "Alignment fault",
+        "Debug event fault",
+        "Access Flag fault on Section",
+        "No function[b]",
+        "Translation fault on Section",
+        "Access Flag fault on Page",
+        "Translation fault on Page",
+        "Precise External Abort",
+        "Domain fault on Section",
+        "No function",
+        "Domain fault on Page",
+        "External abort on translation, first level",
+        "Permission fault on Section",
+        "External abort on translation, second level",
+        "Permission fault on Page",
+    };
+
+    uint32_t code = (ifsr & (0b1111));
+
+    printf("[interrupt] Prefetch Abort - (0x%X = %d) \r\n", ifsr, code, fault_status[code]);
 }
 
 void interrupt_dabt() {
-    printf("[interrupt] Data Abort\r\n");
+    uint32_t dfsr;
+    asm("MRC p15, 0, %0, c5, c0, 0" :: "r" (dfsr));
+
+    char *fault_status[25] = {
+        "No function, reset value"
+        "Alignment fault"
+        "Debug event fault"
+        "Access Flag fault on Section"
+        "Cache maintenance operation fault"
+        "Translation fault on Section"
+        "Access Flag fault on Page"
+        "Translation fault on Page"
+        "Precise External Abort"
+        "Domain fault on Section"
+        "No function"
+        "Domain fault on Page"
+        "External abort on translation, first level"
+        "Permission fault on Section"
+        "External abort on translation, second level"
+        "Permission fault on Page"
+        "No function"
+        "No function"
+        "Imprecise External Abort"
+        "No function"
+        "No function"
+    };
+
+    uint32_t code = (dfsr & (1 << 10)) >> 6;
+    code |= (dfsr & (0b1111));
+
+    printf("[interrupt] Data Abort - (0x%X = %d) \r\n", dfsr, code, fault_status[code]);
 }

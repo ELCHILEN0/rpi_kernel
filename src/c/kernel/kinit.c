@@ -8,13 +8,18 @@ void idleproc( void ) {
     printf("idleproc() running from 0x%X\r\n", idleproc);
     __spin_unlock(&print_lock);   
 
-    for ( ;; ) {
+    asm("SVC 0x80");
+
+    while(true) {
         asm("wfi"); 
     }
 }
 
 void kernel_init( void )
 {
+    __spin_lock(&print_lock);
+    printf("kernel_init()\r\n");
+    __spin_unlock(&print_lock); 
     // Initialize process, dispatcher, context and device structures.
     process_init();
     // disp_init();
@@ -36,6 +41,7 @@ void kernel_init( void )
   
     // Dispatch processes and wait for system calls
     // dispatch(); 
+    // context_switch(get_process(0));
 
     printf("[kernel] Exiting... this should not happen\r\n");
     while(true);
