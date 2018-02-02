@@ -1,5 +1,6 @@
 # The ARM toolchain prefix (32 bit = arm-...-eabi, 64 bit = aarch64-...-gnueabi)
-TOOLCHAIN = arm-none-eabi
+# TOOLCHAIN = arm-none-eabi
+TOOLCHAIN = /usr/local/gcc-arm-none-eabi-6-2017-q2-update/bin/arm-none-eabi
 # TOOLCHAIN = /root/x-tools/aarch64-rpi3-linux-gnueabi/bin/aarch64-rpi3-linux-gnueabi
 
 AARCH = 
