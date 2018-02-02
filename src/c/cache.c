@@ -6,38 +6,37 @@
 static volatile __attribute__ ((aligned (0x4000))) uint32_t l1_page_table[4096];
 
 void init_linear_addr_map() {
-    // uint32_t pbase;
-    // asm("MRC p15, 1, %0, c15, c3, 0" :: "r" (pbase));
-    // printf("PBASE = 0x%X\r\n");
 
     // @ 31                 20 19  18  17  16 15  14   12 11 10  9  8     5   4    3 2   1 0
     // @ |section base address| 0  0  |nG| S |AP2|  TEX  |  AP | P | Domain | XN | C B | 1 0|
+
+/*
+The SCU is enabled, through its control register located in the private memory region. The SCU has configurable access control, restricting which processors can configure it.
+The MMU is enabled.
+The page being accessed is marked as Normal Shareable, with a cache policy of write-back, write-allocate.
+Device and Strongly-ordered memory, however, are not cacheable, and write-through caches behave like uncached
+memory from the point of view of the core.
+*/
 
     uint32_t base;
     for (base = 0; base < 1024 - 16; base++) {
         // l1_page_table[base] = base << 20 | L1_NORMAL_001_11 | L1_PRW_URW | L1_SECTION;
         // TODO: outer and inner write-back, write-allocate
         l1_page_table[base] = base << 20 | L1_PRW_URW | L1_SECTION;
-        l1_page_table[base] |= (1 << 12) | (1 << 2);    // TEX[0] C B = 101
+        l1_page_table[base] |= (0b001 << 12) | (0b10 << 2); // NO REMAP
+        // l1_page_table[base] |= (1 << 12) | (1 << 2);    // TEX[0] C B = 101
         l1_page_table[base] |= (1 << 16);               // S = 1
     }
 
+    // TODO: Automatically
     for (; base < 1025; base++) {
         // l1_page_table[base] = base << 20 | L1_DEVICE_010_00 | L1_PRW_URW | L1_SECTION;
         l1_page_table[base] = base << 20 | L1_PRW_URW | L1_SECTION;
-        // l1_page_table[base] |= (1 << 12) | (1 << 2);    // TEX[0] C B = 101
+        l1_page_table[base] |= (0b000 << 12) | (0b01 << 2); // NO REMAP
+        
         l1_page_table[base] |= (1 << 16);               // S = 1
         l1_page_table[base] |= (1 << 4);                // XN = 1
     }
-
-    // for (int base = 0; base < 4096; base++) {
-    //     // l1_page_table[base] = ((0xFFF00000) & (base << 20)) | L1_NORMAL_001_11 | L1_PRW_URW | L1_SECTION;
-    //     if ((base << 20) < PERIPHERAL_BASE) {
-    //         l1_page_table[base] = ((0xFFF00000) & (base << 20)) | L1_NORMAL_001_11 | L1_PRW_URW | L1_SECTION ;
-    //     } else {
-    //         l1_page_table[base] = ((0xFFF00000) & (base << 20)) | (1 << 16) | (0b01 << 2) | L1_PRW_URW | L1_SECTION;
-    //     }
-    // }
 
     for (; base < 4096; base++) {
         l1_page_table[base] = 0;
@@ -59,17 +58,6 @@ void init_linear_addr_map() {
 @ Domain[5:8]=0 - Set all pages to use domain 0
 @ XN[4]=0       - Execute never disabled
 @ Bits[1:0]=10  - Indicate entry is a 1MB section
-
-
-And an important thing, be careful with identity mapping when you reach MMIO_BASE.
-You'll have to use a different AttrIndex and shareability.
-For normal memory it should be inner shareable and AttrIndex should point to a 
-MAIR value of 0xCC or 0xFF (depending on you want alloc or not), while for 
-device memory it must be outer shareable and AttrIndex must point to a 
-MAIR value of 0x04 in order to work properly.
-
-
-MAIR...
 
 */
 
@@ -93,11 +81,9 @@ void enable_mmu(void)
     asm("MCR p15, 0, %0, c7, c5, 0" :: "r" (0));
     asm("MCR p15, 0, %0, c7, c5, 6" :: "r" (0));
     asm("MCR p15, 0, %0, c8, c7, 0" :: "r" (0));
-    // asm("ISB");
 
     unsigned auxctrl;
     asm volatile ("mrc p15, 0, %0, c1, c0,  1" : "=r" (auxctrl));
-    // printf("ax = 0x%X\r\n", auxctrl);
     auxctrl |= (1 << 6); // Enable SMP
     asm volatile ("mcr p15, 0, %0, c1, c0,  1" :: "r" (auxctrl));
 
@@ -108,12 +94,11 @@ void enable_mmu(void)
     asm volatile("isb");
 
     asm volatile("MRC p15, 0, %0, c1, C0, 0" : "=r" (control));
-    // printf("CTRL: 0x%X\r\n", control);
     control |= (1 << 0);    // Set M to enable MMU
     control |= (1 << 2);    // Set C to enable D Cache
     // control |= (1 << 12);   // Set I to enable I Cache
     control |= (1 << 11);   // Set Z to enable branch prediction
-    control |= (1 << 28);   // TEX REMAP TEX[0] + C + B
+    // control |= (1 << 28);   // TEX REMAP TEX[0] + C + B
     asm volatile("MCR p15, 0, %0, C1, C0, 0" :: "r" (control));
     asm volatile("isb");
 }
