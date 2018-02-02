@@ -30,27 +30,19 @@ void slave_core() {
     int core_id = get_core_id();
     int core_gpio[3] = { 6, 13, 19 };
 
-    // gpio_write(core_gpio[core_id - 1], true);
     __spin_lock(&slave_lock);
     printf("[core] Started core %d\r\n", core_id);
-    // for (int i = 0; i < 0x1000000; i++) { asm("nop"); }
+    for (int i = 0; i < 0x1000000; i++) { asm("nop"); }
     __spin_unlock(&slave_lock);
-    // gpio_write(core_gpio[core_id - 1], false);
 
     while (true) {
-        for (int i = 0; i < 0x10000 * 3; i++);
+        for (int i = 0; i < 0x10000 * core_id * 10; i++);
         gpio_write(core_gpio[core_id - 1], true);
-        // asm volatile ("dmb");
-        // asm volatile ("dsb");              
-        // asm volatile ("isb");
 
-        for (int i = 0; i < 0x10000 * 3; i++);
+        for (int i = 0; i < 0x10000 * core_id * 10; i++);
         gpio_write(core_gpio[core_id - 1], false);
-        // asm volatile ("dmb");  
-        // asm volatile ("dsb");      
-        // asm volatile ("isb");        
+  
     }
-    while (true);
 }
 
 void context_switch() {

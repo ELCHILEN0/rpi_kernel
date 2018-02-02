@@ -30,7 +30,6 @@ memory from the point of view of the core.
 
     // TODO: Automatically
     for (; base < 1025; base++) {
-        // l1_page_table[base] = base << 20 | L1_DEVICE_010_00 | L1_PRW_URW | L1_SECTION;
         l1_page_table[base] = base << 20 | L1_PRW_URW | L1_SECTION;
         l1_page_table[base] |= (0b000 << 12) | (0b01 << 2); // NO REMAP
         
@@ -42,24 +41,6 @@ memory from the point of view of the core.
         l1_page_table[base] = 0;
     }
 }
-
-/*
-
-@
-@ Bits[31:20]   - Top 12 bits of VA is pointer into table
-@ nG[17]=0      - Non global, enables matching against ASID in the TLB when set.
-@ S[16]=0       - Indicates normal memory is shared when set.
-@ AP2[15]=0
-@ AP[11:10]=11  - Configure for full read/write access in all modes
-@ TEX[14:12]=
-@ CB[3:2]=
-@
-@ IMPP[9]=0     - Ignored
-@ Domain[5:8]=0 - Set all pages to use domain 0
-@ XN[4]=0       - Execute never disabled
-@ Bits[1:0]=10  - Indicate entry is a 1MB section
-
-*/
 
 void enable_mmu(void)
 {    
@@ -96,7 +77,7 @@ void enable_mmu(void)
     asm volatile("MRC p15, 0, %0, c1, C0, 0" : "=r" (control));
     control |= (1 << 0);    // Set M to enable MMU
     control |= (1 << 2);    // Set C to enable D Cache
-    // control |= (1 << 12);   // Set I to enable I Cache
+    control |= (1 << 12);   // Set I to enable I Cache
     control |= (1 << 11);   // Set Z to enable branch prediction
     // control |= (1 << 28);   // TEX REMAP TEX[0] + C + B
     asm volatile("MCR p15, 0, %0, C1, C0, 0" :: "r" (control));
