@@ -1,3 +1,6 @@
+#ifndef GPIO_H
+#define GPIO_H
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -79,3 +82,4 @@ extern int gpio_write(unsigned int pin, bool high);
  * \return -1 on error
  */
 extern int gpio_pull(unsigned int pin, bool up, bool off);
+#endif

@@ -38,7 +38,7 @@ SECTIONS {
     __bss_end = .;
 
     __heap_start = .;
-    . = . + 0x1000;
+    . = . + 0x100000;
     . = ALIGN(8);
     __heap_end = .;
 

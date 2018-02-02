@@ -1,3 +1,6 @@
+#ifndef PERIPHERAL_H
+#define PERIPHERAL_H
+
 #include <stdint.h>
 
 #define PERIPHERAL_BASE 0x3F000000
@@ -19,3 +22,4 @@
 // Memory-Mapped I/O
 extern void mmio_write(uint32_t reg, uint32_t data);
 extern uint32_t mmio_read(uint32_t reg);
+#endif

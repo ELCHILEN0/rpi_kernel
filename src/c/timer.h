@@ -1,3 +1,6 @@
+#ifndef TIMER_H
+#define TIMER_H
+
 #include <stdint.h>
 
 typedef struct {
@@ -54,3 +57,5 @@ extern void local_timer_start( unsigned int reload );
 extern void local_timer_reset( void );
 
 local_timer_t *local_timer;
+
+#endif
