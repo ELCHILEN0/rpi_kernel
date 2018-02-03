@@ -3,14 +3,13 @@
 
 #include <stdbool.h>
 
-uint32_t l1_page_table[4096];
+uint32_t l1_page_table[4096]; // TODO: Static initialization useful when flashing entire elf file
 
 // typedef volatile struct {
 //     uint8_t 
 // } l1_section;
 
 void init_linear_addr_map() {
-
     // @ 31                 20 19  18  17  16 15  14   12 11 10  9  8     5   4    3 2   1 0
     // @ |section base address| 0  0  |nG| S |AP2|  TEX  |  AP | P | Domain | XN | C B | 1 0|
 
@@ -65,6 +64,15 @@ void enable_mmu(void)
     control |= (1 << 12);   // Set I to enable I Cache
     control |= (1 << 11);   // Set Z to enable branch prediction
     // control |= (1 << 28);   // TEX_REMAP = TEX[0] + C + B instead of TEX[2:0] + C + B
+    asm volatile("MCR p15, 0, %0, c1, c0, 0" :: "r" (control));
+    asm volatile("ISB");
+}
+
+void disable_mmu(void)
+{
+    uint32_t control;
+    asm volatile("MRC p15, 0, %0, c1, c0, 0" : "=r" (control));
+    control &= ~(1 << 0);    // Unset M to disable MMU
     asm volatile("MCR p15, 0, %0, c1, c0, 0" :: "r" (control));
     asm volatile("ISB");
 }

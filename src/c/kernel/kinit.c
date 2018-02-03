@@ -8,6 +8,8 @@ void idleproc( void ) {
     printf("idleproc() running from 0x%X\r\n", idleproc);
     __spin_unlock(&print_lock);   
 
+    while(true);
+
     asm("SVC 0x80");
 
     while(true) {

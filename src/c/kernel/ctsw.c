@@ -60,14 +60,14 @@ enum ctsw_code context_switch(pcb_t *process) {
         POP {r0-r12, lr}
     */
 
-    asm volatile ("BX %0" :: "r" (process->frame->lr));
     asm volatile("\
+        _kernel_to_process:
             STMIA sp, {r0-pc}^ \n\
             MOV sp, %0 \n\
             MOV %1, sp \n\
             LDMIA sp, {r0-pc}^ \n\
-        .global _InterruptEntryPoint \n\
-        _InterruptEntryPoint: \n\
+        .global _int_svc \n\
+        _int_svc: \n\
             nop \n\
         " : "=r" (kernel_stack)
           : "r" (process_stack), "r" (process->frame->lr));

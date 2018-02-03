@@ -70,6 +70,7 @@ void interrupt_fiq() {
 
 void interrupt_udef() {
     printf("[interrupt] Undefined Instruction\r\n");
+    while(true);        
 }
 
 void interrupt_pabt() {
@@ -98,6 +99,7 @@ void interrupt_pabt() {
     uint32_t code = (ifsr & (0b1111));
 
     printf("[interrupt] Prefetch Abort - (0x%X = %d) \r\n", ifsr, code, fault_status[code]);
+    while(true);
 }
 
 void interrupt_dabt() {
@@ -131,5 +133,6 @@ void interrupt_dabt() {
     uint32_t code = (dfsr & (1 << 10)) >> 6;
     code |= (dfsr & (0b1111));
 
-    printf("[interrupt] Data Abort - (0x%X = %d) \r\n", dfsr, code, fault_status[code]);
+    printf("[interrupt] Data Abort - (0x%X = %d) %s\r\n", dfsr, code, fault_status[code]);
+    while(true);    
 }

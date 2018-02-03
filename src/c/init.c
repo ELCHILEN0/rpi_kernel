@@ -25,14 +25,14 @@ extern void _init_core(void);
 
 spinlock_t print_lock;
 
-extern void _InterruptEntryPoint(void);
+extern void _int_svc(void);
 
 void interrupt_handler() {
     static bool next_blinker_state = true;
     gpio_write(21, next_blinker_state);
     next_blinker_state = !next_blinker_state;
 
-    _InterruptEntryPoint();
+    _int_svc();
 }
 
 void time_slice() {
