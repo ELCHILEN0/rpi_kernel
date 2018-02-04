@@ -82,29 +82,12 @@ enum ctsw_code context_switch(pcb_t *process) {
     __spin_unlock(&print_lock);  
     bool debug = false;
     while(!debug);
-    asm("PUSH {r0}");
-    asm("PUSH {r1}");
-    asm("PUSH {r2}");
-    asm("PUSH {r3}");
-    asm("PUSH {r4}");
-    asm("PUSH {r5}");
-    // asm("STMDB sp!, {r0-r12, lr, pc}");
+    asm("STMIA sp!, {r0-pc}"); // PUSH ascending...
     asm("MOV %0, sp" : "=r" (kernel_stack));
     asm("MOV sp, %0" :: "r" (process_stack));
-    asm("POP {r0-pc}");
-    // asm("LDMIA sp!, {r0-r12, lr, pc}^");
+    // asm("POP {r0-pc}");
+    asm("LDMIA sp!, {r0-pc}^"); // POP descending... (TODO ^ = banked CPSR...)
     asm("BX lr");
-
-    asm volatile("\
-        _kernel_to_process: \n\
-            LDM sp, {r0-pc} \n\
-            BX %2 \n\
-        .global _int_svc \n\
-        _int_svc: \n\
-            nop \n\
-        _process_to_kernel: \n\
-        " : "=r" (kernel_stack)
-          : "r" (process_stack), "r" (process->frame->lr));
 
     __spin_lock(&print_lock);
     printf("Back in kernel...\r\n");
