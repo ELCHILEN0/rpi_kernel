@@ -24,8 +24,8 @@ extern void idleproc();
 enum ctsw_code context_switch(pcb_t *process) {
     (void)kernel_stack; 
 
-    ret_code = process->ret;
-    process->frame->reg[0] = ret_code;
+    // ret_code = process->ret;
+    // process->frame->reg[0] = ret_code;
 
     //process_stack = (unsigned long) process->stack_frame; 
  
@@ -93,8 +93,7 @@ enum ctsw_code context_switch(pcb_t *process) {
     asm("MOV sp, %0" :: "r" (process_stack));
     asm("POP {r0-r12}");
     asm("POP {sp}");
-    asm("POP {lr}");
-    asm("POP {pc}");
+    asm("POP {lr, pc}");
     // asm("LDMIA sp!, {r0-r12, lr, pc}^");
     asm("BX lr");
 
