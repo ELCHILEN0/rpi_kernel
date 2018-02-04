@@ -114,7 +114,7 @@ void cinit_core( ) {
             gpio_fsel(6, SEL_OUTPUT);
             gpio_fsel(13, SEL_OUTPUT);
             gpio_fsel(19, SEL_OUTPUT);
-            gpio_fsel(21, SEL_INPUT);
+            gpio_fsel(21, SEL_OUTPUT);
 
             uart_init(115200);
             init_jtag();

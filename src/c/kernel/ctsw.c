@@ -76,21 +76,39 @@ enum ctsw_code context_switch(pcb_t *process) {
 // (59) cpsr (/32)
     process_stack = (uint32_t) process->frame;
 
-
     __spin_lock(&print_lock);
-    printf("waiting for gdb... idleproc at 0x%X\r\n", idleproc);
+    printf("context switch gdb hook...\r\n");
     __spin_unlock(&print_lock);  
     bool debug = false;
     while(!debug);
-    asm("STMIA sp!, {r0-pc}"); // PUSH ascending...
-    asm("MOV %0, sp" : "=r" (kernel_stack));
-    asm("MOV sp, %0" :: "r" (process_stack));
-    // asm("POP {r0-pc}");
-    asm("LDMIA sp!, {r0-pc}^"); // POP descending... (TODO ^ = banked CPSR...)
-    asm("BX lr");
 
+    asm volatile("STMIA sp!, {r0-r12}");
+    asm volatile("\n\
+    .global _kernel_to_process  \n\
+    _kernel_to_process:         \n\
+        MOV %0, sp          \n\
+        MOV sp, %1          \n\
+    "   : "=r" (kernel_stack)
+        : "r" (process_stack));
+    asm volatile("LDMIA sp!, {r0-pc}^");
+    asm volatile("BX lr"); // Possibly not required, if PC is restored as part of the LDM
+    asm volatile("\n\
+    .global _int_svc            \n\
+    _int_svc:                   \n\
+        mov %0, #1          \n\
+    "   : "=r" (interrupt_type));
+    asm volatile("\n\
+    .global _process_to_kernel  \n\
+    _process_to_kernel:         \n\
+        MOV %0, sp           \n\
+        MOV sp, %1           \n\
+    "   : "=r" (process_stack)
+        : "r" (kernel_stack));
+    asm volatile("LDMDB sp!, {r0-r12}^");
+
+    // TODO: SVC Arguments...
     __spin_lock(&print_lock);
-    printf("Back in kernel...\r\n");
+    printf("[kernel] Interrupt type %d\r\n", interrupt_type);
     __spin_unlock(&print_lock);  
     while (true);
 //     __asm __volatile( " \
