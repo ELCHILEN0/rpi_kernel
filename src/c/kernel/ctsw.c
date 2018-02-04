@@ -45,9 +45,6 @@ enum ctsw_code context_switch(pcb_t *process) {
      * 5.  Pop kernel eflags and general registers from the stack
      */
 
-    __spin_lock(&print_lock);
-    printf("0x%X = 0x%X\r\n", idleproc, process->frame->lr);
-    __spin_unlock(&print_lock);  
     // idleproc();
 
     /*
@@ -60,15 +57,55 @@ enum ctsw_code context_switch(pcb_t *process) {
         POP {r0-r12, lr}
     */
 
+// (43) r0 (/32)
+// (44) r1 (/32)
+// (45) r2 (/32)
+// (46) r3 (/32)
+// (47) r4 (/32)
+// (48) r5 (/32)
+// (49) r6 (/32)
+// (50) r7 (/32)
+// (51) r8 (/32)
+// (52) r9 (/32)
+// (53) r10 (/32)
+// (54) r11 (/32)
+// (55) r12 (/32)
+// (56) sp (/32)
+// (57) lr (/32)
+// (58) pc (/32)
+// (59) cpsr (/32)
+    process_stack = (uint32_t) process->frame;
+
+
+    __spin_lock(&print_lock);
+    printf("waiting for gdb... idleproc at 0x%X\r\n", idleproc);
+    __spin_unlock(&print_lock);  
+    bool debug = false;
+    while(!debug);
+    asm("PUSH {r0}");
+    asm("PUSH {r1}");
+    asm("PUSH {r2}");
+    asm("PUSH {r3}");
+    asm("PUSH {r4}");
+    asm("PUSH {r5}");
+    // asm("STMDB sp!, {r0-r12, lr, pc}");
+    asm("MOV %0, sp" : "=r" (kernel_stack));
+    asm("MOV sp, %0" :: "r" (process_stack));
+    asm("POP {r0-r12}");
+    asm("POP {sp}");
+    asm("POP {lr}");
+    asm("POP {pc}");
+    // asm("LDMIA sp!, {r0-r12, lr, pc}^");
+    asm("BX lr");
+
     asm volatile("\
-        _kernel_to_process:
-            STMIA sp, {r0-pc}^ \n\
-            MOV sp, %0 \n\
-            MOV %1, sp \n\
-            LDMIA sp, {r0-pc}^ \n\
+        _kernel_to_process: \n\
+            LDM sp, {r0-pc} \n\
+            BX %2 \n\
         .global _int_svc \n\
         _int_svc: \n\
             nop \n\
+        _process_to_kernel: \n\
         " : "=r" (kernel_stack)
           : "r" (process_stack), "r" (process->frame->lr));
 

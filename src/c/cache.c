@@ -76,3 +76,10 @@ void disable_mmu(void)
     asm volatile("MCR p15, 0, %0, c1, c0, 0" :: "r" (control));
     asm volatile("ISB");
 }
+
+void warm_reset(void) {
+    uint32_t rmr;
+    asm("MRC p15,0, %0 ,c12,c0,2" : "=r" (rmr));
+    rmr |= 1;
+    asm("MRC p15,0, %0 ,c12,c0,2" :: "r" (rmr));
+}

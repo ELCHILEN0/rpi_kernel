@@ -120,13 +120,12 @@ void cinit_core( ) {
             init_jtag();
 
             printf("[core%d] Started...\r\n", core_id, master_core);
+            // init_linear_addr_map();
+            // enable_mmu();       
 
-            init_linear_addr_map();
-            enable_mmu();       
-
-            core_enable(1, (uint32_t) _init_core);
-            core_enable(2, (uint32_t) _init_core);
-            core_enable(3, (uint32_t) _init_core);     
+            // core_enable(1, (uint32_t) _init_core);
+            // core_enable(2, (uint32_t) _init_core);
+            // core_enable(3, (uint32_t) _init_core);     
 
             master_core(); // No more coprocessor changes, J-TAG entrypoint
         }

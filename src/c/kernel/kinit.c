@@ -3,9 +3,9 @@
 
 extern spinlock_t print_lock;
 
-void idleproc( void ) {
+void idleproc( uint32_t r0, uint32_t r1, uint32_t r2 ) {
     __spin_lock(&print_lock);
-    printf("idleproc() running from 0x%X\r\n", idleproc);
+    printf("idleproc() running from 0x%X (%X, %X, %X)\r\n", idleproc, r0, r1, r2);
     __spin_unlock(&print_lock);   
 
     while(true);
@@ -29,7 +29,7 @@ void kernel_init( void )
     // devices_init();
 
     // Create idle and root process
-    if (create( &idleproc, 4096) < 0) {
+    if (create(idleproc, 4096) < 0) {
         __spin_lock(&print_lock);
         printf("failed to init idle() process\r\n");
         __spin_unlock(&print_lock);            

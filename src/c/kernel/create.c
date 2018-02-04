@@ -44,37 +44,19 @@ int create(void (*func)(void), int stack_size) {
     if (!stack_pointer)
         return -1;
 
-// (43) r0 (/32)
-// (44) r1 (/32)
-// (45) r2 (/32)
-// (46) r3 (/32)
-// (47) r4 (/32)
-// (48) r5 (/32)
-// (49) r6 (/32)
-// (50) r7 (/32)
-// (51) r8 (/32)
-// (52) r9 (/32)
-// (53) r10 (/32)
-// (54) r11 (/32)
-// (55) r12 (/32)
-// (56) sp (/32)
-// (57) lr (/32)
-// (58) pc (/32)
-// (59) cpsr (/32)
-
     process_t *process = stack_pointer + stack_size - sizeof(process_t);
     process->stack_base = stack_pointer;
     process->frame = (arm_frame32_t *) (process - sizeof(arm_frame32_t) - 1 * sizeof(long));
-
+    
     // TODO: Create with args...
     for (int i = 0; i < 12; i++) {
-        process->frame->reg[i] = 0;
+        process->frame->reg[i] = i * 10;
     }
 
-    process->frame->sp = (uint32_t) &process->frame->stack_slots;
+    process->frame->sp = (uint32_t) &process->frame->lr;
     process->frame->lr = (uint32_t) func;
     process->frame->pc = (uint32_t) func;
-    asm("MRS %0, CPSR" :: "r" (process->frame->cpsr));
+    // asm("MRS %0, CPSR" :: "r" (process->frame->cpsr));
     
     //process->state = READY;
     process->pid = next_pid++;
