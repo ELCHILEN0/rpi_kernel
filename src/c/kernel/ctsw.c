@@ -24,56 +24,10 @@ extern void idleproc();
 enum ctsw_code context_switch(pcb_t *process) {
     (void)kernel_stack; 
 
+    // TODO Syscall ret code...
     // ret_code = process->ret;
     // process->frame->reg[0] = ret_code;
 
-    //process_stack = (unsigned long) process->stack_frame; 
- 
-    /* In the assembly code, switching to process
-     * 1.  Push kernel eflags and general registers onto the stack
-     * 2.  Save kernel stack pointer
-     * 3.  Switch to the process stack
-     * 4.  Pop process general registers from the stack
-     * 5.  Store return value in eax
-     * 6.  Do an iret to switch to process (implicit popf, from int) 
-     *
-     * Switching to kernel
-     * 1.  Read syscall params
-     * 2.  Push general registers onto the stack
-     * 3.  Save the process stack pointer
-     * 4.  Switch to the kernel stack
-     * 5.  Pop kernel eflags and general registers from the stack
-     */
-
-    // idleproc();
-
-    /*
-        PUSH {r0-r12, lr}
-        MSR r0, CPSR
-        PUSH {r0}
-
-        POP {r0}
-        MRS CPSR, r0
-        POP {r0-r12, lr}
-    */
-
-// (43) r0 (/32)
-// (44) r1 (/32)
-// (45) r2 (/32)
-// (46) r3 (/32)
-// (47) r4 (/32)
-// (48) r5 (/32)
-// (49) r6 (/32)
-// (50) r7 (/32)
-// (51) r8 (/32)
-// (52) r9 (/32)
-// (53) r10 (/32)
-// (54) r11 (/32)
-// (55) r12 (/32)
-// (56) sp (/32)
-// (57) lr (/32)
-// (58) pc (/32)
-// (59) cpsr (/32)
     process_stack = (uint32_t) process->frame;
 
     __spin_lock(&print_lock);
@@ -82,68 +36,51 @@ enum ctsw_code context_switch(pcb_t *process) {
     bool debug = false;
     while(!debug);
 
+    // Push kernel r0-r12 (general registers)
     asm volatile("STMIA sp!, {r0-r12}");
-    asm volatile("\n\
-    .global _kernel_to_process  \n\
-    _kernel_to_process:         \n\
+    // Swap kernel -> process stacks
+    asm volatile(".global _kernel_to_process    \n\
+    _kernel_to_process:                         \n\
         MOV %0, sp          \n\
         MOV sp, %1          \n\
     "   : "=r" (kernel_stack)
         : "r" (process_stack));
+    // Restore process r0-pc (all registers), restoring pc jumps to the function
     asm volatile("LDMIA sp!, {r0-pc}^");
-    asm volatile("BX lr"); // Possibly not required, if PC is restored as part of the LDM
-    asm volatile("\n\
-    .global _int_svc            \n\
-    _int_svc:                   \n\
+
+    // Interrupt routine pushes registers
+    asm volatile(".global _int_svc  \n\
+    _int_svc:                       \n\
         mov %0, #1          \n\
     "   : "=r" (interrupt_type));
-    asm volatile("\n\
-    .global _process_to_kernel  \n\
-    _process_to_kernel:         \n\
+    // Swap process -> kernel stacks
+    asm volatile(".global _process_to_kernel    \n\
+    _process_to_kernel:                         \n\
         MOV %0, sp           \n\
         MOV sp, %1           \n\
     "   : "=r" (process_stack)
         : "r" (kernel_stack));
+    // Restore kernel r0-r12 (general registers)
     asm volatile("LDMDB sp!, {r0-r12}^");
 
     // TODO: SVC Arguments...
-    __spin_lock(&print_lock);
-    printf("[kernel] Interrupt type %d\r\n", interrupt_type);
-    __spin_unlock(&print_lock);  
     while (true);
-//     __asm __volatile( " \
-//         PUSH {r0-lr}
-//         pushf \n\
-//         pusha \n\
-//         movl    %%esp, kernel_stack	\n\
-//         movl    process_stack, %%esp	\n\
-//         popa \n\
-//         iret \n\
-//    _KernelEntryPoint:	\n\
-// 	    cli	\n\
-//         pusha	\n\
-// 	    movl	$1, interrupt_type \n\
-//         movl	4(%%ebp), %%edx \n\
-//         movl	%%edx, ret_code	\n\
-//         movl    8(%%ebp), %%edx \n\
-//         movl    %%edx, args     \n\
-//  	    jmp	_CommonJump	\n\
-//    _HardwareEntryPoint:	\n\
-// 	    cli	\n\
-//         pusha	\n\
-//         movl	$0, interrupt_type	\n\
-//    _CommonJump: \n\
-//         movl    %%esp, process_stack  \n\
-//         movl    kernel_stack, %%esp  \n\
-//         popa \n\
-//         popf \n\
-//         POP {r0-lr, pc}
-//         "
-//         :
-//         : 
-//         : "%eax"
-//     );
+
+    switch (interrupt_type) {
+        case 1:
+            process->args = 0;
+            // ret_code =  
+        break;
+
+        default:
+            __spin_lock(&print_lock);
+            printf("[kernel] Unhandled context switch...\r\n");
+            __spin_unlock(&print_lock);
+        break; 
+    }
   
+    process->frame = (arm_frame32_t *) process_stack;
+
     // switch (interrupt_type) {
     //     case 0:
     //         process->ret = ret_code;
