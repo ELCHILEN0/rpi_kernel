@@ -91,9 +91,7 @@ enum ctsw_code context_switch(pcb_t *process) {
     // asm("STMDB sp!, {r0-r12, lr, pc}");
     asm("MOV %0, sp" : "=r" (kernel_stack));
     asm("MOV sp, %0" :: "r" (process_stack));
-    asm("POP {r0-r12}");
-    asm("POP {sp}");
-    asm("POP {lr, pc}");
+    asm("POP {r0-pc}");
     // asm("LDMIA sp!, {r0-r12, lr, pc}^");
     asm("BX lr");
 
