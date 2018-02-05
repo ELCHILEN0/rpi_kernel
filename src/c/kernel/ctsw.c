@@ -16,17 +16,17 @@ void _HardwareEntryPoint( void );
 void _KernelEntryPoint( void );
 // void _KeyboardEntryPoint( void );
 
-static uint32_t kernel_stack, process_stack, prev_stack;
-static uint32_t ret_code, args, interrupt_type;
+// static uint32_t kernel_stack, process_stack, prev_stack;
+// static uint32_t ret_code, args, interrupt_type;
 
 enum ctsw_code context_switch(pcb_t *process) {
-    (void)kernel_stack; 
+    // (void)kernel_stack; 
 
     // TODO Syscall ret code...
     // ret_code = process->ret;
     // process->frame->reg[0] = ret_code;
 
-    process_stack = (uint32_t) process->frame;
+    // process_stack = (uint32_t) process->frame;
 
     __spin_lock(&print_lock);
     printf("context switch gdb hook...\r\n");
@@ -49,6 +49,7 @@ enum ctsw_code context_switch(pcb_t *process) {
     asm volatile("POP {r0-r12, lr}");
     asm volatile("MOVS pc, lr");
 
+    uint32_t interrupt_type, ret_code, args;
     // Switch to SYSTEM mode to save USER sp in process->frame
     // Read USER syscall args ... (r1-r2)
     // Switch back to SVC restoring sp implicitl
@@ -69,7 +70,7 @@ enum ctsw_code context_switch(pcb_t *process) {
     // Restore kernel r0-r12 (general registers), sp and lr are already restored (banked)
     asm volatile("POP {r0-r12, lr}");
 
-    process->frame = (arm_frame32_t *) process_stack;    
+    // process->frame = (arm_frame32_t *) process_stack;    
 
     debug = true;
     while(debug);
