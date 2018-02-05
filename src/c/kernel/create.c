@@ -49,7 +49,7 @@ int create(void (*func)(), int stack_size, enum process_priority priority) {
     process->frame = (arm_frame32_t *) (process - sizeof(arm_frame32_t) - 1 * sizeof(long));
     
     // TODO: Create with args...
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < 13; i++) {
         process->frame->reg[i] = i * 10;
     }
 
