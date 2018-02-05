@@ -3,9 +3,16 @@
 
 extern spinlock_t print_lock;
 
-void newproc() {}
+void newproc() {
+    __spin_lock(&print_lock);
+    printf("newproc()\r\n");
+    __spin_unlock(&print_lock); 
+}
 
 void idleproc( uint32_t r0, uint32_t r1, uint32_t r2 ) {
+    __spin_lock(&print_lock);
+    printf("idleproc(%d, %d, %d)\r\n", r0, r1, r2);
+    __spin_unlock(&print_lock); 
     // __spin_lock(&print_lock);
     // printf("idleproc() running from 0x%X (%X, %X, %X) debug here...\r\n", idleproc, r0, r1, r2);
     // __spin_unlock(&print_lock);   
@@ -47,7 +54,6 @@ void kernel_init( void )
   
     // Dispatch processes and wait for system calls
     dispatch(); 
-    // context_switch(get_process(0));
 
     printf("[kernel] Exiting... this should not happen\r\n");
     while(true);
