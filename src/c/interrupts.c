@@ -9,7 +9,6 @@
 #include "timer.h"
 #include "peripheral.h"
 
-// TODO: Unhandled exceptions to begin...
 interrupt_vector_t vector_table_svc[256];
 interrupt_vector_t vector_table_irq[26];
 
@@ -28,9 +27,9 @@ void register_interrupt_handler(interrupt_vector_t vector_table[], unsigned int 
     vector_table[i].handler = handler;
 }
 
-void interrupt_svc(int code) {
-    printf("[interrupt] Supvervisor Call (0x%X)\r\n", code);
-
+__attribute((naked)) void interrupt_svc(int code) {
+    // The following line clobbers r0-r3 so that the vector handler will not overwrite them
+    asm volatile ("nop" ::: "r0", "r1", "r2", "r3");
     interrupt_vector_t vector = vector_table_svc[code];
     vector.handler();
 }

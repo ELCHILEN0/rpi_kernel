@@ -19,8 +19,6 @@ void _KernelEntryPoint( void );
 static uint32_t kernel_stack, process_stack, prev_stack;
 static uint32_t ret_code, args, interrupt_type;
 
-extern void idleproc();
-
 enum ctsw_code context_switch(pcb_t *process) {
     (void)kernel_stack; 
 
@@ -33,8 +31,8 @@ enum ctsw_code context_switch(pcb_t *process) {
     __spin_lock(&print_lock);
     printf("context switch gdb hook...\r\n");
     __spin_unlock(&print_lock);  
-    bool debug = false;
-    while(!debug);
+    bool debug = true;
+    while(debug);
 
     // Push kernel r0-r12 (general registers)
     asm volatile("STMIA sp!, {r0-r12}");
@@ -52,7 +50,9 @@ enum ctsw_code context_switch(pcb_t *process) {
     asm volatile(".global _int_svc  \n\
     _int_svc:                       \n\
         mov %0, #1          \n\
-    "   : "=r" (interrupt_type));
+        mov %1, r1          \n\
+        mov %2, r2          \n\
+    "   : "=r" (interrupt_type), "=r" (ret_code), "=r" (args));
     // Swap process -> kernel stacks
     asm volatile(".global _process_to_kernel    \n\
     _process_to_kernel:                         \n\
@@ -63,13 +63,13 @@ enum ctsw_code context_switch(pcb_t *process) {
     // Restore kernel r0-r12 (general registers)
     asm volatile("LDMDB sp!, {r0-r12}^");
 
-    // TODO: SVC Arguments...
-    while (true);
+    debug = true;
+    while(debug);
 
     switch (interrupt_type) {
         case 1:
-            process->args = 0;
-            // ret_code =  
+            process->ret = ret_code;
+            process->args = args;
         break;
 
         default:
@@ -95,6 +95,7 @@ enum ctsw_code context_switch(pcb_t *process) {
 
     // process->stack_frame = (arm_frame32_t *) process_stack;
 
+    while(true);
     return ret_code;
 }
 

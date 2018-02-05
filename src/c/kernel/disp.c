@@ -95,7 +95,7 @@ void dispatch() {
 
         va_list args = *(va_list *)process->args;
         switch (request) {
-            case SYS_FORK:
+            case SYS_CREATE:
             {
                 // First
                 void *func = va_arg(args, void*);
@@ -118,9 +118,9 @@ void dispatch() {
             case SYS_KILL:
                 // Later
                 break;
-            case SYS_SIG_RETURN:
-                // Later
-                break;
+            // case SYS_SIG_RETURN:
+            //     // Later
+            //     break;
             case (INT_TIMER):
             {
                 // Gradually demote high priority processes once they excede their quantum

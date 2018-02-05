@@ -33,6 +33,7 @@ typedef struct {
 typedef struct {
     pid_t pid;
     uint32_t ret;
+    uint32_t args;
     
     /* Stack */
     uint32_t    stack_size;
@@ -44,6 +45,11 @@ typedef struct {
 
 enum ctsw_code {
     SYS_CREATE,
+    SYS_YIELD,
+    SYS_EXIT,
+    SYS_WAIT_PID,
+    SYS_GET_PID,
+    SYS_KILL,
     INT_TIMER,
 };
 
@@ -55,4 +61,6 @@ extern void process_init();
 extern enum ctsw_code context_switch(pcb_t *process);
 
 extern int create(void (*func)(void), int stack_size);
+
+extern pid_t syscreate( void(*func)(void), uint32_t stack_size);
 #endif

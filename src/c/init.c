@@ -62,7 +62,7 @@ void master_core () {
     printf("[core%d] Executing from 0x%X\r\n", get_core_id(), master_core);
     __spin_unlock(&print_lock);
 
-    register_interrupt_handler(vector_table_svc, 0x80, &interrupt_handler);
+    register_interrupt_handler(vector_table_svc, 0x80, _int_svc);
     register_interrupt_handler(vector_table_svc, 0x81, interrupt_handler);
     register_interrupt_handler(vector_table_irq, 11, time_slice);
 
