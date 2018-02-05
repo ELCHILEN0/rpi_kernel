@@ -35,7 +35,9 @@ enum ctsw_code context_switch(pcb_t *process) {
     while(debug);
 
     // Push kernel r0-r12 (general registers)
-    asm volatile("STMIA sp!, {r0-r12}");
+    asm volatile("PUSH {r0-r12}");
+    // asm volatile("STMIA sp!, {sp}");
+    // asm volatile("STMIA sp!, {r0-r12}");
     // Swap kernel -> process stacks
     asm volatile(".global _kernel_to_process    \n\
     _kernel_to_process:                         \n\
@@ -46,7 +48,7 @@ enum ctsw_code context_switch(pcb_t *process) {
     // Restore process r0-pc (all registers), restoring pc jumps to the function
     asm volatile("LDMIA sp!, {r0-pc}^");
 
-    // Interrupt routine pushes registers
+    // Interrupt routine pushes registers (TODO verify and adjust)
     asm volatile(".global _int_svc  \n\
     _int_svc:                       \n\
         mov %0, #1          \n\
@@ -61,7 +63,9 @@ enum ctsw_code context_switch(pcb_t *process) {
     "   : "=r" (process_stack)
         : "r" (kernel_stack));
     // Restore kernel r0-r12 (general registers)
-    asm volatile("LDMDB sp!, {r0-r12}^");
+    // asm volatile("LDMDB sp!, {r0-r12}^");
+    // asm volatile("LDMDB sp,  {sp}^");
+    asm volatile("POP {r0-r12}");
 
     debug = true;
     while(debug);
@@ -95,7 +99,6 @@ enum ctsw_code context_switch(pcb_t *process) {
 
     // process->stack_frame = (arm_frame32_t *) process_stack;
 
-    while(true);
     return ret_code;
 }
 

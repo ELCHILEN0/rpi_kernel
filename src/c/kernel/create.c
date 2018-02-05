@@ -62,7 +62,8 @@ int create(void (*func)(void), int stack_size) {
     process->pid = next_pid++;
     process->stack_size = stack_size;
 
-    context_switch(process);
+    int i = context_switch(process);
+    printf("0x%d\r\n", i);
 
     // Process list entries
     // INIT_LIST_HEAD(&process->process_list);
