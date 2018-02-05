@@ -28,12 +28,12 @@ void kernel_init( void )
     
     // Initialize process, dispatcher, context and device structures.
     process_init();
-    // disp_init();
+    dispatcher_init();
     // context_init();
     // devices_init();
 
     // Create idle and root process
-    if (create(idleproc, 4096) < 0) {
+    if (create(idleproc, 4096, PRIORITY_IDLE) < 0) {
         __spin_lock(&print_lock);
         printf("failed to init idle() process\r\n");
         __spin_unlock(&print_lock);            
@@ -46,7 +46,7 @@ void kernel_init( void )
     // }
   
     // Dispatch processes and wait for system calls
-    // dispatch(); 
+    dispatch(); 
     // context_switch(get_process(0));
 
     printf("[kernel] Exiting... this should not happen\r\n");

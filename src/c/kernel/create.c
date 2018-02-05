@@ -32,7 +32,7 @@ process_t *get_process(pid_t pid) {
     return NULL;
 }
 
-int create(void (*func)(void), int stack_size) {
+int create(void (*func)(), int stack_size, enum process_priority priority) {
     if (stack_size < PROC_STACK)
         stack_size = PROC_STACK;    
 
@@ -61,19 +61,20 @@ int create(void (*func)(void), int stack_size) {
     //process->state = READY;
     process->pid = next_pid++;
     process->stack_size = stack_size;
-
-    int i = context_switch(process);
-    printf("0x%d\r\n", i);
+    process->initial_priority = priority;
+    process->current_priority = priority;
+    
+    // int i = context_switch(process);
 
     // Process list entries
-    // INIT_LIST_HEAD(&process->process_list);
-    // INIT_LIST_HEAD(&process->process_hash_list);
-    // INIT_LIST_HEAD(&process->sched_list);
+    INIT_LIST_HEAD(&process->process_list);
+    INIT_LIST_HEAD(&process->process_hash_list);
+    INIT_LIST_HEAD(&process->sched_list);
     // INIT_LIST_HEAD(&process->block_list);
     
     // Process Information Lists, different ways to access all processes
-    // list_add(&process->process_list, &process_list);
-    // list_add(&process->process_hash_list, get_process_bucket(process->pid));
+    list_add(&process->process_list, &process_list);
+    list_add(&process->process_hash_list, get_process_bucket(process->pid));
    
     // Proceses waiting for interaction from me
     // INIT_LIST_HEAD(&process->waiting_list);
@@ -88,8 +89,7 @@ int create(void (*func)(void), int stack_size) {
     //     process->sig_handlers[i] = NULL;
     // }
     // process->sig_handlers[SIGSTOP] = (void*) sysstop;
-    
-    // ready(process);
+    ready(process);    
 
     return process->pid;    
 }
