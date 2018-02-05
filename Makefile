@@ -1,6 +1,7 @@
 # The ARM toolchain prefix (32 bit = arm-...-eabi, 64 bit = aarch64-...-gnueabi)
-# TOOLCHAIN = arm-none-eabi
-TOOLCHAIN = /usr/local/gcc-arm-none-eabi-6-2017-q2-update/bin/arm-none-eabi
+TOOLCHAIN = arm-none-eabi
+# TOOLCHAIN = /usr/local/gcc-arm-none-eabi-6-2017-q2-update/bin/arm-none-eabi
+# TOOLCHAIN = /root/x-tools/armv8-rpi3-linux-gnueabihf/bin/armv8-rpi3-linux-gnueabihf
 # TOOLCHAIN = /root/x-tools/aarch64-rpi3-linux-gnueabi/bin/aarch64-rpi3-linux-gnueabi
 
 AARCH = 
@@ -18,7 +19,7 @@ COPY = /Volumes/boot
 SOBJ = bootcode.o vectors.o
 UOBJ = cstartup.o cstubs.o init.o peripheral.o gpio.o mailbox.o interrupts.o timer.o uart.o multicore.o cache.o
 HOBJ = cache.h gpio.h interrupts.h mailbox.h multicore.h peripheral.h timer.h uart.h
-KOBJ = kinit.o create.o ctsw.o
+KOBJ = kinit.o create.o ctsw.o syscall.o disp.o
 
 HOBJ += kernel/kernel.h kernel/list.h
 
@@ -62,16 +63,19 @@ SERIAL_BAUD_RATE = 115200
 serial-screen:
 	screen $(SERIAL_DEVICE) $(SERIAL_BAUD_RATE)
 
+# GDB_HOST = localhost
+GDB_HOST = docker.for.mac.host.internal
+
 gdb-core-0:
-	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -tui -ex="target remote :3333" -ex=continue
+	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -tui -ex="target remote $(GDB_HOST):3333" -ex=continue
 
 gdb-core-1:
-	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -ex="target remote :3334" -ex=continue
+	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -ex="target remote $(GDB_HOST):3334" -ex=continue
 	
 gdb-core-2:
-	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -ex="target remote :3335" -ex=continue
+	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -ex="target remote $(GDB_HOST):3335" -ex=continue
 	
 gdb-core-3:
-	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -ex="target remote :3336" -ex=continue
+	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -ex="target remote $(GDB_HOST):3336" -ex=continue
 
 

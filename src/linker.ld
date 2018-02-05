@@ -105,5 +105,5 @@ SECTIONS {
         . = . + 0x1000;    
         __irq_stack_end_core_3 = .;
     } > RAM
-    
+
 }

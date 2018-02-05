@@ -35,6 +35,8 @@ enum {
 
 extern void init_linear_addr_map();
 extern void enable_mmu(void);
+extern void disable_mmu(void);
+extern void warm_reset(void);
 
 extern uint32_t __attribute__((aligned(0x4000))) l1_page_table[4096];
 #endif

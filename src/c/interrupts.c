@@ -9,7 +9,6 @@
 #include "timer.h"
 #include "peripheral.h"
 
-// TODO: Unhandled exceptions to begin...
 interrupt_vector_t vector_table_svc[256];
 interrupt_vector_t vector_table_irq[26];
 
@@ -28,9 +27,9 @@ void register_interrupt_handler(interrupt_vector_t vector_table[], unsigned int 
     vector_table[i].handler = handler;
 }
 
-void interrupt_svc(int code) {
-    printf("[interrupt] Supvervisor Call (0x%X)\r\n", code);
-
+__attribute((naked)) void interrupt_svc(int code) {
+    // The following line clobbers r0-r3 so that the vector handler will not overwrite them
+    asm volatile ("nop" ::: "r0", "r1", "r2", "r3");
     interrupt_vector_t vector = vector_table_svc[code];
     vector.handler();
 }
@@ -70,6 +69,7 @@ void interrupt_fiq() {
 
 void interrupt_udef() {
     printf("[interrupt] Undefined Instruction\r\n");
+    while(true);        
 }
 
 void interrupt_pabt() {
@@ -98,6 +98,7 @@ void interrupt_pabt() {
     uint32_t code = (ifsr & (0b1111));
 
     printf("[interrupt] Prefetch Abort - (0x%X = %d) \r\n", ifsr, code, fault_status[code]);
+    while(true);
 }
 
 void interrupt_dabt() {
@@ -131,5 +132,6 @@ void interrupt_dabt() {
     uint32_t code = (dfsr & (1 << 10)) >> 6;
     code |= (dfsr & (0b1111));
 
-    printf("[interrupt] Data Abort - (0x%X = %d) \r\n", dfsr, code, fault_status[code]);
+    printf("[interrupt] Data Abort - (0x%X = %d) %s\r\n", dfsr, code, fault_status[code]);
+    while(true);    
 }

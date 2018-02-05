@@ -2,11 +2,12 @@
  */
 
 #include <stdarg.h>
+#include "kernel.h"
 
 // int getCPUtimes(process_t *p, process_status_t *ps);
 
 struct list_head process_list;
-// struct list_head ready_queues[IDLE + 1];
+struct list_head ready_queues[PRIORITY_HIGH + 1];
 // struct list_head block_queue;
 // struct list_head sleep_queue;
 
@@ -14,11 +15,10 @@ struct list_head process_list;
 /**
  * Initialize the process table and schedule lists.
  */
-void disp_init() {
-    // int i;
-    // for (i = 0; i <= IDLE; i++) {
-    //     INIT_LIST_HEAD(&ready_queues[i]);
-    // }
+void dispatcher_init() {
+    for (int i = PRIORITY_IDLE; i <= PRIORITY_HIGH; i++) {
+        INIT_LIST_HEAD(&ready_queues[i]);
+    }
 
     // INIT_LIST_HEAD(&block_queue);
     // INIT_LIST_HEAD(&sleep_queue);
@@ -30,13 +30,13 @@ void disp_init() {
  */
 process_t *next( void ) {
     int i;
-    for (i = 0; i <= IDLE; i++) {
+    for (i = PRIORITY_IDLE; i <= PRIORITY_HIGH; i++) {
         struct list_head *ready_queue = &ready_queues[i];
 
         if (list_empty(ready_queue)) continue;
 
         process_t *process = list_entry(ready_queue->next, process_t, sched_list);
-        process->state = RUNNING;
+        // process->state = RUNNING;
         // Reset its priority when it runs 
         //process->current_priority = process->initial_priority;
         return process;
@@ -53,11 +53,11 @@ void ready( process_t *process ) {
     // process->state = READY;
     // process->block_state = NONE;
 
-    // struct list_head *ready_queue = &ready_queues[process->current_priority];
+    struct list_head *ready_queue = &ready_queues[process->current_priority];
 
     // list_del_init(&process->block_list);
-    // list_del_init(&process->sched_list);
-    // list_add_tail(&process->sched_list, ready_queue);
+    list_del_init(&process->sched_list);
+    list_add_tail(&process->sched_list, ready_queue);
 }
 
 /*
@@ -65,13 +65,13 @@ void ready( process_t *process ) {
  * the functions block_state will be set as specified.  The process shall be 
  * removed from any existing scheduler queues.
  */
-void block( process_t *process, enum blocked_state reason ) {
-    // process->state = BLOCKED;
-    // process->block_state = reason;
+// void block( process_t *process, enum blocked_state reason ) {
+//     // process->state = BLOCKED;
+//     // process->block_state = reason;
 
-    // list_del_init(&process->sched_list);
-    // list_add_tail(&process->sched_list, &block_queue);
-}
+//     // list_del_init(&process->sched_list);
+//     // list_add_tail(&process->sched_list, &block_queue);
+// }
 
 /*
  * The dispatch function will handle requests from processes to invoke a
@@ -95,12 +95,12 @@ void dispatch() {
 
         va_list args = *(va_list *)process->args;
         switch (request) {
-            case SYS_FORK:
+            case SYS_CREATE:
             {
                 // First
                 void *func = va_arg(args, void*);
                 int stack = va_arg(args, int);
-                process->ret = create(func, stack, MED);
+                process->ret = create(func, stack, PRIORITY_MED);
                 break;
             }
             case SYS_YIELD:
@@ -118,29 +118,29 @@ void dispatch() {
             case SYS_KILL:
                 // Later
                 break;
-            case SYS_SIG_RETURN:
-                // Later
-                break;
+            // case SYS_SIG_RETURN:
+            //     // Later
+            //     break;
             case (INT_TIMER):
             {
                 // Gradually demote high priority processes once they excede their quantum
                 //if (process->current_priority > LOW)
                 //    process->current_priority--;
                 
-                process->cpu_time++;
+                // process->cpu_time++;
                
-                ready(process);
-                process = next();
-                tick();
-                end_of_intr();
+                // ready(process);
+                // process = next();
+                // tick();
+                // end_of_intr();
                 break;
             }
             default:
-                kprintf("Bad sys request %d, pid = %u\n", request, process->pid);
+                printf("Bad sys request %d, pid = %u\n", request, process->pid);
                 for (;;);
         }
     }
 
-    kprintf("Out of processes: dying\n");
+    printf("Out of processes: dying\n");
     for(;;);
 }

@@ -25,14 +25,14 @@ extern void _init_core(void);
 
 spinlock_t print_lock;
 
-extern void _InterruptEntryPoint(void);
+extern void _int_svc(void);
 
 void interrupt_handler() {
     static bool next_blinker_state = true;
     gpio_write(21, next_blinker_state);
     next_blinker_state = !next_blinker_state;
 
-    _InterruptEntryPoint();
+    _int_svc();
 }
 
 void time_slice() {
@@ -62,7 +62,7 @@ void master_core () {
     printf("[core%d] Executing from 0x%X\r\n", get_core_id(), master_core);
     __spin_unlock(&print_lock);
 
-    register_interrupt_handler(vector_table_svc, 0x80, &interrupt_handler);
+    register_interrupt_handler(vector_table_svc, 0x80, _int_svc);
     register_interrupt_handler(vector_table_svc, 0x81, interrupt_handler);
     register_interrupt_handler(vector_table_irq, 11, time_slice);
 
@@ -114,19 +114,18 @@ void cinit_core( ) {
             gpio_fsel(6, SEL_OUTPUT);
             gpio_fsel(13, SEL_OUTPUT);
             gpio_fsel(19, SEL_OUTPUT);
-            gpio_fsel(21, SEL_INPUT);
+            gpio_fsel(21, SEL_OUTPUT);
 
             uart_init(115200);
             init_jtag();
 
             printf("[core%d] Started...\r\n", core_id, master_core);
+            // init_linear_addr_map();
+            // enable_mmu();       
 
-            init_linear_addr_map();
-            enable_mmu();       
-
-            core_enable(1, (uint32_t) _init_core);
-            core_enable(2, (uint32_t) _init_core);
-            core_enable(3, (uint32_t) _init_core);     
+            // core_enable(1, (uint32_t) _init_core);
+            // core_enable(2, (uint32_t) _init_core);
+            // core_enable(3, (uint32_t) _init_core);     
 
             master_core(); // No more coprocessor changes, J-TAG entrypoint
         }

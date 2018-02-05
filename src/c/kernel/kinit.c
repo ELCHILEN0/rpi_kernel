@@ -3,12 +3,24 @@
 
 extern spinlock_t print_lock;
 
-void idleproc( void ) {
+void newproc() {
     __spin_lock(&print_lock);
-    printf("idleproc() running from 0x%X\r\n", idleproc);
-    __spin_unlock(&print_lock);   
+    printf("newproc()\r\n");
+    __spin_unlock(&print_lock); 
+}
 
-    asm("SVC 0x80");
+void idleproc( uint32_t r0, uint32_t r1, uint32_t r2 ) {
+    __spin_lock(&print_lock);
+    printf("idleproc(%d, %d, %d)\r\n", r0, r1, r2);
+    __spin_unlock(&print_lock); 
+    // __spin_lock(&print_lock);
+    // printf("idleproc() running from 0x%X (%X, %X, %X) debug here...\r\n", idleproc, r0, r1, r2);
+    // __spin_unlock(&print_lock);   
+    // // bool debug = false;
+    // // while(!debug);
+
+
+    syscreate(&newproc, 1024);
 
     while(true) {
         asm("wfi"); 
@@ -20,14 +32,15 @@ void kernel_init( void )
     __spin_lock(&print_lock);
     printf("kernel_init()\r\n");
     __spin_unlock(&print_lock); 
+    
     // Initialize process, dispatcher, context and device structures.
     process_init();
-    // disp_init();
+    dispatcher_init();
     // context_init();
     // devices_init();
 
     // Create idle and root process
-    if (create( &idleproc, 4096) < 0) {
+    if (create(idleproc, 4096, PRIORITY_IDLE) < 0) {
         __spin_lock(&print_lock);
         printf("failed to init idle() process\r\n");
         __spin_unlock(&print_lock);            
@@ -40,8 +53,7 @@ void kernel_init( void )
     // }
   
     // Dispatch processes and wait for system calls
-    // dispatch(); 
-    // context_switch(get_process(0));
+    dispatch(); 
 
     printf("[kernel] Exiting... this should not happen\r\n");
     while(true);
