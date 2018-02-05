@@ -34,38 +34,42 @@ enum ctsw_code context_switch(pcb_t *process) {
     bool debug = true;
     while(debug);
 
-    // Push kernel r0-r12 (general registers)
+    // Push kernel r0-r12 (general registers), sp and lr are implicity stored (banked)
     asm volatile("PUSH {r0-r12}");
-    // asm volatile("STMIA sp!, {sp}");
-    // asm volatile("STMIA sp!, {r0-r12}");
-    // Swap kernel -> process stacks
+    // Switch to USER mode and update sp
     asm volatile(".global _kernel_to_process    \n\
     _kernel_to_process:                         \n\
-        MOV %0, sp          \n\
-        MOV sp, %1          \n\
-    "   : "=r" (kernel_stack)
-        : "r" (process_stack));
-    // Restore process r0-pc (all registers), restoring pc jumps to the function
-    asm volatile("LDMIA sp!, {r0-pc}^");
+        MOV r0, #(CPSR_MODE_USER | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT ) \n\
+        MSR CPSR_c, r0      \n\
+        MOV sp, %0          \n\
+    "   : "=r" (process->frame)
+        :: "r0");
 
-    // Interrupt routine pushes registers (TODO verify and adjust)
-    asm volatile(".global _int_svc  \n\
-    _int_svc:                       \n\
-        mov %0, #1          \n\
-        mov %1, r1          \n\
-        mov %2, r2          \n\
-    "   : "=r" (interrupt_type), "=r" (ret_code), "=r" (args));
-    // Swap process -> kernel stacks
-    asm volatile(".global _process_to_kernel    \n\
-    _process_to_kernel:                         \n\
-        MOV %0, sp           \n\
-        MOV sp, %1           \n\
-    "   : "=r" (process_stack)
-        : "r" (kernel_stack));
-    // Restore kernel r0-r12 (general registers)
-    // asm volatile("LDMDB sp!, {r0-r12}^");
-    // asm volatile("LDMDB sp,  {sp}^");
-    asm volatile("POP {r0-r12}");
+    // Restore process r0-r12, lr (working set)
+    asm volatile("POP {r0-r12, lr}");
+    asm volatile("MOVS pc, lr");
+
+    // Switch to SYSTEM mode to save USER sp in process->frame
+    // Read USER syscall args ... (r1-r2)
+    // Switch back to SVC restoring sp implicitl
+    asm volatile(".global _process_to_kernel        \n\
+    _process_to_kernel:                             \n\
+    .global _int_syscall                            \n\
+    _int_syscall:                                   \n\
+        MOV r0, #(CPSR_MODE_SYSTEM | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT)   \n\
+        MSR CPSR_c, r0      \n\
+        MOV %3, sp          \n\
+        MOV %0, #1          \n\
+        MOV %1, r1          \n\
+        MOV %2, r2          \n\
+        MOV r0, #(CPSR_MODE_SVC | CPSR_IRQ_INHIBT | CPSR_FIQ_INHIBIT)   \n\
+        MSR CPSR_c, r0      \n\
+    "   : "=r" (interrupt_type), "=r" (ret_code), "=r" (args)
+        : "r" (process->frame));
+    // Restore kernel r0-r12 (general registers), sp and lr are already restored (banked)
+    asm volatile("POP {r0-r12, lr}");
+
+    process->frame = (arm_frame32_t *) process_stack;    
 
     debug = true;
     while(debug);
@@ -82,23 +86,7 @@ enum ctsw_code context_switch(pcb_t *process) {
             __spin_unlock(&print_lock);
         break; 
     }
-  
-    process->frame = (arm_frame32_t *) process_stack;
-
-    // switch (interrupt_type) {
-    //     case 0:
-    //         process->ret = ret_code;
-    //         //process->ret = process->stack_frame->eax;
-    //         ret_code = INT_TIMER;
-    //     break;
-
-    //     case 1:
-    //         process->args = args;
-    //     break;
-    // }
-
-    // process->stack_frame = (arm_frame32_t *) process_stack;
-
+    
     return ret_code;
 }
 

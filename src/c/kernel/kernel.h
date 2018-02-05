@@ -37,10 +37,10 @@ enum ctsw_code {
 
 typedef struct {
     uint32_t reg[13];
-    uint32_t sp;
+    // uint32_t sp; (ignored since implicitly set)
     uint32_t lr;
-    uint32_t pc;
-    // uint32_t cpsr;
+    // uint32_t pc; (on return pc = lr ...)
+    // uint32_t cpsr; (ARM handles this, initial setup should be done)
     // union {
     //     uint32_t spsr;
         uint32_t stack_slots[0];
