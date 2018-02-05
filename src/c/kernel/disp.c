@@ -30,7 +30,7 @@ void dispatcher_init() {
  */
 process_t *next( void ) {
     int i;
-    for (i = PRIORITY_IDLE; i <= PRIORITY_HIGH; i++) {
+    for (i = PRIORITY_HIGH; i >= PRIORITY_IDLE; i--) {
         struct list_head *ready_queue = &ready_queues[i];
 
         if (list_empty(ready_queue)) continue;
@@ -101,6 +101,8 @@ void dispatch() {
                 void *func = va_arg(args, void*);
                 int stack = va_arg(args, int);
                 process->ret = create(func, stack, PRIORITY_MED);
+                ready(process);
+                process = next();
                 break;
             }
             case SYS_YIELD:

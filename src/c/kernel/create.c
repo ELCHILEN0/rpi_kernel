@@ -54,7 +54,7 @@ int create(void (*func)(), int stack_size, enum process_priority priority) {
     }
 
     process->frame->sp = (uint32_t) &process->frame->lr;
-    process->frame->lr = (uint32_t) func;
+    process->frame->lr = (uint32_t) func; // process destructor...
     process->frame->pc = (uint32_t) func;
     // asm("MRS %0, CPSR" :: "r" (process->frame->cpsr));
     
