@@ -11,7 +11,7 @@ void newproc() {
 
 void idleproc( uint32_t r0, uint32_t r1, uint32_t r2 ) {
     __spin_lock(&print_lock);
-    printf("idleproc(%d, %d, %d)\r\n", r0, r1, r2);
+    printf("idleproc d(%d, %d, %d)\r\n", r0, r1, r2);
     __spin_unlock(&print_lock); 
     // __spin_lock(&print_lock);
     // printf("idleproc() running from 0x%X (%X, %X, %X) debug here...\r\n", idleproc, r0, r1, r2);
@@ -38,7 +38,6 @@ void kernel_init( void )
     dispatcher_init();
     // context_init();
     // devices_init();
-
     // Create idle and root process
     if (create(idleproc, 4096, PRIORITY_IDLE) < 0) {
         __spin_lock(&print_lock);

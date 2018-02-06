@@ -1,25 +1,28 @@
 # The ARM toolchain prefix (32 bit = arm-...-eabi, 64 bit = aarch64-...-gnueabi)
-TOOLCHAIN = arm-none-eabi
-TOOLCHAIN = /usr/local/gcc-arm-none-eabi-6-2017-q2-update/bin/arm-none-eabi
+# TOOLCHAIN = arm-none-eabi
+# TOOLCHAIN = /usr/local/gcc-arm-none-eabi-6-2017-q2-update/bin/arm-none-eabi
 # TOOLCHAIN = /root/x-tools/armv8-rpi3-linux-gnueabihf/bin/armv8-rpi3-linux-gnueabihf
-# TOOLCHAIN = /root/x-tools/aarch64-rpi3-linux-gnueabi/bin/aarch64-rpi3-linux-gnueabi
+TOOLCHAIN = /root/x-tools/aarch64-rpi3-linux-gnueabi/bin/aarch64-rpi3-linux-gnueabi
 
 AARCH = 
-CCFLAGS = -nostartfiles -ffreestanding -mfpu=vfp -mcpu=cortex-a53 -ggdb
+CCFLAGS = -nostartfiles -ffreestanding -mcpu=cortex-a53 -ggdb
+# CCFLAGS = -nostartfiles -ffreestanding -mfpu=vfp -mcpu=cortex-a53 -ggdb
 
 # AARCH = -march=armv6 
 # CCFLAGS = -O2 -Wall -nostartfiles -ffreestanding $(AARCH)
 
-TARGET = kernel8-32
+TARGET = kernel8
 BUILD = build
 SOURCE = src
 
 COPY = /Volumes/boot
 
-SOBJ = bootcode.o vectors.o
-UOBJ = cstartup.o cstubs.o init.o peripheral.o gpio.o mailbox.o interrupts.o timer.o uart.o multicore.o cache.o
-HOBJ = cache.h gpio.h interrupts.h mailbox.h multicore.h peripheral.h timer.h uart.h
-KOBJ = kinit.o create.o ctsw.o syscall.o disp.o
+SOBJ = bootcode64.o
+UOBJ = cstartup.o cstubs.o init.o peripheral.o gpio.o multicore.o uart.o
+# SOBJ = bootcode.o vectors.o
+# UOBJ = cstartup.o cstubs.o init.o peripheral.o gpio.o mailbox.o interrupts.o timer.o uart.o multicore.o cache.o
+# HOBJ = cache.h gpio.h interrupts.h mailbox.h multicore.h peripheral.h timer.h uart.h
+# KOBJ = kinit.o create.o ctsw.o syscall.o disp.o
 
 HOBJ += kernel/kernel.h kernel/list.h
 

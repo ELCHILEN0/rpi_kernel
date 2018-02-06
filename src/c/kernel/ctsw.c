@@ -28,52 +28,56 @@ enum ctsw_code context_switch(pcb_t *process) {
 
     // process_stack = (uint32_t) process->frame;
 
+    asm(".global _int_syscall   \n\
+    _int_syscall: \n\
+        nop");
+
     __spin_lock(&print_lock);
     printf("context switch gdb hook...\r\n");
     __spin_unlock(&print_lock);  
-    bool debug = true;
-    while(debug);
+    // bool debug = true;
+    // while(debug);
 
-    // Push kernel r0-r12 (general registers), sp and lr are implicity stored (banked)
-    asm volatile("PUSH {r0-r12}");
+    // // Push kernel r0-r12 (general registers), sp and lr are implicity stored (banked)
+    asm volatile("PUSH {r0-r12, lr}");
     // Switch to USER mode and update sp
     asm volatile(".global _kernel_to_process    \n\
     _kernel_to_process:                         \n\
-        MOV r0, #(CPSR_MODE_USER | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT ) \n\
+        MOV r0, #(0x1F | 0x80 | 0x40) \n\
         MSR CPSR_c, r0      \n\
         MOV sp, %0          \n\
     "   : "=r" (process->frame)
         :: "r0");
 
-    // Restore process r0-r12, lr (working set)
+    // // Restore process r0-r12, lr (working set)
     asm volatile("POP {r0-r12, lr}");
-    asm volatile("MOVS pc, lr");
+    asm volatile("BX lr");
 
     uint32_t interrupt_type, ret_code, args;
-    // Switch to SYSTEM mode to save USER sp in process->frame
-    // Read USER syscall args ... (r1-r2)
-    // Switch back to SVC restoring sp implicitl
-    asm volatile(".global _process_to_kernel        \n\
-    _process_to_kernel:                             \n\
-    .global _int_syscall                            \n\
-    _int_syscall:                                   \n\
-        MOV r0, #(CPSR_MODE_SYSTEM | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT)   \n\
-        MSR CPSR_c, r0      \n\
-        MOV %3, sp          \n\
-        MOV %0, #1          \n\
-        MOV %1, r1          \n\
-        MOV %2, r2          \n\
-        MOV r0, #(CPSR_MODE_SVC | CPSR_IRQ_INHIBT | CPSR_FIQ_INHIBIT)   \n\
-        MSR CPSR_c, r0      \n\
-    "   : "=r" (interrupt_type), "=r" (ret_code), "=r" (args)
-        : "r" (process->frame));
-    // Restore kernel r0-r12 (general registers), sp and lr are already restored (banked)
-    asm volatile("POP {r0-r12, lr}");
+    // // Switch to SYSTEM mode to save USER sp in process->frame
+    // // Read USER syscall args ... (r1-r2)
+    // // Switch back to SVC restoring sp implicitly
+    // asm volatile(".global _process_to_kernel        \n\
+    // _process_to_kernel:                             \n\
+    // .global _int_syscall                            \n\
+    // _int_syscall:                                   \n\
+    //     MOV r0, #(0x1F | 0x80 | 0x40)   \n\
+    //     MSR CPSR_c, r0      \n\
+    //     MOV %3, sp          \n\
+    //     MOV %0, #1          \n\
+    //     MOV %1, r1          \n\
+    //     MOV %2, r2          \n\
+    //     MOV r0, #(0x13 | 0x80 | 0x40)   \n\
+    //     MSR CPSR_c, r0      \n\
+    // "   : "=r" (interrupt_type), "=r" (ret_code), "=r" (args)
+    //     : "r" (process->frame));
+    // // Restore kernel r0-r12 (general registers), sp and lr are already restored (banked)
+    // asm volatile("POP {r0-r12, lr}");
 
     // process->frame = (arm_frame32_t *) process_stack;    
 
-    debug = true;
-    while(debug);
+    // debug = true;
+    // while(debug);
 
     switch (interrupt_type) {
         case 1:

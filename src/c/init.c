@@ -19,57 +19,44 @@
 
 uint32_t act_message[] = {32, 0, 0x00038041, 8, 0, 130, 0, 0};
 
-extern void __enable_interrupts(void);
-extern void __disable_interrupts(void);
+// extern void __enable_interrupts(void);
+// extern void __disable_interrupts(void);
 extern void _init_core(void);
 
 spinlock_t print_lock;
 
-extern void _int_svc(void);
+// extern void _int_syscall(void);
 
 void interrupt_handler() {
     static bool next_blinker_state = true;
     gpio_write(21, next_blinker_state);
     next_blinker_state = !next_blinker_state;
 
-    _int_svc();
+    // _int_syscall();
 }
 
 void time_slice() {
-    local_timer_reset();
+    // local_timer_reset();
 
     static bool next_blinker_state = true;
     gpio_write(13, next_blinker_state);
     next_blinker_state = !next_blinker_state;
 }
 
-void init_jtag() {
-    gpio_pull(22, false, true);
-    gpio_pull(24, false, true);
-    gpio_pull(25, false, true);
-    gpio_pull(26, false, true);
-    gpio_pull(27, false, true);
-
-    gpio_fsel(22, SEL_ALT4); // TRST
-    gpio_fsel(24, SEL_ALT4); // TDO
-    gpio_fsel(25, SEL_ALT4); // TCK
-    gpio_fsel(26, SEL_ALT4); // TDI
-    gpio_fsel(27, SEL_ALT4); // TMS
-}
-
 void master_core () {
     __spin_lock(&print_lock);
-    printf("[core%d] Executing from 0x%X\r\n", get_core_id(), master_core);
+    printf("Executing....\r\n");
+    // printf("[core%d] Executing from 0x%X\r\n", get_core_id(), master_core);
     __spin_unlock(&print_lock);
 
-    register_interrupt_handler(vector_table_svc, 0x80, _int_svc);
-    register_interrupt_handler(vector_table_svc, 0x81, interrupt_handler);
-    register_interrupt_handler(vector_table_irq, 11, time_slice);
+    // register_interrupt_handler(vector_table_svc, 0x80, _int_syscall);
+    // register_interrupt_handler(vector_table_svc, 0x81, interrupt_handler);
+    // register_interrupt_handler(vector_table_irq, 11, time_slice);
 
-    local_timer_interrupt_routing(0);
-    local_timer_start(0x038FFFF);
+    // local_timer_interrupt_routing(0);
+    // local_timer_start(0x038FFFF);
 
-    kernel_init();
+    // kernel_init();
 
     while (true) {
         for (int i = 0; i < 0x10000 * 30; i++);
@@ -85,7 +72,7 @@ void slave_core() {
     int core_gpio[3] = { 6, 13, 19 };
 
     __spin_lock(&print_lock);
-    printf("[core%d] Executing from 0x%X!\r\n", core_id, slave_core);
+    // printf("[core%d] Executing from 0x%X!\r\n", core_id, slave_core);
     for (int i = 0; i < 0x1000000; i++) { asm("nop"); }
     __spin_unlock(&print_lock);
 
@@ -101,14 +88,14 @@ void slave_core() {
 
 void cinit_core( ) {
     // OK status (use till GPIO working)
-    act_message[6] = 1;
-    mailbox_write(mailbox0, MB0_PROPERTY_TAGS_ARM_TO_VC, (uint32_t) &act_message);
+    // act_message[6] = 1;
+    // mailbox_write(mailbox0, MB0_PROPERTY_TAGS_ARM_TO_VC, (uint32_t) &act_message);
 
     int core_id = get_core_id();
     switch(core_id) {
         case 0:
         {
-            init_vector_tables();
+            // init_vector_tables();
 
             gpio_fsel(5, SEL_OUTPUT);
             gpio_fsel(6, SEL_OUTPUT);
@@ -116,10 +103,16 @@ void cinit_core( ) {
             gpio_fsel(19, SEL_OUTPUT);
             gpio_fsel(21, SEL_OUTPUT);
 
-            uart_init(115200);
-            init_jtag();
+            gpio_write(5, true);
+            gpio_write(6, true);
+            gpio_write(13, true);
+            gpio_write(19, true);
+            gpio_write(21, true);
 
-            printf("[core%d] Started...\r\n", core_id, master_core);
+            uart_init(115200);
+
+            printf("Started...\r\n");
+            // printf("[core%d] Started...\r\n", core_id, master_core);
             // init_linear_addr_map();
             // enable_mmu();       
 
@@ -132,12 +125,12 @@ void cinit_core( ) {
         break;
 
         default:
-            enable_mmu();
+            // enable_mmu();
             slave_core(); // No more coprocessor changes, J-TAG entrypoint
             break;
     }
     
     // Error status
-    act_message[6] = 0;
-    mailbox_write(mailbox0, MB0_PROPERTY_TAGS_ARM_TO_VC, (uint32_t) &act_message);
+    // act_message[6] = 0;
+    // mailbox_write(mailbox0, MB0_PROPERTY_TAGS_ARM_TO_VC, (uint32_t) &act_message);
 }
