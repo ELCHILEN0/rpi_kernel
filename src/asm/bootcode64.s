@@ -1,36 +1,5 @@
 .section .text
 
-// See ARM section A2.2 (Processor Modes)
-.equ    CPSR_MODE_USER,         0x10
-.equ    CPSR_MODE_FIQ,          0x11
-.equ    CPSR_MODE_IRQ,          0x12
-.equ    CPSR_MODE_SVC,          0x13
-.equ    CPSR_MODE_ABORT,        0x17
-.equ    CPSR_MODE_UNDEFINED,    0x1B
-.equ    CPSR_MODE_SYSTEM,       0x1F
-
-// See ARM section A2.5 (Program status registers)
-.equ    CPSR_IRQ_INHIBIT,       0x80
-.equ    CPSR_FIQ_INHIBIT,       0x40
-.equ    CPSR_THUMB,             0x20
-
-.equ	SCTLR_ENABLE_DATA_CACHE,        0x4
-.equ	SCTLR_ENABLE_BRANCH_PREDICTION, 0x800
-.equ	SCTLR_ENABLE_INSTRUCTION_CACHE, 0x1000
-
-.global _vectors
-_vectors:
-    b _init_core
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-    nop
-
-hang:
-    b hang
 
 /**
  * On startup the armstub runs which is located from 0x0 - 0x100
@@ -55,20 +24,9 @@ hang:
 
 .global _init_core
 _init_core:
-
-/*
-    // R0 = System Control Register
-    mrc p15,0,r0,c1,c0,0
-	
-    // Enable caches and branch prediction
-    orr r0,#SCTLR_ENABLE_BRANCH_PREDICTION
-    orr r0,#SCTLR_ENABLE_DATA_CACHE
-    orr r0,#SCTLR_ENABLE_INSTRUCTION_CACHE
-
-    // System Control Register = R0
-    mcr p15,0,r0,c1,c0,0
-  */
     b _init_core_0
+
+hang:
     b hang
 
 _core_vectors:
@@ -78,6 +36,19 @@ _core_vectors:
     .word _init_core_3
 
 _init_core_0:
+    bl cinit_core
+
+#if 0
+    ldr x0, =_vectors_el1
+    msr vbar_el1, x0
+#endif
+
+#if 1
+    bl drop_to_el1
+#if 0
+    bl drop_to_el0
+#endif
+#endif
 
     /**
     * Finally branch to higher level c routines.
@@ -93,3 +64,32 @@ _init_core_2:
 
 _init_core_3:
   b hang
+
+drop_to_el1:
+	mov x0, #0x80000000 // 64-bit 
+	msr	hcr_el2, x0
+
+	mov	x0, sp
+	msr	sp_el1, x0	// SP_EL1 = SP_EL2
+
+	mov x0, #0x3c5
+	msr spsr_el2, x0
+
+	mov elr_el2, lr // lr return address
+	eret
+
+drop_to_el0:
+    mov x0, sp
+    msr sp_el0, x0 // SP_EL0 = SP_EL1
+
+    mov x0, #3c0
+    msr spsr_el1, x0
+
+    mov elr_el1, lr // lr return address
+    eret
+
+enable_interrupts:
+    msr daifset #(0x1 | 0x2 | 0x4)
+
+disable_interrupts:
+    msr daifsclr #(0x1 | 0x2 | 0x4)
