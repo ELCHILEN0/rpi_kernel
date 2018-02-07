@@ -1,4 +1,4 @@
-ENTRY(_vectors)
+ENTRY(_init_core)
 
 MEMORY
 {
