@@ -39,7 +39,7 @@ enum ctsw_code context_switch(pcb_t *process) {
     // Switch to USER mode and update sp
     asm volatile(".global _kernel_to_process    \n\
     _kernel_to_process:                         \n\
-        MOV r0, #(CPSR_MODE_USER | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT ) \n\
+        MOV r0, #(0x10 | 0x80 | 0x40 ) \n\
         MSR CPSR_c, r0      \n\
         MOV sp, %0          \n\
     "   : "=r" (process->frame)
@@ -57,13 +57,13 @@ enum ctsw_code context_switch(pcb_t *process) {
     _process_to_kernel:                             \n\
     .global _int_syscall                            \n\
     _int_syscall:                                   \n\
-        MOV r0, #(CPSR_MODE_SYSTEM | CPSR_IRQ_INHIBIT | CPSR_FIQ_INHIBIT)   \n\
+        MOV r0, #(0x1F | 0x80 | 0x40)   \n\
         MSR CPSR_c, r0      \n\
         MOV %3, sp          \n\
         MOV %0, #1          \n\
         MOV %1, r1          \n\
         MOV %2, r2          \n\
-        MOV r0, #(CPSR_MODE_SVC | CPSR_IRQ_INHIBT | CPSR_FIQ_INHIBIT)   \n\
+        MOV r0, #(0x13 | 0x80 | 0x40)   \n\
         MSR CPSR_c, r0      \n\
     "   : "=r" (interrupt_type), "=r" (ret_code), "=r" (args)
         : "r" (process->frame));
