@@ -33,18 +33,20 @@ void __spin_unlock(spinlock_t *lock) {
     // __sync_lock_release(&lock->flag);
 }
 
-#define CORE0_MBOX3_SET             0x4000008C
-#define CORE1_MBOX3_R               0x400000DC
-#define CORE2_MBOX3_R               0x400000EC
-#define CORE3_MBOX3_R               0x400000FC
-
 /*
  * Signal the specified core to jump to the address at addr.  After signaling,
  * the calling core goes into WFE mode until the target core signals SEV.  This
  * is to ensure startup code can run.
+ * 
+ * https://github.com/raspberrypi/tools/blob/master/armstubs/armstub8.S#L109
  */
 void core_enable(uint32_t core, uint32_t addr)
 {
-    mmio_write(CORE0_MBOX3_SET + 0x10 * core, addr);
+    uint64_t *wakeup_addr = (uint64_t *) 0xd8;
+    wakeup_addr[0] = addr;
+    wakeup_addr[1] = addr;
+    wakeup_addr[2] = addr;
+    wakeup_addr[3] = addr;
+
     asm("SEV");
 }
