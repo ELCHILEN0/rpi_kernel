@@ -45,7 +45,7 @@ void time_slice() {
 
 void master_core () {
     __spin_lock(&print_lock);
-    printf("Executing....\r\n");
+    // printf("Executing....\r\n");
     // printf("[core%d] Executing from 0x%X\r\n", get_core_id(), master_core);
     __spin_unlock(&print_lock);
 
@@ -86,10 +86,10 @@ void slave_core() {
     }
 }
 
-void cinit_core( ) {
+void cinit_core(void) {
     // OK status (use till GPIO working)
-    // act_message[6] = 1;
-    // mailbox_write(mailbox0, MB0_PROPERTY_TAGS_ARM_TO_VC, (uint32_t) &act_message);
+    act_message[6] = 1;
+    mailbox_write(mailbox0, MB0_PROPERTY_TAGS_ARM_TO_VC, (uint32_t) &act_message);
 
     int core_id = get_core_id();
     switch(core_id) {
@@ -111,26 +111,36 @@ void cinit_core( ) {
 
             uart_init(115200);
 
-            printf("Started...\r\n");
+            uart_putc('H');
+            uart_putc('e');
+            uart_putc('l');
+            uart_putc('l');
+            uart_putc('o');
+            uart_putc('\r');
+            uart_putc('\n');
+
+            // void *test = malloc(sizeof(int));
+
+            // printf("Started...\r\n");
             // printf("[core%d] Started...\r\n", core_id, master_core);
             // init_linear_addr_map();
             // enable_mmu();       
 
-            // core_enable(1, (uint32_t) _init_core);
-            // core_enable(2, (uint32_t) _init_core);
-            // core_enable(3, (uint32_t) _init_core);     
+            core_enable(1, (uint32_t) _init_core);
+            core_enable(2, (uint32_t) _init_core);
+            core_enable(3, (uint32_t) _init_core);     
 
-            master_core(); // No more coprocessor changes, J-TAG entrypoint
+            master_core();
         }
         break;
 
         default:
             // enable_mmu();
-            slave_core(); // No more coprocessor changes, J-TAG entrypoint
+            slave_core();
             break;
     }
     
     // Error status
-    // act_message[6] = 0;
-    // mailbox_write(mailbox0, MB0_PROPERTY_TAGS_ARM_TO_VC, (uint32_t) &act_message);
+    act_message[6] = 0;
+    mailbox_write(mailbox0, MB0_PROPERTY_TAGS_ARM_TO_VC, (uint32_t) &act_message);
 }

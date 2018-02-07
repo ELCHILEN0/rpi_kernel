@@ -5,7 +5,7 @@
 TOOLCHAIN = /root/x-tools/aarch64-rpi3-linux-gnueabi/bin/aarch64-rpi3-linux-gnueabi
 
 AARCH = 
-CCFLAGS = -nostartfiles -ffreestanding -mcpu=cortex-a53 -ggdb
+CCFLAGS = -Wall -nostartfiles -ffreestanding -mcpu=cortex-a53 -ggdb -nostdlib -lc -static
 # CCFLAGS = -nostartfiles -ffreestanding -mfpu=vfp -mcpu=cortex-a53 -ggdb
 
 # AARCH = -march=armv6 
@@ -18,7 +18,7 @@ SOURCE = src
 COPY = /Volumes/boot
 
 SOBJ = bootcode64.o
-UOBJ = cstartup.o cstubs.o init.o peripheral.o gpio.o multicore.o uart.o
+UOBJ = cstartup.o cstubs.o init.o peripheral.o gpio.o multicore.o uart.o mailbox.o
 # SOBJ = bootcode.o vectors.o
 # UOBJ = cstartup.o cstubs.o init.o peripheral.o gpio.o mailbox.o interrupts.o timer.o uart.o multicore.o cache.o
 # HOBJ = cache.h gpio.h interrupts.h mailbox.h multicore.h peripheral.h timer.h uart.h
@@ -70,7 +70,7 @@ serial-screen:
 GDB_HOST = docker.for.mac.host.internal
 
 gdb-core-0:
-	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -tui -ex="target remote $(GDB_HOST):3333" -ex=continue
+	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -tui -ex "target remote $(GDB_HOST):3333" -ex "tui enable" -ex "tui reg general" -ex "set confirm off" -ex "load $(BUILD)/$(TARGET).elf"
 
 gdb-core-1:
 	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -ex="target remote $(GDB_HOST):3334" -ex=continue

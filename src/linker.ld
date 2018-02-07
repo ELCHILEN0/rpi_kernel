@@ -44,33 +44,13 @@ SECTIONS {
 
     .stack_core_0 : {
         . = ALIGN(8);
-        __user_stack_start_core_0 = .;
+        __el0_stack_start_core_0 = .;
         . = . + 0x1000;    
-        __user_stack_end_core_0 = .;
+        __el0_stack_end_core_0 = .;
 
-        __fiq_stack_start_core_0 = .;
+        __el1_stack_start_core_0 = .;
         . = . + 0x1000;    
-        __fiq_stack_end_core_0 = .;
-        
-        __irq_stack_start_core_0 = .;
-        . = . + 0x1000;    
-        __irq_stack_end_core_0 = .;
-
-        __svr_stack_start_core_0 = .;
-        . = . + 0x1000;    
-        __svr_stack_end_core_0 = .;
-
-        __abt_stack_start_core_0 = .;
-        . = . + 0x1000;    
-        __abt_stack_end_core_0 = .;
-
-        __udef_stack_start_core_0 = .;
-        . = . + 0x1000;    
-        __udef_stack_end_core_0 = .;
-        
-        __sys_stack_start_core_0 = .;
-        . = . + 0x1000;    
-        __sys_stack_end_core_0 = .;
+        __el1_stack_end_core_0 = .;
     } > RAM
 
     .stack_core_1 : {

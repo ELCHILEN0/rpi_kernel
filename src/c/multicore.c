@@ -5,8 +5,10 @@
 
 uint32_t get_core_id( void ) {
     uint32_t core_id;
-    // asm("mrc     p15, 0, %0, c0, c0, 5; \
-    //     ubfx    %0, %0, #0, #2" : "=r" (core_id));
+
+    asm ("MRS x0, MPIDR_EL1     \n\
+          UBFX x0, x0, #0, #2   \n\
+    " : "=r" (core_id));
 
     return core_id;
 }

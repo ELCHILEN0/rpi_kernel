@@ -25,38 +25,77 @@
 // http://infocenter.arm.com/help/topic/com.arm.doc.dai0527a/DAI0527A_baremetal_boot_code_for_ARMv8_A_processors.pdf
 .global _init_core
 _init_core:
-    b _init_core_0
+    bl enter_el1
+
+    MOV    X0,  XZR
+    MOV    X1,  XZR
+    MOV    X2,  XZR
+    MOV    X3,  XZR
+    MOV    X4,  XZR
+    MOV    X5,  XZR
+    MOV    X6,  XZR
+    MOV    X7,  XZR
+    MOV    X8,  XZR
+    MOV    X9,  XZR
+    MOV    X10, XZR
+    MOV    X11, XZR
+    MOV    X12, XZR
+    MOV    X13, XZR
+    MOV    X14, XZR
+    MOV    X15, XZR
+    MOV    X16, XZR
+    MOV    X17, XZR
+    MOV    X18, XZR
+    MOV    X19, XZR
+    MOV    X20, XZR
+    MOV    X21, XZR
+    MOV    X22, XZR
+    MOV    X23, XZR
+    MOV    X24, XZR
+    MOV    X25, XZR
+    MOV    X26, XZR
+    MOV    X27, XZR
+    MOV    X28, XZR
+    MOV    X29, XZR
+    MOV    X30, XZR
+
+    // Jump to core init
+    MRS x0, MPIDR_EL1
+    UBFX x0, x0, #0, #2
+
+    ADR x1, _core_vectors
+    MOV x2, #4
+    MADD x1, x0, x2, x1
+    BR x1
 
 hang:
     b hang
 
 _core_vectors:
-    .word _init_core_0
-    .word _init_core_1
-    .word _init_core_2
-    .word _init_core_3
+    B _init_core_0
+    B _init_core_1
+    B _init_core_2
+    B _init_core_3
 
 _init_core_0:
-    //bl cinit_core
-
 #if 0
     //ldr x0, =_vectors_el1
     //msr vbar_el1, x0
 #endif
+    ldr x0, =__el1_stack_end_core_0
+    mov sp, x0
 
-#if 1
-    bl enter_el1
-    nop
-    nop
-#if 1
+/*
     bl enter_el0
-#endif
-#endif
+
+    ldr x0, =__el0_stack_end_core_0
+    mov sp, x0
+*/
 
     /**
     * Finally branch to higher level c routines.
     */
-    bl cinit_core
+    bl cstartup
     b hang
 
 _init_core_1:
@@ -97,10 +136,8 @@ enter_el0:
     MSR	ELR_el1, x30
 	ERET
 
-/*
 enable_interrupts:
-    msr daifset #(0x1 | 0x2 | 0x4)
+    MSR DAIFset, #(0x1 | 0x2 | 0x4)
 
 disable_interrupts:
-    msr daifsclr #(0x1 | 0x2 | 0x4)
-*/
+    MSR DAIFclr, #(0x1 | 0x2 | 0x4)
