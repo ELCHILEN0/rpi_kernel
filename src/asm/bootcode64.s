@@ -1,30 +1,9 @@
 .section .text
 
-
-/**
- * On startup the armstub runs which is located from 0x0 - 0x100
- * TODO (Optional): Rewite armstub to follow https://www.kernel.org/doc/Documentation/arm64/booting.txt semantics
- *
- * armstubs: https://github.com/raspberrypi/tools/tree/master/armstubs
- * - HYP
- * - Core 0 jumps to 0x8000, 0x80000 on aarch64
- * - Cores 1-3 are stuck in a WFE loop
- * - On SVR they jump to the address in mailbox 3
-
- * Therefore common startup code should:
- * - HYP -> SVR (no need for virtualization extensions)
- * - Setup execution level stacks (this varies on aarch64)
- * - Jump to execution code
-
- * Initialization routine is as follows:
- * - HYP -> SVC (all cores)
- * - Jump to core vector to perform core specific initialization
- * - Jump to core execution
- */
-
 // http://infocenter.arm.com/help/topic/com.arm.doc.dai0527a/DAI0527A_baremetal_boot_code_for_ARMv8_A_processors.pdf
 .global _init_core
 _init_core:
+    // Drop to el1
     bl enter_el1
 
     MOV    X0,  XZR
@@ -59,7 +38,7 @@ _init_core:
     MOV    X29, XZR
     MOV    X30, XZR
 
-    // Jump to core init
+    // Jump to the core init vector
     MRS x0, MPIDR_EL1
     UBFX x0, x0, #0, #2
 
@@ -99,13 +78,22 @@ _init_core_0:
     b hang
 
 _init_core_1:
-  b hang
+    ldr x0, =__el1_stack_end_core_1
+    mov sp, x0
+
+    b cinit_core
 
 _init_core_2:
-  b hang
+    ldr x0, =__el1_stack_end_core_2
+    mov sp, x0
+    
+    b cinit_core
 
 _init_core_3:
-  b hang
+    ldr x0, =__el1_stack_end_core_3
+    mov sp, x0
+    
+    b cinit_core
 
 enter_el1:
     // aarch64
@@ -114,7 +102,7 @@ enter_el1:
 	MSR HCR_EL2, x0
 
     // reset value
-	msr	SCTLR_el1, XZR
+	MSR	SCTLR_el1, XZR
 
     // MODE = EL1H, DAIF = 0
 	MOV x0, #0b00101 

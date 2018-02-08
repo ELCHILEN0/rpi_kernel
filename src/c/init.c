@@ -59,10 +59,10 @@ void master_core () {
     // kernel_init();
 
     while (true) {
-        for (int i = 0; i < 0x10000 * 30; i++);
+        for (int i = 0; i < 0x1000 * 30; i++);
         gpio_write(5, true);
 
-        for (int i = 0; i < 0x10000 * 30; i++);
+        for (int i = 0; i < 0x1000 * 30; i++);
         gpio_write(5, false);
     }
 }
@@ -73,14 +73,14 @@ void slave_core() {
 
     __spin_lock(&print_lock);
     // printf("[core%d] Executing from 0x%X!\r\n", core_id, slave_core);
-    for (int i = 0; i < 0x1000000; i++) { asm("nop"); }
+    // for (int i = 0; i < 0x100000; i++) { asm("nop"); }
     __spin_unlock(&print_lock);
 
     while (true) {
-        for (int i = 0; i < 0x10000 * (core_id + 1) * 30; i++);
+        for (int i = 0; i < 0x1000 * (core_id + 1) * 30; i++);
         gpio_write(core_gpio[core_id - 1], true);
 
-        for (int i = 0; i < 0x10000 * (core_id + 1) * 30; i++);
+        for (int i = 0; i < 0x1000 * (core_id + 1) * 30; i++);
         gpio_write(core_gpio[core_id - 1], false);
   
     }
@@ -126,9 +126,9 @@ void cinit_core(void) {
             // init_linear_addr_map();
             // enable_mmu();       
 
-            core_enable(1, (uint32_t) _init_core);
-            core_enable(2, (uint32_t) _init_core);
-            core_enable(3, (uint32_t) _init_core);     
+            core_enable(1, (uint64_t) _init_core);
+            core_enable(2, (uint64_t) _init_core);
+            core_enable(3, (uint64_t) _init_core);     
 
             master_core();
         }

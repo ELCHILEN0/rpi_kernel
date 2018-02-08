@@ -42,12 +42,9 @@ void __spin_unlock(spinlock_t *lock) {
  */
 static uint64_t *cpu_release_addr = (uint64_t *) 0xd8;
 
-void core_enable(uint32_t core, uint32_t addr)
+void core_enable(uint32_t core, uint64_t addr)
 {
-    cpu_release_addr[0] = addr;
-    cpu_release_addr[1] = addr;
-    cpu_release_addr[2] = addr;
-    cpu_release_addr[3] = addr;
+    cpu_release_addr[core] = addr;
 
     asm("SEV");
 }

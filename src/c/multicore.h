@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 extern uint32_t get_core_id( void );
-extern void core_enable(uint32_t core, uint32_t addr);
+extern void core_enable(uint32_t core, uint64_t addr);
 
 typedef int lock_t;
 

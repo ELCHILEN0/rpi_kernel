@@ -68,17 +68,18 @@ serial-screen:
 
 # GDB_HOST = localhost
 GDB_HOST = docker.for.mac.host.internal
+GDB_ARGS = -ex "tui enable" -ex "layout split" -ex "set confirm off" 
 
 gdb-core-0:
-	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -tui -ex "target remote $(GDB_HOST):3333" -ex "tui enable" -ex "tui reg general" -ex "set confirm off" -ex "load $(BUILD)/$(TARGET).elf"
+	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -tui -ex "target remote $(GDB_HOST):3333" $(GDB_ARGS) -ex "load $(BUILD)/$(TARGET).elf"
 
 gdb-core-1:
-	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -ex="target remote $(GDB_HOST):3334" -ex=continue
+	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -ex="target remote $(GDB_HOST):3334" $(GDB_ARGS) -ex "file $(BUILD)/$(TARGET).elf"
 	
 gdb-core-2:
-	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -ex="target remote $(GDB_HOST):3335" -ex=continue
+	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -ex="target remote $(GDB_HOST):3335" $(GDB_ARGS) -ex "file $(BUILD)/$(TARGET).elf"
 	
 gdb-core-3:
-	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -ex="target remote $(GDB_HOST):3336" -ex=continue
+	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -ex="target remote $(GDB_HOST):3336" $(GDB_ARGS) -ex "file $(BUILD)/$(TARGET).elf"
 
 
