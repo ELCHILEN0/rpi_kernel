@@ -40,13 +40,24 @@ void __spin_unlock(spinlock_t *lock) {
  * 
  * https://github.com/raspberrypi/tools/blob/master/armstubs/armstub8.S#L109
  */
+static uint64_t *cpu_release_addr = (uint64_t *) 0xd8;
+
 void core_enable(uint32_t core, uint32_t addr)
 {
-    uint64_t *wakeup_addr = (uint64_t *) 0xd8;
-    wakeup_addr[0] = addr;
-    wakeup_addr[1] = addr;
-    wakeup_addr[2] = addr;
-    wakeup_addr[3] = addr;
+    cpu_release_addr[0] = addr;
+    cpu_release_addr[1] = addr;
+    cpu_release_addr[2] = addr;
+    cpu_release_addr[3] = addr;
 
     asm("SEV");
+}
+
+void core_sleep() {
+    uint32_t core_id = get_core_id();
+    uint64_t wakeup_addr = 0;
+    cpu_release_addr[core_id] = wakeup_addr;    
+    while ((wakeup_addr = cpu_release_addr[core_id]) == 0) {
+        asm("WFE");
+    }
+    asm("BR %0" :: "r" (wakeup_addr));
 }
