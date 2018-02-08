@@ -71,6 +71,9 @@ _init_core_0:
     mov sp, x0
 */
 
+    LDR    X1, =vector_table_el1
+    MSR    VBAR_EL1, X1
+
     /**
     * Finally branch to higher level c routines.
     */
@@ -113,6 +116,7 @@ enter_el1:
 	ERET
 
 
+.global enter_el0
 enter_el0:
 /*
     mov x0, sp
@@ -124,8 +128,12 @@ enter_el0:
     MSR	ELR_el1, x30
 	ERET
 
-enable_interrupts:
+.global __enable_interrupts
+__enable_interrupts:
     MSR DAIFset, #(0x1 | 0x2 | 0x4)
+    RET
 
-disable_interrupts:
+.global __disable_interrupts
+__disable_interrupts:
     MSR DAIFclr, #(0x1 | 0x2 | 0x4)
+    RET

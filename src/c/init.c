@@ -19,13 +19,19 @@
 
 uint32_t act_message[] = {32, 0, 0x00038041, 8, 0, 130, 0, 0};
 
-// extern void __enable_interrupts(void);
-// extern void __disable_interrupts(void);
+extern void __enable_interrupts(void);
+extern void __disable_interrupts(void);
 extern void _init_core(void);
 
 spinlock_t print_lock;
 
 // extern void _int_syscall(void);
+
+void test_handler() {
+    gpio_write(21, false);
+    uart_putc('!');
+    // local_timer_reset();
+}
 
 void interrupt_handler() {
     static bool next_blinker_state = true;
@@ -36,7 +42,6 @@ void interrupt_handler() {
 }
 
 void time_slice() {
-    // local_timer_reset();
 
     static bool next_blinker_state = true;
     gpio_write(13, next_blinker_state);
@@ -53,6 +58,7 @@ void master_core () {
     // register_interrupt_handler(vector_table_svc, 0x81, interrupt_handler);
     // register_interrupt_handler(vector_table_irq, 11, time_slice);
 
+    __enable_interrupts();
     // local_timer_interrupt_routing(0);
     // local_timer_start(0x038FFFF);
 
@@ -86,6 +92,8 @@ void slave_core() {
     }
 }
 
+extern void enter_el0();
+
 void cinit_core(void) {
     // OK status (use till GPIO working)
     act_message[6] = 1;
@@ -95,7 +103,9 @@ void cinit_core(void) {
     switch(core_id) {
         case 0:
         {
-            // init_vector_tables();
+            init_vector_tables();
+
+            register_interrupt_handler(vector_table_irq, 0x80, test_handler);
 
             gpio_fsel(5, SEL_OUTPUT);
             gpio_fsel(6, SEL_OUTPUT);
@@ -111,13 +121,15 @@ void cinit_core(void) {
 
             uart_init(115200);
 
-            uart_putc('H');
-            uart_putc('e');
-            uart_putc('l');
-            uart_putc('l');
+            uart_putc('W');
             uart_putc('o');
+            uart_putc('r');
+            uart_putc('l');
+            uart_putc('d');
             uart_putc('\r');
             uart_putc('\n');
+
+            asm("SVC 0x80");
 
             // void *test = malloc(sizeof(int));
 

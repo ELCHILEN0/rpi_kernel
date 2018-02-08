@@ -5,7 +5,9 @@
 TOOLCHAIN = /root/x-tools/aarch64-rpi3-linux-gnueabi/bin/aarch64-rpi3-linux-gnueabi
 
 AARCH = 
-CCFLAGS = -Wall -nostartfiles -ffreestanding -mcpu=cortex-a53 -ggdb -nostdlib -lc -static
+CCFLAGS = -Wall -nostartfiles -ffreestanding -mcpu=cortex-a53 -ggdb -nostdlib 
+LIBS = -I /root/x-tools/newlib-3.0.0/newlib/libc/include
+# LIBS = -lc -nostdlib
 # CCFLAGS = -nostartfiles -ffreestanding -mfpu=vfp -mcpu=cortex-a53 -ggdb
 
 # AARCH = -march=armv6 
@@ -17,9 +19,8 @@ SOURCE = src
 
 COPY = /Volumes/boot
 
-SOBJ = bootcode64.o
-UOBJ = cstartup.o cstubs.o init.o peripheral.o gpio.o multicore.o uart.o mailbox.o
-# SOBJ = bootcode.o vectors.o
+SOBJ = bootcode64.o vectors64.o
+UOBJ = cstartup.o cstubs.o init.o peripheral.o gpio.o multicore.o uart.o mailbox.o interrupts.o timer.o
 # UOBJ = cstartup.o cstubs.o init.o peripheral.o gpio.o mailbox.o interrupts.o timer.o uart.o multicore.o cache.o
 # HOBJ = cache.h gpio.h interrupts.h mailbox.h multicore.h peripheral.h timer.h uart.h
 # KOBJ = kinit.o create.o ctsw.o syscall.o disp.o
@@ -30,7 +31,7 @@ all: $(BUILD)/$(TARGET).img $(BUILD)/$(TARGET).list
 
 # ELF
 $(BUILD)/$(TARGET).elf: $(addprefix $(BUILD)/, $(SOBJ)) $(addprefix $(BUILD)/, $(UOBJ)) $(addprefix $(BUILD)/, $(KOBJ))
-	$(TOOLCHAIN)-gcc $(CCFLAGS) -T $(SOURCE)/linker.ld $^ -o $(BUILD)/$(TARGET).elf
+	$(TOOLCHAIN)-gcc $(CCFLAGS) -T $(SOURCE)/linker.ld $^ $(LIBS) -o $(BUILD)/$(TARGET).elf
 
 # ELF to LIST
 $(BUILD)/$(TARGET).list: $(BUILD)/$(TARGET).elf

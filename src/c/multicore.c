@@ -13,16 +13,6 @@ uint32_t get_core_id( void ) {
     return core_id;
 }
 
-
-// int test_and_set(volatile int *addr) {
-//     int old_value = swap_atomic(addr, 1);
-
-//     if (old_value == 0)
-//         return 0;
-
-//     return 1;
-// }
-
 // 18.5.2
 int __spin_lock(spinlock_t *lock) {
     // while (__sync_lock_test_and_set(&lock->flag, 1));
