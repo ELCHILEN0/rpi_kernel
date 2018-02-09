@@ -57,6 +57,38 @@ extern void warm_reset(void);
 // TTBR0 = l0 (skip this too big)
 // TTBR1 = l1
 
+// level 0-2
+// https://armv8-ref.codingbelief.com/en/chapter_d4/d43_1_vmsav8-64_translation_table_descriptor_formats.html
+/*
+Table -> bits 47-m = next level table address
+4 kb    => (m = 12)
+16 kb   => (m = 16)
+64 kb   => (m = 64)
+
+Block -> bits 47-n = output address
+4 kb    => L1 (n = 30), L2 (n = 21)
+16 kb   => L2 (n = 25)
+64 kb   => L2 (n = 29)
+*/
+enum {
+    INVALID = 0x0,
+    BLOCK = 0x1,
+    TABLE = 0x3,    
+};
+
+// level 3
+/*
+4 kb    => bits (47-12)
+16 kb   => bits (47-12)
+64 kb   => bits (47-12)
+*/
+enum {
+    L3_INVALID = 0x0,
+    L3_RESERVED = 0x1,
+    L3_PAGE = 0x3,
+};
+
+
 /*
    Translation table lookup with 4KB pages:
 
@@ -73,7 +105,7 @@ extern void warm_reset(void);
      +-------------------------------------------------> [63] TTBR0/1
 */
 
-extern uint64_t __attribute__((aligned(0x4000))) l0_translation_table[512];
+// extern uint64_t __attribute__((aligned(0x4000))) l0_translation_table[512];
 extern uint64_t __attribute__((aligned(0x4000))) l1_translation_table[512];
 extern uint64_t __attribute__((aligned(0x4000))) l2_translation_table[512];
 extern uint64_t __attribute__((aligned(0x4000))) l3_translation_table[512];

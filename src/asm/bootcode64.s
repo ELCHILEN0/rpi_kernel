@@ -42,7 +42,8 @@ _init_core:
     // MSR    CPTR_EL3, XZR
     // MSR    CPTR_EL3, XZR
 
-    BL init_tt
+    BL init_identity_map
+    BL init_mmu
 
     // Disable access trapping in EL1 and EL0.
     MOV X1, #(0x3 << 20)
@@ -151,15 +152,16 @@ __disable_interrupts:
     MSR DAIFclr, #(0x1 | 0x2 | 0x4)
     RET
 
-init_tt:
+init_mmu:
     LDR X1, = 0x3520
     MSR TCR_EL1, X1
     LDR X1, =0xFF440400
     MSR MAIR_EL1, X1
 
-    ADR X0, ttb0_base
+    LDR X0, =l1_translation_table
     MSR TTBR0_EL1, X0
 
+/*
     // level1
     LDR X1, =level2_pagetable
     LDR X2, =0xFFFFF000
@@ -221,16 +223,17 @@ level2_pagetable:
 BLOCK_2MB (ADDR << 20), 0, 0x74C
 .set ADDR, ADDR+2
 .endr
+*/
 
-MRS    X0, S3_1_C15_C2_1
-ORR X0, X0, #(0x1 << 6)
-MSR S3_1_C15_C2_1, X0
+    MRS    X0, S3_1_C15_C2_1
+    ORR X0, X0, #(0x1 << 6)
+    MSR S3_1_C15_C2_1, X0
 
-MRS    X0, SCTLR_EL1
-ORR X0, X0, #(0x1 << 2)
-ORR X0, X0, #(0x1 << 12)
-ORR X0, X0, 0x1
-MSR SCTLR_EL1, X0
-DSB SY
-ISB
-RET
+    MRS    X0, SCTLR_EL1
+    ORR X0, X0, #(0x1 << 2)
+    ORR X0, X0, #(0x1 << 12)
+    ORR X0, X0, 0x1
+    MSR SCTLR_EL1, X0
+    DSB SY
+    ISB
+    RET
