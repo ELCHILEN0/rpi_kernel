@@ -2,11 +2,12 @@
 # TOOLCHAIN = arm-none-eabi
 # TOOLCHAIN = /usr/local/gcc-arm-none-eabi-6-2017-q2-update/bin/arm-none-eabi
 # TOOLCHAIN = /root/x-tools/armv8-rpi3-linux-gnueabihf/bin/armv8-rpi3-linux-gnueabihf
-TOOLCHAIN = /root/x-tools/aarch64-rpi3-linux-gnueabi/bin/aarch64-rpi3-linux-gnueabi
+# TOOLCHAIN = /root/x-tools/aarch64-rpi3-linux-gnueabi/bin/aarch64-rpi3-linux-gnueabi
+TOOLCHAIN = /root/x-tools/gcc-linaro-5.5.0-2017.10-x86_64_aarch64-elf/bin/aarch64-elf
 
 AARCH = 
 CCFLAGS = -Wall -nostartfiles -ffreestanding -mcpu=cortex-a53 -ggdb -nostdlib 
-LIBS = -I /root/x-tools/newlib-3.0.0/newlib/libc/include
+LIBS = -I /root/x-tools/sysroot-newlib-linaro-2017.10-aarch64-elf/usr/lib/include /root/x-tools/sysroot-newlib-linaro-2017.10-aarch64-elf/usr/lib/libc.a
 # LIBS = -lc -nostdlib
 # CCFLAGS = -nostartfiles -ffreestanding -mfpu=vfp -mcpu=cortex-a53 -ggdb
 

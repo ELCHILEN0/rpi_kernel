@@ -131,9 +131,9 @@ void cinit_core(void) {
 
             asm("SVC 0x80");
 
-            // void *test = malloc(sizeof(int));
+            void *test = malloc(sizeof(int));
 
-            // printf("Started...\r\n");
+            printf("Started...\r\n");
             // printf("[core%d] Started...\r\n", core_id, master_core);
             // init_linear_addr_map();
             // enable_mmu();       

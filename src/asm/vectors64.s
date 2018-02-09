@@ -19,13 +19,20 @@
     STP X28, X29, [SP, #-16]!
     // STP X30, X31, [SP, #-16]!
 
-    mrs	x1, SPSR_EL1
-	mrs	x2, ELR_EL1
+    MRS	X1, SPSR_EL1
+	MRS	X2, ELR_EL1
+    STP X1, X2, [SP, #-16]
+    // enable interrupts... (reentrant)
 
     .ifb \identify_and_clear_source
         //BL	\identify_and_clear_source
     .endif
 	BL	\handler
+
+    // disable interrupts... (reentrant)
+    LDP X1, X2, [SP], #16
+    MSR ELR_EL1, X2
+    MSR SPSR_EL1, X1
 
     // LDP X30, X31, [SP], #16
 	LDP X28, X29, [SP], #16
