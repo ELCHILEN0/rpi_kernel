@@ -3,7 +3,7 @@ ENTRY(_init_core)
 MEMORY
 {
     /* Kernel boots at 0x8000 on 32 bit, 0x80000 on 64 bit.  Unless changed in config to 0x0. */
-    RAM     (rwx)   : ORIGIN = 0x8000, LENGTH = 256M
+    RAM     (rwx)   : ORIGIN = 0x80000, LENGTH = 256M
     ROM     (rx)    : ORIGIN = 0x20000000, LENGTH = 512M
 }
 
@@ -85,5 +85,9 @@ SECTIONS {
         . = . + 0x1000;    
         __el1_stack_end_core_3 = .;
     } > RAM
+
+    .undefined : {
+        *(.*)
+    }
 
 }
