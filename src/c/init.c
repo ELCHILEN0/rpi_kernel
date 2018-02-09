@@ -121,19 +121,10 @@ void cinit_core(void) {
 
             uart_init(115200);
 
-            uart_putc('W');
-            uart_putc('o');
-            uart_putc('r');
-            uart_putc('l');
-            uart_putc('d');
-            uart_putc('\r');
-            uart_putc('\n');
+            // asm("SVC 0x80");
 
-            asm("SVC 0x80");
-
-            void *test = malloc(sizeof(int));
-
-            printf("Started...\r\n");
+            write(0, "Started\r\n", 9);
+            // printf("Started...\r\n");
             // printf("[core%d] Started...\r\n", core_id, master_core);
             // init_linear_addr_map();
             // enable_mmu();       

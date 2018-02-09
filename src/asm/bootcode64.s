@@ -38,6 +38,17 @@ _init_core:
     MOV    X29, XZR
     MOV    X30, XZR
 
+    // Disable trapping of accessing in EL3 and EL2.
+    // MSR    CPTR_EL3, XZR
+    // MSR    CPTR_EL3, XZR
+
+    BL init_tt
+
+    // Disable access trapping in EL1 and EL0.
+    MOV X1, #(0x3 << 20)
+    MSR CPACR_EL1, X1
+    ISB
+
     // Jump to the core init vector
     MRS x0, MPIDR_EL1
     UBFX x0, x0, #0, #2
@@ -73,6 +84,8 @@ _init_core_0:
 
     LDR    X1, =vector_table_el1
     MSR    VBAR_EL1, X1
+
+    BL init_tt
 
     /**
     * Finally branch to higher level c routines.
@@ -137,3 +150,87 @@ __enable_interrupts:
 __disable_interrupts:
     MSR DAIFclr, #(0x1 | 0x2 | 0x4)
     RET
+
+init_tt:
+    LDR X1, = 0x3520
+    MSR TCR_EL1, X1
+    LDR X1, =0xFF440400
+    MSR MAIR_EL1, X1
+
+    ADR X0, ttb0_base
+    MSR TTBR0_EL1, X0
+
+    // level1
+    LDR X1, =level2_pagetable
+    LDR X2, =0xFFFFF000
+    AND X2, X1, X2
+    ORR X2, X2, X3
+    STR X2, [X0], #8
+
+    LDR X2, =0x40000741
+    STR X2, [X0], #8
+
+    LDR X2, =0x80000741
+    STR X2, [x0], #8
+
+    LDR X2, =0xC0000741
+    STR X2, [X0], #8
+
+    /// level2
+    LDR X0, =level2_pagetable
+    LDR X2, =0x0000074D
+
+    MOV X4, #512
+    LDR X5, =0x00200000
+
+loop:
+    STR x2, [x0], #8
+    ADD X2, X2, X5
+    SUBS X4, X4, #1
+    BNE loop
+
+// Put a 64-bit value with little endianness.
+.macro PUT_64B high, low
+    .word \low
+    .word \high
+.endm
+
+.macro TABLE_ENTRY PA, ATTR
+    PUT_64B   \ATTR, (\PA) + 0x3
+.endm
+
+.macro BLOCK_1GB PA, ATTR_HI, ATTR_LO
+    PUT_64B \ATTR_HI, ((\PA) & 0xC0000000) | \ATTR_LO | 0x1
+.endm
+
+.macro BLOCK_2MB PA, ATTR_HI, ATTR_LO
+    PUT_64B \ATTR_HI, ((\PA) & 0xFFE00000) | \ATTR_LO | 0x1 
+.endm
+
+.align 12
+ttb0_base:
+TABLE_ENTRY level2_pagetable, 0
+BLOCK_1GB 0x40000000, 0, 0x740
+BLOCK_1GB 0x80000000, 0, 0x740
+BLOCK_1GB 0xC0000000, 0, 0x740
+
+.align 12
+level2_pagetable:
+.set ADDR, 0x000
+.rept 0x200
+BLOCK_2MB (ADDR << 20), 0, 0x74C
+.set ADDR, ADDR+2
+.endr
+
+MRS    X0, S3_1_C15_C2_1
+ORR X0, X0, #(0x1 << 6)
+MSR S3_1_C15_C2_1, X0
+
+MRS    X0, SCTLR_EL1
+ORR X0, X0, #(0x1 << 2)
+ORR X0, X0, #(0x1 << 12)
+ORR X0, X0, 0x1
+MSR SCTLR_EL1, X0
+DSB SY
+ISB
+RET

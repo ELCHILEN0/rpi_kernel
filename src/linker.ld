@@ -86,8 +86,7 @@ SECTIONS {
         __el1_stack_end_core_3 = .;
     } > RAM
 
-    .undefined : {
-        *(.*)
+    /DISCARD/ : {
+        *(.note.gnu.build-id);
     }
-
 }

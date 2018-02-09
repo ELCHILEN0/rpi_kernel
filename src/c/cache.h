@@ -11,6 +11,11 @@ enum {
     L2_FAULT = 0x0,
     L2_LARGE_PAGE = 0x1,
     L2_SMALL_PAGE = 0x2,
+
+    TABLE_DESCRIPTOR = 0x3,
+    BLOCK_ENTRY = 0x1,
+    TABLE_ENTRY = 0x3,
+    FAULT_ENTRY = 0x0,
 } translation_table_entry_t;
 
 enum {
@@ -38,5 +43,38 @@ extern void enable_mmu(void);
 extern void disable_mmu(void);
 extern void warm_reset(void);
 
-extern uint32_t __attribute__((aligned(0x4000))) l1_page_table[4096];
+
+// 47-39 = l0 index
+// 38-30 = l1 index
+// 29-21 = l2 index or OA(29-21)
+// 20-12 = l3 index or OA(20-12)
+
+// l0 = 512 (no block) 512 GB
+// l1 = 512 (block option) 1 GB
+// l2 = 512 (block option) 2 MB
+// l3 = 512 (page only) 4 kb
+
+// TTBR0 = l0 (skip this too big)
+// TTBR1 = l1
+
+/*
+   Translation table lookup with 4KB pages:
+
+    +--------+--------+--------+--------+--------+--------+--------+--------+
+    |63    56|55    48|47    40|39    32|31    24|23    16|15     8|7      0|
+    +--------+--------+--------+--------+--------+--------+--------+--------+
+     |                 |         |         |         |         |
+     |                 |         |         |         |         v
+     |                 |         |         |         |   [11:0]  in-page offset
+     |                 |         |         |         +-> [20:12] L3 index
+     |                 |         |         +-----------> [29:21] L2 index
+     |                 |         +---------------------> [38:30] L1 index
+     |                 +-------------------------------> [47:39] L0 index
+     +-------------------------------------------------> [63] TTBR0/1
+*/
+
+extern uint64_t __attribute__((aligned(0x4000))) l0_translation_table[512];
+extern uint64_t __attribute__((aligned(0x4000))) l1_translation_table[512];
+extern uint64_t __attribute__((aligned(0x4000))) l2_translation_table[512];
+extern uint64_t __attribute__((aligned(0x4000))) l3_translation_table[512];
 #endif

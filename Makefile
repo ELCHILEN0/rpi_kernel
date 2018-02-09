@@ -61,7 +61,7 @@ clean:
 DOCKER_IMAGE = toolchain
 DOCKER_BUILD = /root/build
 start-toolchain:
-	docker run --rm -it -v $(CURDIR):$(DOCKER_BUILD) -v $(COPY):$(COPY) -w $(DOCKER_BUILD) $(DOCKER_IMAGE)
+	docker run --rm -it -v $(CURDIR):$(DOCKER_BUILD) -w $(DOCKER_BUILD) $(DOCKER_IMAGE)
 
 SERIAL_DEVICE = /dev/tty.usbserial-AH069DMB
 SERIAL_BAUD_RATE = 115200
