@@ -15,12 +15,12 @@ uint32_t get_core_id( void ) {
 
 // 18.5.2
 int __spin_lock(spinlock_t *lock) {
-    // while (__sync_lock_test_and_set(&lock->flag, 1));
+    while (__sync_lock_test_and_set(&lock->flag, 1));
     return 0;
 }
 
 void __spin_unlock(spinlock_t *lock) {
-    // __sync_lock_release(&lock->flag);
+    __sync_lock_release(&lock->flag);
 }
 
 /*

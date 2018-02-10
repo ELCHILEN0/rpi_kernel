@@ -13,7 +13,6 @@
 
 #include "mailbox.h"
 #include "multicore.h"
-#include "cache.h"
 
 #include "kernel/kernel.h"
 
@@ -79,22 +78,22 @@ void slave_core() {
 
     __spin_lock(&print_lock);
     // printf("[core%d] Executing from 0x%X!\r\n", core_id, slave_core);
-    // for (int i = 0; i < 0x100000; i++) { asm("nop"); }
+    for (int i = 0; i < 0x1000000; i++) { asm("nop"); }
     __spin_unlock(&print_lock);
 
     while (true) {
-        for (int i = 0; i < 0x1000 * (core_id + 1) * 30; i++);
+        for (int i = 0; i < 0x10000 * (core_id + 1) * 30; i++);
         gpio_write(core_gpio[core_id - 1], true);
 
-        for (int i = 0; i < 0x1000 * (core_id + 1) * 30; i++);
-        gpio_write(core_gpio[core_id - 1], false);
-  
+        for (int i = 0; i < 0x10000 * (core_id + 1) * 30; i++);
+        gpio_write(core_gpio[core_id - 1], false);  
     }
 }
 
 extern void enter_el0();
+extern void enable_mmu();
 
-void cinit_core(void) {
+void cinit_core(void) {    
     // OK status (use till GPIO working)
     act_message[6] = 1;
     mailbox_write(mailbox0, MB0_PROPERTY_TAGS_ARM_TO_VC, (uint32_t) &act_message);
@@ -103,6 +102,12 @@ void cinit_core(void) {
     switch(core_id) {
         case 0:
         {
+            core_enable(1, (uint64_t) _init_core);
+            core_enable(2, (uint64_t) _init_core);
+            core_enable(3, (uint64_t) _init_core);   
+
+            enable_mmu();                
+
             init_vector_tables();
 
             register_interrupt_handler(vector_table_irq, 0x80, test_handler);
@@ -116,6 +121,9 @@ void cinit_core(void) {
             gpio_write(5, true);
             gpio_write(6, true);
             gpio_write(13, true);
+
+            __sync_lock_test_and_set(&print_lock.flag, 1);
+
             gpio_write(19, true);
             gpio_write(21, true);
 
@@ -128,18 +136,14 @@ void cinit_core(void) {
             // printf("Started...\r\n");
             // printf("[core%d] Started...\r\n", core_id, master_core);
             // init_linear_addr_map();
-            // enable_mmu();       
-
-            core_enable(1, (uint64_t) _init_core);
-            core_enable(2, (uint64_t) _init_core);
-            core_enable(3, (uint64_t) _init_core);     
+            // enable_mmu();        
 
             master_core();
         }
         break;
 
         default:
-            // enable_mmu();
+            enable_mmu();
             slave_core();
             break;
     }

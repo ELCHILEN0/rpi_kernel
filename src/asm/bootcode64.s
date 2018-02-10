@@ -66,10 +66,9 @@ _core_vectors:
     B _init_core_3
 
 _init_core_0:
-#if 0
-    //ldr x0, =_vectors_el1
-    //msr vbar_el1, x0
-#endif
+    LDR    X1, =vector_table_el1
+    MSR    VBAR_EL1, X1
+
     ldr x0, =__el1_stack_end_core_0
     mov sp, x0
 
@@ -79,12 +78,6 @@ _init_core_0:
     ldr x0, =__el0_stack_end_core_0
     mov sp, x0
 */
-
-    LDR    X1, =vector_table_el1
-    MSR    VBAR_EL1, X1
-
-    BL init_identity_map
-    BL init_mmu
     
     /**
     * Finally branch to higher level c routines.
@@ -179,7 +172,7 @@ BLOCK_1GB 0xC0000000, 0, 0x740
 level2_pagetable:
 .set ADDR, 0x000
 .rept 0x100
-BLOCK_2MB (ADDR << 20), 0, 0x70C // Normal Memory
+BLOCK_2MB (ADDR << 20), 0, 0x708 // Normal Memory
 .set ADDR, ADDR+2
 .endr
 .rept 0x100 // TODO: Adjust this range...
@@ -187,10 +180,18 @@ BLOCK_2MB (ADDR << 20), 0, 0x740 // Device Memory
 .set ADDR, ADDR+2
 .endr
 
-init_mmu:
+.global enable_mmu
+enable_mmu:
     LDR X1, = 0x3520
     MSR TCR_EL1, X1
-    LDR X1, =0xFF440400
+
+    /* 
+    Memory attributes
+        0 => 0x00 = device nGnRnE
+        1 => 0x44 = normal outer and inner non-cacheable
+        2 => 0x5D = normal outer and inner write-back, write-allocate
+    */
+    LDR X1, =0x5D4400
     MSR MAIR_EL1, X1
 
     ADR X0, ttb0_base
