@@ -65,10 +65,10 @@ void master_core () {
     // kernel_init();
 
     while (true) {
-        for (int i = 0; i < 0x1000 * 30; i++);
+        for (int i = 0; i < 0x100000 * 30; i++);
         gpio_write(5, true);
 
-        for (int i = 0; i < 0x1000 * 30; i++);
+        for (int i = 0; i < 0x100000 * 30; i++);
         gpio_write(5, false);
     }
 }
@@ -119,6 +119,7 @@ void cinit_core(void) {
             gpio_write(19, true);
             gpio_write(21, true);
 
+            
             uart_init(115200);
 
             // asm("SVC 0x80");

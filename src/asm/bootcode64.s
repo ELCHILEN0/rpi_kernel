@@ -42,9 +42,6 @@ _init_core:
     // MSR    CPTR_EL3, XZR
     // MSR    CPTR_EL3, XZR
 
-    BL init_identity_map
-    BL init_mmu
-
     // Disable access trapping in EL1 and EL0.
     MOV X1, #(0x3 << 20)
     MSR CPACR_EL1, X1
@@ -86,8 +83,9 @@ _init_core_0:
     LDR    X1, =vector_table_el1
     MSR    VBAR_EL1, X1
 
-    BL init_tt
-
+    BL init_identity_map
+    BL init_mmu
+    
     /**
     * Finally branch to higher level c routines.
     */
@@ -152,45 +150,6 @@ __disable_interrupts:
     MSR DAIFclr, #(0x1 | 0x2 | 0x4)
     RET
 
-init_mmu:
-    LDR X1, = 0x3520
-    MSR TCR_EL1, X1
-    LDR X1, =0xFF440400
-    MSR MAIR_EL1, X1
-
-    LDR X0, =l1_translation_table
-    MSR TTBR0_EL1, X0
-
-/*
-    // level1
-    LDR X1, =level2_pagetable
-    LDR X2, =0xFFFFF000
-    AND X2, X1, X2
-    ORR X2, X2, X3
-    STR X2, [X0], #8
-
-    LDR X2, =0x40000741
-    STR X2, [X0], #8
-
-    LDR X2, =0x80000741
-    STR X2, [x0], #8
-
-    LDR X2, =0xC0000741
-    STR X2, [X0], #8
-
-    /// level2
-    LDR X0, =level2_pagetable
-    LDR X2, =0x0000074D
-
-    MOV X4, #512
-    LDR X5, =0x00200000
-
-loop:
-    STR x2, [x0], #8
-    ADD X2, X2, X5
-    SUBS X4, X4, #1
-    BNE loop
-
 // Put a 64-bit value with little endianness.
 .macro PUT_64B high, low
     .word \low
@@ -219,17 +178,27 @@ BLOCK_1GB 0xC0000000, 0, 0x740
 .align 12
 level2_pagetable:
 .set ADDR, 0x000
-.rept 0x200
-BLOCK_2MB (ADDR << 20), 0, 0x74C
+.rept 0x100
+BLOCK_2MB (ADDR << 20), 0, 0x70C // Normal Memory
 .set ADDR, ADDR+2
 .endr
-*/
+.rept 0x100 // TODO: Adjust this range...
+BLOCK_2MB (ADDR << 20), 0, 0x740 // Device Memory
+.set ADDR, ADDR+2
+.endr
 
-    MRS    X0, S3_1_C15_C2_1
-    ORR X0, X0, #(0x1 << 6)
-    MSR S3_1_C15_C2_1, X0
+init_mmu:
+    LDR X1, = 0x3520
+    MSR TCR_EL1, X1
+    LDR X1, =0xFF440400
+    MSR MAIR_EL1, X1
 
-    MRS    X0, SCTLR_EL1
+    ADR X0, ttb0_base
+    MSR TTBR0_EL1, X0
+
+    // NOTE: CPU Extended Control Register (S3_1_C15_C2_1) SMPEN already set
+
+    MRS X0, SCTLR_EL1
     ORR X0, X0, #(0x1 << 2)
     ORR X0, X0, #(0x1 << 12)
     ORR X0, X0, 0x1

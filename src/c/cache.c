@@ -5,25 +5,27 @@
 
 uint32_t l1_page_table[4096]; // TODO: Static initialization useful when flashing entire elf file
 
-// typedef volatile struct {
-//     uint8_t 
-// } l1_section;
+uint64_t l1_translation_table[512];
+uint64_t l2_translation_table[512];
 
 void init_identity_map() {
-    uint64_t base;
+    uint64_t tt_index;
     /*
     L1 = 1GB chunks
         => l1[0] = l2 addr
         => l1[1] = device, block...
         => l1[2-512] = 0 invalid...
     */
-    for (base = 0; base < 1; base++) {
-        l1_translation_table[base] = (((uint64_t) l2_translation_table) & 0xFFFFF000) | TABLE;
+    for (tt_index = 0; tt_index < 1; tt_index++) {
+        uint64_t attr_hi = 0;
+        uint64_t attr_lo = TABLE;
+        uint64_t pa = (uint64_t) l2_translation_table & 0xFFFFF000;
+        l1_translation_table[tt_index] = attr_hi | pa | attr_lo;
     }
 
-    for (; base < 512; base++) {
+    for (; tt_index < 512; tt_index++) {
         // Invalid 1 GB Blocks
-        l1_translation_table[base] = 0;
+        l1_translation_table[tt_index] = 0;
     }
 
     /*
@@ -34,18 +36,18 @@ void init_identity_map() {
     1 MB = base << 20
     2 MB = base << 21
     */
-    for (base = 0; base < 504; base++) {
+    for (tt_index = 0; tt_index < 504; tt_index++) {
         uint64_t attr_hi = 0;
-        uint64_t attr_low = 0x74C | BLOCK;
-        uint64_t pa = (base << 21) & 0xFFE00000;
-        l2_translation_table[base] = attr_hi | pa | attr_low;   
+        uint64_t attr_lo = 0x74C | BLOCK;
+        uint64_t pa = (tt_index << 21) & 0xFFE00000;
+        l2_translation_table[tt_index] = attr_hi | pa | attr_lo;   
     }
 
-    for(; base < 512; base++) {
+    for(; tt_index < 512; tt_index++) {
         uint64_t attr_hi = 0;
-        uint64_t attr_low = 0x740 | BLOCK;
-        uint64_t pa = (base << 21) & 0xFFE00000;
-        l2_translation_table[base] = attr_hi | pa | attr_low;   
+        uint64_t attr_lo = 0x740 | BLOCK;
+        uint64_t pa = (tt_index << 21) & 0xFFE00000;
+        l2_translation_table[tt_index] = attr_hi | pa | attr_lo;   
     }
 }
 
