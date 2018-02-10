@@ -19,9 +19,9 @@
     STP X28, X29, [SP, #-16]!
     STR X30, [SP, #-16]!
 
-    MRS	X1, SPSR_EL1
-	MRS	X2, ELR_EL1
-    STP X1, X2, [SP, #-16]!
+    MRS	X9, SPSR_EL1
+	MRS	X10, ELR_EL1
+    STP X9, X10, [SP, #-16]!
     // enable interrupts... (reentrant)
 
     .ifb \identify_and_clear_source
@@ -30,9 +30,9 @@
 	BL	\handler
 
     // disable interrupts... (reentrant)
-    LDP X1, X2, [SP], #16
-    MSR ELR_EL1, X2
-    MSR SPSR_EL1, X1
+    LDP X9, X10, [SP], #16
+    MSR ELR_EL1, X10
+    MSR SPSR_EL1, X9
 
     LDR X30, [SP], #16
 	LDP X28, X29, [SP], #16
@@ -57,15 +57,19 @@
 .global vector_table_el1
 vector_table_el1:
 curr_el_sp0_sync:
-    interrupt_handler test_handler
+    MSR SPSel, #0
+    interrupt_handler _int_syscall
 .balign 0x80
 curr_el_sp0_irq:
-    interrupt_handler test_handler
+    MSR SPSel, #0
+    interrupt_handler _int_syscall
 .balign 0x80
 curr_el_sp0_fiq:
-    interrupt_handler test_handler
+    MSR SPSel, #0
+    interrupt_handler _int_syscall
 .balign 0x80
 curr_el_sp0_serror:
+    MSR SPSel, #0
     interrupt_handler test_handler
 
 .balign 0x80

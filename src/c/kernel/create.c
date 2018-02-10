@@ -49,12 +49,12 @@ int create(void (*func)(), int stack_size, enum process_priority priority) {
     process->frame = (aarch64_frame_t *) (process - sizeof(aarch64_frame_t) - 1 * sizeof(long));
     
     // TODO: Create with args...
-    for (int i = 0; i < 30; i++) {
+    for (int i = 0; i < 31; i++) {
         process->frame->reg[i] = i * 10;
     }
 
     process->frame->elr = (uint32_t) func;
-    process->frame->spsr = 0;
+    process->frame->spsr = 0b00100;
     
     //process->state = READY;
     process->pid = next_pid++;

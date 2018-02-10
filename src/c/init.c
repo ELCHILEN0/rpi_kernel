@@ -49,8 +49,7 @@ void time_slice() {
 
 void master_core () {
     __spin_lock(&print_lock);
-    // printf("Executing....\r\n");
-    // printf("[core%d] Executing from 0x%X\r\n", get_core_id(), master_core);
+    printf("[core%d] Executing from 0x%X\r\n", get_core_id(), master_core);
     __spin_unlock(&print_lock);
 
     // register_interrupt_handler(vector_table_svc, 0x80, _int_syscall);
@@ -77,8 +76,7 @@ void slave_core() {
     int core_gpio[3] = { 6, 13, 19 };
 
     __spin_lock(&print_lock);
-    // printf("[core%d] Executing from 0x%X!\r\n", core_id, slave_core);
-    for (int i = 0; i < 0x1000000; i++) { asm("nop"); }
+    printf("[core%d] Executing from 0x%X!\r\n", core_id, slave_core);
     __spin_unlock(&print_lock);
 
     while (true) {
@@ -124,17 +122,7 @@ void cinit_core(void) {
             gpio_write(19, true);
             gpio_write(21, true);
 
-            
-            uart_init(115200);
-
-            // asm("MOV x0, #1");
-            // asm("MOV x2, #2");
-            // asm("MOV x3, #3");
-            // asm("SVC 0x80");
-            
-
-            // printf("Started...\r\n");
-            // printf("[core%d] Started...\r\n", core_id, master_core);     
+            uart_init(115200); // TODO: Config flag may enable this
 
             master_core();
         }

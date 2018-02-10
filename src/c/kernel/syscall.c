@@ -11,10 +11,14 @@ int syscall( int req_id, ... ) {
     va_list args;
     va_start(args, req_id);
 
-    asm volatile("MOV x1, %0" :: "r" (req_id));
-    asm volatile("MOV x2, %0" :: "r" (&args));
-    asm volatile("SVC 0x80");
-    asm volatile("MOV %0, x0" : "=r" (ret_code));
+    asm volatile(".global _syscall      \n\
+    _syscall:                           \n\
+        MOV X0, %0                      \n\
+        MOV X1, %1                      \n\
+    "   :: "r" (req_id), "r" (&args)
+        : "x0", "x1");
+    asm volatile("SVC 0x80"); // TODO: r8 = 0x80
+    asm volatile("MOV %0, X0" : "=r" (ret_code));
 
     va_end(args);
 

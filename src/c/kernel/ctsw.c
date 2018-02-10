@@ -1,28 +1,12 @@
-/* ctsw.c : context switcher
- */
-
-// #include <xeroskernel.h>
-// #include <i386.h>
 #include "kernel.h"
 
+static uint64_t interrupt_type, ret_code, args;
 
-/* Your code goes here - You will need to write some assembly code. You must
-   use the gnu conventions for specifying the instructions. (i.e this is the
-   format used in class and on the slides.) You are not allowed to change the
-   compiler/assembler options or issue directives to permit usage of Intel's
-   assembly language conventions.
-*/
-void _HardwareEntryPoint( void );
-void _KernelEntryPoint( void );
-
-extern void enter_el0();
 
 enum ctsw_code context_switch(pcb_t *process) {
     // TODO Syscall ret code...
     // ret_code = process->ret;
     // process->frame->reg[0] = ret_code;
-
-    uint64_t interrupt_type, ret_code, args;
 
     // Save kernel state...
     asm volatile(".global _kernel_save  \n\
@@ -44,9 +28,9 @@ enum ctsw_code context_switch(pcb_t *process) {
         STP X28, X29, [SP, #-16]!   \n\
         STR X30, [SP, #-16]!        \n\
                                     \n\
-        MRS	X1, SPSR_EL1            \n\
-        MRS	X2, ELR_EL1             \n\
-        STP X1, X2, [SP, #-16]!     \n\
+        MRS	X9, SPSR_EL1            \n\
+        MRS	X10, ELR_EL1            \n\
+        STP X9, X10, [SP, #-16]!    \n\
     ");
 
     // Switch to SP0, Load process SP, Return to Handler
@@ -54,9 +38,9 @@ enum ctsw_code context_switch(pcb_t *process) {
     _kernel_to_process:                         \n\
         MSR SPSel, #0       \n\
         MOV SP, %0          \n\
-        LDP X1, X2, [SP], #16       \n\
-        MSR ELR_EL1,    X2          \n\
-        MSR SPSR_EL1,   X1          \n\
+        LDP X9, X10, [SP], #16      \n\
+        MSR ELR_EL1,    X10         \n\
+        MSR SPSR_EL1,   X9          \n\
                                     \n\
         LDR X30, [SP], #16          \n\
         LDP X28, X29, [SP], #16     \n\
@@ -74,31 +58,32 @@ enum ctsw_code context_switch(pcb_t *process) {
         LDP X4, X5, [SP], #16       \n\
         LDP X2, X3, [SP], #16       \n\
         LDP X0, X1, [SP], #16       \n\
-    "   : "=r" (process->frame));
+    "   :: "r" (process->frame));
 
     asm volatile("ERET");
 
-    // Interrupt leaves us here, read args from stack
+    // TODO ... these variables are stored in registers
     asm volatile(".global _int_syscall          \n\
     _int_syscall:                               \n\
         MOV %0, #1          \n\
-        MOV %1, x1          \n\
-        MOV %2, x2          \n\
-    "   : "=r" (interrupt_type), "=r" (ret_code), "=r" (args));
+        MOV %1, X0          \n\
+        MOV %2, X1          \n\
+    "   : "=r" (interrupt_type), "=r" (ret_code), "=r" (args)
+        :: "x0", "x1");
 
     // Save process SP, Switch to SP1
     asm volatile(".global _process_to_kernel    \n\
     _process_to_kernel:                         \n\
         MOV %0, SP          \n\
         MSR SPSel, #1        \n\
-    " :: "r" (process->frame));
+    "   : "=r" (process->frame));
 
     // Load kernel state...
     asm volatile(".global _kernel_load          \n\
     _kernel_load:                               \n\
-        LDP X1, X2, [SP], #16       \n\
-        MSR ELR_EL1,    X2          \n\
-        MSR SPSR_EL1,   X1          \n\
+        LDP X9, X10, [SP], #16      \n\
+        MSR ELR_EL1,    X9          \n\
+        MSR SPSR_EL1,   X10         \n\
                                     \n\
         LDR X30, [SP], #16          \n\
         LDP X28, X29, [SP], #16     \n\
@@ -134,9 +119,6 @@ enum ctsw_code context_switch(pcb_t *process) {
     return ret_code;
 }
 
-/*
- * Initialize the interupt entry point when context switching.
- */
 void context_init() {
     // set_evec((unsigned int) KERNEL_INT, (unsigned long) _KernelEntryPoint);
     // set_evec((unsigned int) TIMER_INT,  (unsigned long) _HardwareEntryPoint);
