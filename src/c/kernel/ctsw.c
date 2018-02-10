@@ -14,70 +14,109 @@
 */
 void _HardwareEntryPoint( void );
 void _KernelEntryPoint( void );
-// void _KeyboardEntryPoint( void );
 
-// static uint32_t kernel_stack, process_stack, prev_stack;
-// static uint32_t ret_code, args, interrupt_type;
+extern void enter_el0();
 
 enum ctsw_code context_switch(pcb_t *process) {
-    // (void)kernel_stack; 
-
     // TODO Syscall ret code...
     // ret_code = process->ret;
     // process->frame->reg[0] = ret_code;
 
-    // process_stack = (uint32_t) process->frame;
+    uint64_t interrupt_type, ret_code, args;
 
-    asm(".global _int_syscall   \n\
-    _int_syscall: \n\
-        nop");
+    // Save kernel state...
+    asm volatile(".global _kernel_save  \n\
+    _kernel_save:                       \n\
+        STP X0, X1, [SP, #-16]!     \n\
+        STP X2, X3, [SP, #-16]!     \n\
+        STP X4, X5, [SP, #-16]!     \n\
+        STP X6, X7, [SP, #-16]!     \n\
+        STP X8, X9, [SP, #-16]!     \n\
+        STP X10, X11, [SP, #-16]!   \n\
+        STP X12, X13, [SP, #-16]!   \n\
+        STP X14, X15, [SP, #-16]!   \n\
+        STP X16, X17, [SP, #-16]!   \n\
+        STP X18, X19, [SP, #-16]!   \n\
+        STP X20, X21, [SP, #-16]!   \n\
+        STP X22, X23, [SP, #-16]!   \n\
+        STP X24, X25, [SP, #-16]!   \n\
+        STP X26, X27, [SP, #-16]!   \n\
+        STP X28, X29, [SP, #-16]!   \n\
+        STR X30, [SP, #-16]!        \n\
+                                    \n\
+        MRS	X1, SPSR_EL1            \n\
+        MRS	X2, ELR_EL1             \n\
+        STP X1, X2, [SP, #-16]!     \n\
+    ");
 
-    __spin_lock(&print_lock);
-    printf("context switch gdb hook...\r\n");
-    __spin_unlock(&print_lock);  
-    // bool debug = true;
-    // while(debug);
-
-    // // Push kernel r0-r12 (general registers), sp and lr are implicity stored (banked)
-    asm volatile("PUSH {r0-r12, lr}");
-    // Switch to USER mode and update sp
+    // Switch to SP0, Load process SP, Return to Handler
     asm volatile(".global _kernel_to_process    \n\
     _kernel_to_process:                         \n\
-        MOV r0, #(0x1F | 0x80 | 0x40) \n\
-        MSR CPSR_c, r0      \n\
-        MOV sp, %0          \n\
-    "   : "=r" (process->frame)
-        :: "r0");
+        MSR SPSel, #0       \n\
+        MOV SP, %0          \n\
+        LDP X1, X2, [SP], #16       \n\
+        MSR ELR_EL1,    X2          \n\
+        MSR SPSR_EL1,   X1          \n\
+                                    \n\
+        LDR X30, [SP], #16          \n\
+        LDP X28, X29, [SP], #16     \n\
+        LDP X26, X27, [SP], #16     \n\
+        LDP X24, X25, [SP], #16     \n\
+        LDP X22, X23, [SP], #16     \n\
+        LDP X20, X21, [SP], #16     \n\
+        LDP X18, X19, [SP], #16     \n\
+        LDP X16, X17, [SP], #16     \n\
+        LDP X14, X15, [SP], #16     \n\
+        LDP X12, X13, [SP], #16     \n\
+        LDP X10, X11, [SP], #16     \n\
+        LDP X8, X9, [SP], #16       \n\
+        LDP X6, X7, [SP], #16       \n\
+        LDP X4, X5, [SP], #16       \n\
+        LDP X2, X3, [SP], #16       \n\
+        LDP X0, X1, [SP], #16       \n\
+    "   : "=r" (process->frame));
 
-    // // Restore process r0-r12, lr (working set)
-    asm volatile("POP {r0-r12, lr}");
-    asm volatile("BX lr");
+    asm volatile("ERET");
 
-    uint32_t interrupt_type, ret_code, args;
-    // // Switch to SYSTEM mode to save USER sp in process->frame
-    // // Read USER syscall args ... (r1-r2)
-    // // Switch back to SVC restoring sp implicitly
-    // asm volatile(".global _process_to_kernel        \n\
-    // _process_to_kernel:                             \n\
-    // .global _int_syscall                            \n\
-    // _int_syscall:                                   \n\
-    //     MOV r0, #(0x1F | 0x80 | 0x40)   \n\
-    //     MSR CPSR_c, r0      \n\
-    //     MOV %3, sp          \n\
-    //     MOV %0, #1          \n\
-    //     MOV %1, r1          \n\
-    //     MOV %2, r2          \n\
-    //     MOV r0, #(0x13 | 0x80 | 0x40)   \n\
-    //     MSR CPSR_c, r0      \n\
-    // "   : "=r" (interrupt_type), "=r" (ret_code), "=r" (args)
-    //     : "r" (process->frame));
-    // // Restore kernel r0-r12 (general registers), sp and lr are already restored (banked)
-    // asm volatile("POP {r0-r12, lr}");
+    // Interrupt leaves us here, read args from stack
+    asm volatile(".global _int_syscall          \n\
+    _int_syscall:                               \n\
+        MOV %0, #1          \n\
+        MOV %1, x1          \n\
+        MOV %2, x2          \n\
+    "   : "=r" (interrupt_type), "=r" (ret_code), "=r" (args));
 
-    // process->frame = (arm_frame32_t *) process_stack;    
+    // Save process SP, Switch to SP1
+    asm volatile(".global _process_to_kernel    \n\
+    _process_to_kernel:                         \n\
+        MOV %0, SP          \n\
+        MSR SPSel, #1        \n\
+    " :: "r" (process->frame));
 
-    // debug = true;
-    // while(debug);
+    // Load kernel state...
+    asm volatile(".global _kernel_load          \n\
+    _kernel_load:                               \n\
+        LDP X1, X2, [SP], #16       \n\
+        MSR ELR_EL1,    X2          \n\
+        MSR SPSR_EL1,   X1          \n\
+                                    \n\
+        LDR X30, [SP], #16          \n\
+        LDP X28, X29, [SP], #16     \n\
+        LDP X26, X27, [SP], #16     \n\
+        LDP X24, X25, [SP], #16     \n\
+        LDP X22, X23, [SP], #16     \n\
+        LDP X20, X21, [SP], #16     \n\
+        LDP X18, X19, [SP], #16     \n\
+        LDP X16, X17, [SP], #16     \n\
+        LDP X14, X15, [SP], #16     \n\
+        LDP X12, X13, [SP], #16     \n\
+        LDP X10, X11, [SP], #16     \n\
+        LDP X8, X9, [SP], #16       \n\
+        LDP X6, X7, [SP], #16       \n\
+        LDP X4, X5, [SP], #16       \n\
+        LDP X2, X3, [SP], #16       \n\
+        LDP X0, X1, [SP], #16       \n\
+    ");
 
     switch (interrupt_type) {
         case 1:

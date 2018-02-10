@@ -43,9 +43,15 @@ typedef struct {
     // uint32_t cpsr; (ARM handles this, initial setup should be done)
     // union {
     //     uint32_t spsr;
-        uint32_t stack_slots[0];
+        uint32_t stack_slots[0]; // TODO: Cleanup function
     // }; // TODO: Offset of (Generic stack)
 } arm_frame32_t;
+
+typedef struct {
+    uint64_t elr;
+    uint64_t spsr; // SPSR is actually 32 bits but this is for alignment...
+    uint64_t reg[30]; // Note: reg[0] = X29, reg[29] = X0
+} aarch64_frame_t;
 
 typedef struct {
     pid_t pid;
@@ -58,7 +64,7 @@ typedef struct {
     /* Stack */
     uint32_t    stack_size;
     uint32_t    *stack_base;
-    arm_frame32_t   *frame;
+    aarch64_frame_t   *frame; // stack pointer...
 
     struct list_head process_list;
     struct list_head process_hash_list;

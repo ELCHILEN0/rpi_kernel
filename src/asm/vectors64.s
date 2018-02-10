@@ -17,11 +17,11 @@
     STP X24, X25, [SP, #-16]!
     STP X26, X27, [SP, #-16]!
     STP X28, X29, [SP, #-16]!
-    // STP X30, X31, [SP, #-16]!
+    STR X30, [SP, #-16]!
 
     MRS	X1, SPSR_EL1
 	MRS	X2, ELR_EL1
-    STP X1, X2, [SP, #-16]
+    STP X1, X2, [SP, #-16]!
     // enable interrupts... (reentrant)
 
     .ifb \identify_and_clear_source
@@ -34,7 +34,7 @@
     MSR ELR_EL1, X2
     MSR SPSR_EL1, X1
 
-    // LDP X30, X31, [SP], #16
+    LDR X30, [SP], #16
 	LDP X28, X29, [SP], #16
     LDP X26, X27, [SP], #16
 	LDP X24, X25, [SP], #16
@@ -81,9 +81,10 @@ curr_el_spx_fiq:
 curr_el_spx_serror:
     interrupt_handler test_handler   
 
+// These should be used when using USER mode
 .balign 0x80
 lower_el_aarch64_sync:
-    interrupt_handler test_handler
+    interrupt_handler _int_syscall
 .balign 0x80
 lower_el_aarch64_irq:
     interrupt_handler test_handler

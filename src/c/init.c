@@ -61,7 +61,7 @@ void master_core () {
     // local_timer_interrupt_routing(0);
     // local_timer_start(0x038FFFF);
 
-    // kernel_init();
+    kernel_init();
 
     while (true) {
         for (int i = 0; i < 0x100000 * 30; i++);
@@ -121,22 +121,20 @@ void cinit_core(void) {
             gpio_write(5, true);
             gpio_write(6, true);
             gpio_write(13, true);
-
-            __sync_lock_test_and_set(&print_lock.flag, 1);
-
             gpio_write(19, true);
             gpio_write(21, true);
 
             
             uart_init(115200);
 
+            // asm("MOV x0, #1");
+            // asm("MOV x2, #2");
+            // asm("MOV x3, #3");
             // asm("SVC 0x80");
+            
 
-            write(0, "Started\r\n", 9);
             // printf("Started...\r\n");
-            // printf("[core%d] Started...\r\n", core_id, master_core);
-            // init_linear_addr_map();
-            // enable_mmu();        
+            // printf("[core%d] Started...\r\n", core_id, master_core);     
 
             master_core();
         }

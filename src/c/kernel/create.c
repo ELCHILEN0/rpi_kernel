@@ -46,17 +46,15 @@ int create(void (*func)(), int stack_size, enum process_priority priority) {
 
     process_t *process = stack_pointer + stack_size - sizeof(process_t);
     process->stack_base = stack_pointer;
-    process->frame = (arm_frame32_t *) (process - sizeof(arm_frame32_t) - 1 * sizeof(long));
+    process->frame = (aarch64_frame_t *) (process - sizeof(aarch64_frame_t) - 1 * sizeof(long));
     
     // TODO: Create with args...
-    for (int i = 0; i < 13; i++) {
+    for (int i = 0; i < 30; i++) {
         process->frame->reg[i] = i * 10;
     }
 
-    // process->frame->sp = (uint32_t) &process->frame->lr;
-    process->frame->lr = (uint32_t) func;
-    // process->frame->pc = (uint32_t) NULL;
-    // asm("MRS %0, CPSR" :: "r" (process->frame->cpsr));
+    process->frame->elr = (uint32_t) func;
+    process->frame->spsr = 0;
     
     //process->state = READY;
     process->pid = next_pid++;

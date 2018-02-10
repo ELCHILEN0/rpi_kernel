@@ -35,7 +35,6 @@ static uint64_t *cpu_release_addr = (uint64_t *) 0xd8;
 void core_enable(uint32_t core, uint64_t addr)
 {
     cpu_release_addr[core] = addr;
-
     asm("SEV");
 }
 

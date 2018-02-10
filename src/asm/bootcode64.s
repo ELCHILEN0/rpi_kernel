@@ -3,7 +3,7 @@
 // http://infocenter.arm.com/help/topic/com.arm.doc.dai0527a/DAI0527A_baremetal_boot_code_for_ARMv8_A_processors.pdf
 .global _init_core
 _init_core:
-    // Drop to el1
+    // Drop to el1h
     bl enter_el1
 
     MOV    X0,  XZR
@@ -69,8 +69,15 @@ _init_core_0:
     LDR    X1, =vector_table_el1
     MSR    VBAR_EL1, X1
 
+    MSR SPSel, #1
     ldr x0, =__el1_stack_end_core_0
-    mov sp, x0
+    MOV sp, x0
+
+/*
+    MSR SPSel, #0 
+    ldr x0, =__el0_stack_end_core_0
+    MOV sp, x0   
+*/
 
 /*
     bl enter_el0
@@ -86,18 +93,21 @@ _init_core_0:
     b hang
 
 _init_core_1:
+    MSR SPSel, #1
     ldr x0, =__el1_stack_end_core_1
     mov sp, x0
 
     b cinit_core
 
 _init_core_2:
+    MSR SPSel, #1
     ldr x0, =__el1_stack_end_core_2
     mov sp, x0
     
     b cinit_core
 
 _init_core_3:
+    MSR SPSel, #1
     ldr x0, =__el1_stack_end_core_3
     mov sp, x0
     
@@ -119,7 +129,6 @@ enter_el1:
     // return addr
 	MSR	ELR_el2, x30
 	ERET
-
 
 .global enter_el0
 enter_el0:
