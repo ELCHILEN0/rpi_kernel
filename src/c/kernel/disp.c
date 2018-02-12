@@ -97,14 +97,14 @@ void dispatch() {
         switch (request) {
             case SYS_CREATE:
             {
-                // First
                 void *func = va_arg(args, void*);
                 int stack = va_arg(args, int);
                 process->ret = create(func, stack, PRIORITY_MED);
                 break;
             }
             case SYS_YIELD:
-                // Second
+                ready(process);
+                process = next();
                 break;
             case SYS_EXIT:
                 // Fourth
@@ -113,7 +113,7 @@ void dispatch() {
                 // Fifth
                 break;
             case SYS_GET_PID:
-                // Third
+                process->ret = process->pid;
                 break;
             case SYS_KILL:
                 // Later

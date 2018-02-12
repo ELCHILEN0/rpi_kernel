@@ -54,7 +54,8 @@ int create(void (*func)(), int stack_size, enum process_priority priority) {
     }
 
     process->frame->elr = (uint32_t) func;
-    process->frame->spsr = 0b00100;
+    process->frame->spsr = 0b00100; // EL1t
+    // process->frame->spsr = 0b00000; // EL0
     
     //process->state = READY;
     process->pid = next_pid++;
@@ -71,8 +72,8 @@ int create(void (*func)(), int stack_size, enum process_priority priority) {
     // INIT_LIST_HEAD(&process->block_list);
     
     // Process Information Lists, different ways to access all processes
-    list_add(&process->process_list, &process_list);
-    list_add(&process->process_hash_list, get_process_bucket(process->pid));
+    // list_add(&process->process_list, &process_list);
+    // list_add(&process->process_hash_list, get_process_bucket(process->pid));
    
     // Proceses waiting for interaction from me
     // INIT_LIST_HEAD(&process->waiting_list);

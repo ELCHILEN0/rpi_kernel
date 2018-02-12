@@ -4,11 +4,6 @@ static uint64_t interrupt_type, ret_code, args;
 
 
 enum ctsw_code context_switch(pcb_t *process) {
-    // TODO Syscall ret code...
-    // ret_code = process->ret;
-    // process->frame->reg[0] = ret_code;
-
-    // Save kernel state...
     asm volatile(".global _kernel_save  \n\
     _kernel_save:                       \n\
         STP X0, X1, [SP, #-16]!     \n\
@@ -33,11 +28,17 @@ enum ctsw_code context_switch(pcb_t *process) {
         STP X9, X10, [SP, #-16]!    \n\
     ");
 
-    // Switch to SP0, Load process SP, Return to Handler
+    process->frame->reg[30] = process->ret;    
+
+    // Switch to SP0, Load Process SP
     asm volatile(".global _kernel_to_process    \n\
     _kernel_to_process:                         \n\
         MSR SPSel, #0       \n\
         MOV SP, %0          \n\
+    " :: "r" (process->frame));
+    
+    asm volatile(".global _process_load \n\
+    _process_load:                      \n\
         LDP X9, X10, [SP], #16      \n\
         MSR ELR_EL1,    X10         \n\
         MSR SPSR_EL1,   X9          \n\
@@ -58,11 +59,12 @@ enum ctsw_code context_switch(pcb_t *process) {
         LDP X4, X5, [SP], #16       \n\
         LDP X2, X3, [SP], #16       \n\
         LDP X0, X1, [SP], #16       \n\
-    "   :: "r" (process->frame));
+    ");
 
     asm volatile("ERET");
 
-    // TODO ... these variables are stored in registers
+    // NOTE: ESR = 0x560000XX == aarch64 SVC exception (XX == code)
+    // TODO ... find a way to store these locally to the function call, push onto stack, pop after...
     asm volatile(".global _int_syscall          \n\
     _int_syscall:                               \n\
         MOV %0, #1          \n\
@@ -71,19 +73,18 @@ enum ctsw_code context_switch(pcb_t *process) {
     "   : "=r" (interrupt_type), "=r" (ret_code), "=r" (args)
         :: "x0", "x1");
 
-    // Save process SP, Switch to SP1
+    // Switch to SP1 to restore kernel state
     asm volatile(".global _process_to_kernel    \n\
     _process_to_kernel:                         \n\
-        MOV %0, SP          \n\
         MSR SPSel, #1        \n\
-    "   : "=r" (process->frame));
+    ");
 
     // Load kernel state...
     asm volatile(".global _kernel_load          \n\
     _kernel_load:                               \n\
         LDP X9, X10, [SP], #16      \n\
-        MSR ELR_EL1,    X9          \n\
-        MSR SPSR_EL1,   X10         \n\
+        MSR ELR_EL1,    X10         \n\
+        MSR SPSR_EL1,   X9          \n\
                                     \n\
         LDR X30, [SP], #16          \n\
         LDP X28, X29, [SP], #16     \n\
@@ -102,6 +103,13 @@ enum ctsw_code context_switch(pcb_t *process) {
         LDP X2, X3, [SP], #16       \n\
         LDP X0, X1, [SP], #16       \n\
     ");
+
+    asm volatile(".global _process_save         \n\
+    _process_save:                         \n\
+        MSR SPSel, #0       \n\
+        MOV %0, SP          \n\
+        MSR SPSel, #1       \n\
+    " : "=r" (process->frame));
 
     switch (interrupt_type) {
         case 1:

@@ -180,11 +180,11 @@ BLOCK_1GB 0xC0000000, 0, 0x740
 .align 12
 level2_pagetable:
 .set ADDR, 0x000
-.rept 0x100
+.rept 0x1F8
 BLOCK_2MB (ADDR << 20), 0, 0x708 // Normal Memory
 .set ADDR, ADDR+2
 .endr
-.rept 0x100 // TODO: Adjust this range...
+.rept 0x8
 BLOCK_2MB (ADDR << 20), 0, 0x740 // Device Memory
 .set ADDR, ADDR+2
 .endr

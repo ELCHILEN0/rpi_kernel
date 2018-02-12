@@ -1,6 +1,5 @@
 #include "kernel.h"
 
-
 extern spinlock_t print_lock;
 
 void newproc() {
@@ -10,16 +9,29 @@ void newproc() {
 }
 
 void idleproc( uint32_t r0, uint32_t r1, uint32_t r2 ) {
-    // __spin_lock(&print_lock);
-    // printf("idleproc(%d, %d, %d)\r\n", r0, r1, r2);
-    // __spin_unlock(&print_lock); 
+    //printf("idleproc()\r\n");
+    uint32_t pid = 10;
+    pid = sysgetpid();
 
-    syscreate(newproc, 1024);
+    // syscreate(newproc, 1024);    
+
+    __spin_lock(&print_lock);
+    printf("[%d] idleproc(%d, %d, %d)\r\n", pid, r0, r1, r2);
+    __spin_unlock(&print_lock); 
+
+    pid = sysgetpid();
+
+    __spin_lock(&print_lock);
+    printf("[%d] idleproc(%d, %d, %d)\r\n", pid, r0, r1, r2);
+    __spin_unlock(&print_lock); 
+
 
     while(true) {
         asm("wfi"); 
     }
 }
+
+struct list_head my_list;
 
 void kernel_init( void )
 {
@@ -33,6 +45,7 @@ void kernel_init( void )
     // context_init();
     // devices_init();
     // Create idle and root process
+
     if (create(idleproc, 4096, PRIORITY_IDLE) < 0) {
         __spin_lock(&print_lock);
         printf("failed to init idle() process\r\n");

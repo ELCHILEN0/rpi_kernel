@@ -84,4 +84,5 @@ extern enum ctsw_code context_switch(pcb_t *process);
 extern int create(void (*func)(), int stack_size, enum process_priority);
 
 extern pid_t syscreate( void(*func)(void), uint32_t stack_size);
+extern pid_t sysgetpid( void );
 #endif
