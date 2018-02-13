@@ -55,8 +55,8 @@ typedef struct {
 
 typedef struct {
     pid_t pid;
-    uint32_t ret;
-    uint32_t args;
+    uint64_t ret;
+    uint64_t args;
 
     enum process_priority initial_priority;
     enum process_priority current_priority;

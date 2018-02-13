@@ -1,6 +1,3 @@
-/* syscall.c : syscalls
- */
-
 #include "kernel.h"
 #include <stdarg.h>
 

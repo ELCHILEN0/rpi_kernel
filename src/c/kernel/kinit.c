@@ -9,7 +9,17 @@ void newproc() {
 }
 
 void idleproc( uint32_t r0, uint32_t r1, uint32_t r2 ) {
-    //printf("idleproc()\r\n");
+    __spin_lock(&print_lock);
+    write(0, "idleproc()\r\n", 12);
+    __spin_unlock(&print_lock);
+    /*
+       84bf8:	f0000100 	adrp	x0, a7000 <__extenddftf2+0x28>
+    ESR_EL1        0x96000044	2516582468 == 000100 Translation fault, level 0
+    
+    level 0 not configured... level 1 first configured level
+        
+    */
+
     uint32_t pid = 10;
     pid = sysgetpid();
     pid = sysgetpid();

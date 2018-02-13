@@ -50,8 +50,9 @@ int create(void (*func)(), int stack_size, enum process_priority priority) {
     
     // TODO: Create with args...
     for (int i = 0; i < 31; i++) {
-        process->frame->reg[i] = i * 10;
+        process->frame->reg[i] = 0;
     }
+    process->ret = process->frame[0];
 
     process->frame->elr = (uint32_t) func;
     process->frame->spsr = 0b00100; // EL1t
