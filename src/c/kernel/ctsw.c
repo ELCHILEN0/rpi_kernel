@@ -1,34 +1,46 @@
 #include "kernel.h"
 
-static uint64_t interrupt_type, ret_code, args;
-
+void identify_and_clear_source() {
+    // TODO: Adapt for other interrupt types...
+    asm volatile(".global _identify_and_clear_source    \n\
+    _identify_and_clear_source:                         \n\
+        MSR SPSel, #1               \n\
+        STP X0, X1, [SP, #-16]!     \n\
+        MOV X0, #1                  \n\
+        STR X0, [SP, #-8]!          \n\
+    " ::: "x0", "x1");
+}
 
 enum ctsw_code context_switch(pcb_t *process) {
+    uint64_t interrupt_type, ret_code, args, stack_pointer;
+
     asm volatile(".global _kernel_save  \n\
     _kernel_save:                       \n\
-        STP X0, X1, [SP, #-16]!     \n\
-        STP X2, X3, [SP, #-16]!     \n\
-        STP X4, X5, [SP, #-16]!     \n\
-        STP X6, X7, [SP, #-16]!     \n\
-        STP X8, X9, [SP, #-16]!     \n\
-        STP X10, X11, [SP, #-16]!   \n\
-        STP X12, X13, [SP, #-16]!   \n\
-        STP X14, X15, [SP, #-16]!   \n\
-        STP X16, X17, [SP, #-16]!   \n\
-        STP X18, X19, [SP, #-16]!   \n\
-        STP X20, X21, [SP, #-16]!   \n\
-        STP X22, X23, [SP, #-16]!   \n\
-        STP X24, X25, [SP, #-16]!   \n\
-        STP X26, X27, [SP, #-16]!   \n\
+        MSR SPSel, #1               \n\
+        STR X30, [SP, #-8]!         \n\
         STP X28, X29, [SP, #-16]!   \n\
-        STR X30, [SP, #-16]!        \n\
+        STP X26, X27, [SP, #-16]!   \n\
+        STP X24, X25, [SP, #-16]!   \n\
+        STP X22, X23, [SP, #-16]!   \n\
+        STP X20, X21, [SP, #-16]!   \n\
+        STP X18, X19, [SP, #-16]!   \n\
+        STP X16, X17, [SP, #-16]!   \n\
+        STP X14, X15, [SP, #-16]!   \n\
+        STP X12, X13, [SP, #-16]!   \n\
+        STP X10, X11, [SP, #-16]!   \n\
+        STP X8, X9, [SP, #-16]!     \n\
+        STP X6, X7, [SP, #-16]!     \n\
+        STP X4, X5, [SP, #-16]!     \n\
+        STP X2, X3, [SP, #-16]!     \n\
+        STP X0, X1, [SP, #-16]!     \n\
                                     \n\
         MRS	X9, SPSR_EL1            \n\
         MRS	X10, ELR_EL1            \n\
         STP X9, X10, [SP, #-16]!    \n\
-    ");
+    " ::: "x9", "x10");
 
-    process->frame->reg[30] = process->ret;    
+    // TODO: syscall, avoid clobbering p->reg[0], instead clobber x9/8
+    process->frame->reg[0] = process->ret;
 
     // Switch to SP0, Load Process SP
     asm volatile(".global _kernel_to_process    \n\
@@ -40,76 +52,77 @@ enum ctsw_code context_switch(pcb_t *process) {
     asm volatile(".global _process_load \n\
     _process_load:                      \n\
         LDP X9, X10, [SP], #16      \n\
-        MSR ELR_EL1,    X10         \n\
-        MSR SPSR_EL1,   X9          \n\
+        MSR ELR_EL1, X10            \n\
+        MSR SPSR_EL1, X9            \n\
                                     \n\
-        LDR X30, [SP], #16          \n\
-        LDP X28, X29, [SP], #16     \n\
-        LDP X26, X27, [SP], #16     \n\
-        LDP X24, X25, [SP], #16     \n\
-        LDP X22, X23, [SP], #16     \n\
-        LDP X20, X21, [SP], #16     \n\
-        LDP X18, X19, [SP], #16     \n\
-        LDP X16, X17, [SP], #16     \n\
-        LDP X14, X15, [SP], #16     \n\
-        LDP X12, X13, [SP], #16     \n\
-        LDP X10, X11, [SP], #16     \n\
-        LDP X8, X9, [SP], #16       \n\
-        LDP X6, X7, [SP], #16       \n\
-        LDP X4, X5, [SP], #16       \n\
-        LDP X2, X3, [SP], #16       \n\
         LDP X0, X1, [SP], #16       \n\
+        LDP X2, X3, [SP], #16       \n\
+        LDP X4, X5, [SP], #16       \n\
+        LDP X6, X7, [SP], #16       \n\
+        LDP X8, X9, [SP], #16       \n\
+        LDP X10, X11, [SP], #16     \n\
+        LDP X12, X13, [SP], #16     \n\
+        LDP X14, X15, [SP], #16     \n\
+        LDP X16, X17, [SP], #16     \n\
+        LDP X18, X19, [SP], #16     \n\
+        LDP X20, X21, [SP], #16     \n\
+        LDP X22, X23, [SP], #16     \n\
+        LDP X24, X25, [SP], #16     \n\
+        LDP X26, X27, [SP], #16     \n\
+        LDP X28, X29, [SP], #16     \n\
+        LDR X30, [SP], #8           \n\
     ");
 
     asm volatile("ERET");
 
     // NOTE: ESR = 0x560000XX == aarch64 SVC exception (XX == code)
-    // TODO ... find a way to store these locally to the function call, push onto stack, pop after...
+    // TODO: move this to interrupt identification function...
+    // Store syscall params, and interrupt type id to the process stack
     asm volatile(".global _int_syscall          \n\
     _int_syscall:                               \n\
-        MOV %0, #1          \n\
-        MOV %1, X0          \n\
-        MOV %2, X1          \n\
-    "   : "=r" (interrupt_type), "=r" (ret_code), "=r" (args)
-        :: "x0", "x1");
-
-    // Switch to SP1 to restore kernel state
-    asm volatile(".global _process_to_kernel    \n\
-    _process_to_kernel:                         \n\
-        MSR SPSel, #1        \n\
+        MSR SPSel, #0                   \n\
+        STP X0, X1, [SP, #-16]!         \n\
+        MOV X0, #1                      \n\
+        STR X0,     [SP, #-8]!          \n\
     ");
 
     // Load kernel state...
     asm volatile(".global _kernel_load          \n\
     _kernel_load:                               \n\
+        MSR SPSel, #1               \n\
         LDP X9, X10, [SP], #16      \n\
-        MSR ELR_EL1,    X10         \n\
-        MSR SPSR_EL1,   X9          \n\
+        MSR ELR_EL1, X10            \n\
+        MSR SPSR_EL1, X9            \n\
                                     \n\
-        LDR X30, [SP], #16          \n\
-        LDP X28, X29, [SP], #16     \n\
-        LDP X26, X27, [SP], #16     \n\
-        LDP X24, X25, [SP], #16     \n\
-        LDP X22, X23, [SP], #16     \n\
-        LDP X20, X21, [SP], #16     \n\
-        LDP X18, X19, [SP], #16     \n\
-        LDP X16, X17, [SP], #16     \n\
-        LDP X14, X15, [SP], #16     \n\
-        LDP X12, X13, [SP], #16     \n\
-        LDP X10, X11, [SP], #16     \n\
-        LDP X8, X9, [SP], #16       \n\
-        LDP X6, X7, [SP], #16       \n\
-        LDP X4, X5, [SP], #16       \n\
-        LDP X2, X3, [SP], #16       \n\
         LDP X0, X1, [SP], #16       \n\
+        LDP X2, X3, [SP], #16       \n\
+        LDP X4, X5, [SP], #16       \n\
+        LDP X6, X7, [SP], #16       \n\
+        LDP X8, X9, [SP], #16       \n\
+        LDP X10, X11, [SP], #16     \n\
+        LDP X12, X13, [SP], #16     \n\
+        LDP X14, X15, [SP], #16     \n\
+        LDP X16, X17, [SP], #16     \n\
+        LDP X18, X19, [SP], #16     \n\
+        LDP X20, X21, [SP], #16     \n\
+        LDP X22, X23, [SP], #16     \n\
+        LDP X24, X25, [SP], #16     \n\
+        LDP X26, X27, [SP], #16     \n\
+        LDP X28, X29, [SP], #16     \n\
+        LDR X30, [SP], #8           \n\
     ");
 
+    // Handle the exception, saving the process SP and loading the syscall args
     asm volatile(".global _process_save         \n\
-    _process_save:                         \n\
+    _process_save:                              \n\
         MSR SPSel, #0       \n\
-        MOV %0, SP          \n\
+        LDR %0,     [SP], #8    \n\
+        LDP %1, %2, [SP], #16   \n\
+        MOV %3, SP          \n\
         MSR SPSel, #1       \n\
-    " : "=r" (process->frame));
+    " : "=r" (interrupt_type), "=r" (ret_code), "=r" (args), "=r" (stack_pointer));
+
+    process->frame = (aarch64_frame_t *) stack_pointer;
 
     switch (interrupt_type) {
         case 1:

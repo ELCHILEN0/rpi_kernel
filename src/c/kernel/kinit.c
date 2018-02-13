@@ -12,6 +12,8 @@ void idleproc( uint32_t r0, uint32_t r1, uint32_t r2 ) {
     //printf("idleproc()\r\n");
     uint32_t pid = 10;
     pid = sysgetpid();
+    pid = sysgetpid();
+    pid = sysgetpid();
 
     // syscreate(newproc, 1024);    
 

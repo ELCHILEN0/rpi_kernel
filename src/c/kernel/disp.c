@@ -113,7 +113,8 @@ void dispatch() {
                 // Fifth
                 break;
             case SYS_GET_PID:
-                process->ret = process->pid;
+                // process->ret = process->pid;
+                process->ret = 0x1234;
                 break;
             case SYS_KILL:
                 // Later

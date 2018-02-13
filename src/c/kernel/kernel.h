@@ -50,7 +50,7 @@ typedef struct {
 typedef struct {
     uint64_t spsr; // SPSR is actually 32 bits but this is for alignment...    
     uint64_t elr;
-    uint64_t reg[31]; // Note: reg[0] = X30, reg[30] = X0
+    uint64_t reg[31];
 } aarch64_frame_t;
 
 typedef struct {
