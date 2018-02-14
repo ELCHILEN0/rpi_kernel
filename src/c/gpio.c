@@ -46,4 +46,6 @@ extern int gpio_pull(unsigned int pin, bool up, bool off) {
     gpio->pud_clk[pin / 32] = (1 << (pin % 32));
     for (int i = 0; i < 150; i++) asm volatile ("nop");
     gpio->pud_clk[pin / 32] = 0;
+
+    return 0;
 }

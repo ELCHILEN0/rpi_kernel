@@ -25,7 +25,7 @@ enum process_priority {
     PRIORITY_HIGH,
 };
 
-enum ctsw_code {
+enum interrupt_cause {
     SYS_CREATE,
     SYS_YIELD,
     SYS_EXIT,
@@ -33,6 +33,12 @@ enum ctsw_code {
     SYS_GET_PID,
     SYS_KILL,
     INT_TIMER,
+};
+
+enum process_state {
+    RUNNABLE,
+    BLOCKED,
+    STOPPED,
 };
 
 typedef struct {
@@ -48,7 +54,7 @@ typedef struct {
 } arm_frame32_t;
 
 typedef struct {
-    uint64_t spsr; // SPSR is actually 32 bits but this is for alignment...    
+    uint64_t spsr;    
     uint64_t elr;
     uint64_t reg[31];
 } aarch64_frame_t;
@@ -58,12 +64,14 @@ typedef struct {
     uint64_t ret;
     uint64_t args;
 
+    enum process_state state;
+
     enum process_priority initial_priority;
     enum process_priority current_priority;
     
     /* Stack */
-    uint32_t    stack_size;
-    uint32_t    *stack_base;
+    uint64_t    stack_size;
+    uint64_t    *stack_base;
     aarch64_frame_t   *frame; // stack pointer...
 
     struct list_head process_list;
@@ -79,7 +87,7 @@ extern void dispatcher_init();
 extern void dispatch();
 
 extern void ready(process_t *process);
-extern enum ctsw_code context_switch(pcb_t *process);
+extern enum interrupt_cause context_switch(pcb_t *process);
 
 extern int create(void (*func)(), int stack_size, enum process_priority);
 

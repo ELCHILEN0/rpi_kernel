@@ -24,8 +24,8 @@
     STP X9, X10, [SP, #-16]!
     // enable interrupts... (reentrant)
 
-    .ifb \identify_and_clear_source
-        // BL	\identify_and_clear_source
+    .ifnb \identify_and_clear_source
+        BL	\identify_and_clear_source
     .endif
 	BL	\handler
 
@@ -58,15 +58,15 @@
 vector_table_el1:
 curr_el_sp0_sync:
     MSR SPSel, #0
-    interrupt_handler _int_syscall
+    interrupt_handler _kernel_load _identify_sp0
 .balign 0x80
 curr_el_sp0_irq:
     MSR SPSel, #0
-    interrupt_handler _int_syscall
+    interrupt_handler _kernel_load _identify_sp0
 .balign 0x80
 curr_el_sp0_fiq:
     MSR SPSel, #0
-    interrupt_handler _int_syscall
+    interrupt_handler _kernel_load _identify_sp0
 .balign 0x80
 curr_el_sp0_serror:
     MSR SPSel, #0
@@ -88,27 +88,27 @@ curr_el_spx_serror:
 // These should be used when using USER mode
 .balign 0x80
 lower_el_aarch64_sync:
-    interrupt_handler _int_syscall
+    b .
 .balign 0x80
 lower_el_aarch64_irq:
-    interrupt_handler test_handler
+    b .
 .balign 0x80
 lower_el_aarch64_fiq:
-    interrupt_handler test_handler
+    b .
 .balign 0x80
 lower_el_aarch64_serror:
-    interrupt_handler test_handler
+    b .
 
 .balign 0x80
 lower_el_aarch32_sync:
-    interrupt_handler test_handler
+    b .
 .balign 0x80
 lower_el_aarch32_irq:
-    interrupt_handler test_handler
+    b .
 .balign 0x80
 lower_el_aarch32_fiq:
-    interrupt_handler test_handler
+    b .
 .balign 0x80
 lower_el_aarch32_serror:
-    interrupt_handler test_handler
+    b .
                          

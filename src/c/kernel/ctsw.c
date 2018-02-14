@@ -1,17 +1,18 @@
 #include "kernel.h"
 
-void identify_and_clear_source() {
-    // TODO: Adapt for other interrupt types...
-    asm volatile(".global _identify_and_clear_source    \n\
-    _identify_and_clear_source:                         \n\
-        MSR SPSel, #1               \n\
-        STP X0, X1, [SP, #-16]!     \n\
-        MOV X0, #1                  \n\
-        STR X0, [SP, #-8]!          \n\
+void __attribute((naked)) identify_and_clear_source() {
+    // 0x560000XX == aarch64 SVC exception (XX == code)
+    // TODO: Adapt for other interrupt types... read ESR
+    asm volatile(".global _identify_sp0    \n\
+    _identify_sp0:                         \n\
+        MSR SPSel, #0                   \n\
+        STP X0, X1, [SP, #-16]!         \n\
+        MOV X0, #1                      \n\
+        STR X0,     [SP, #-8]!          \n\
     " ::: "x0", "x1");
 }
 
-enum ctsw_code context_switch(pcb_t *process) {
+enum interrupt_cause context_switch(pcb_t *process) {
     uint64_t interrupt_type, ret_code, args, stack_pointer;
 
     asm volatile(".global _kernel_save  \n\
@@ -75,8 +76,6 @@ enum ctsw_code context_switch(pcb_t *process) {
 
     asm volatile("ERET");
 
-    // NOTE: ESR = 0x560000XX == aarch64 SVC exception (XX == code)
-    // TODO: move this to interrupt identification function...
     // Store syscall params, and interrupt type id to the process stack
     asm volatile(".global _int_syscall          \n\
     _int_syscall:                               \n\
