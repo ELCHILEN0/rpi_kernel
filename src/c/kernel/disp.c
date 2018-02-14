@@ -29,8 +29,7 @@ void dispatcher_init() {
  * process into a detatched but running state.
  */
 process_t *next( void ) {
-    int i;
-    for (i = PRIORITY_IDLE; i <= PRIORITY_HIGH; i++) {
+    for (int i = PRIORITY_HIGH; i >= PRIORITY_IDLE; i--) {
         struct list_head *ready_queue = &ready_queues[i];
 
         if (list_empty(ready_queue)) continue;
