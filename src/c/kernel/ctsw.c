@@ -84,7 +84,7 @@ enum ctsw_code context_switch(pcb_t *process) {
         STP X0, X1, [SP, #-16]!         \n\
         MOV X0, #1                      \n\
         STR X0,     [SP, #-8]!          \n\
-    ");
+    "); 
 
     // Load kernel state...
     asm volatile(".global _kernel_load          \n\

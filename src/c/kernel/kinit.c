@@ -10,7 +10,8 @@ void newproc() {
 
 void idleproc( uint32_t r0, uint32_t r1, uint32_t r2 ) {
     __spin_lock(&print_lock);
-    write(0, "idleproc()\r\n", 12);
+    // write(0, "idleproc()\r\n", 12);
+    printf("this is a test\r\n");
     __spin_unlock(&print_lock);
     /*
        84bf8:	f0000100 	adrp	x0, a7000 <__extenddftf2+0x28>
