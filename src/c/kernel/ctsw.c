@@ -39,7 +39,7 @@ enum ctsw_code context_switch(pcb_t *process) {
         STP X9, X10, [SP, #-16]!    \n\
     " ::: "x9", "x10");
 
-    // TODO: syscall, avoid clobbering p->reg[0], instead clobber x9/8
+    // Place previous interrupt return code in x0
     process->frame->reg[0] = process->ret;
 
     // Switch to SP0, Load Process SP

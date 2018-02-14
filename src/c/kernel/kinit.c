@@ -6,38 +6,29 @@ void newproc() {
     __spin_lock(&print_lock);
     printf("newproc()\r\n");
     __spin_unlock(&print_lock); 
+
+    while (true);
 }
 
 void idleproc( uint32_t r0, uint32_t r1, uint32_t r2 ) {
     __spin_lock(&print_lock);
-    // write(0, "idleproc()\r\n", 12);
-    printf("this is a test\r\n");
+    printf("idleproc()\r\n", r0);
     __spin_unlock(&print_lock);
-    /*
-       84bf8:	f0000100 	adrp	x0, a7000 <__extenddftf2+0x28>
-    ESR_EL1        0x96000044	2516582468 == 000100 Translation fault, level 0
-    
-    level 0 not configured... level 1 first configured level
-        
-    */
 
     uint32_t pid = 10;
     pid = sysgetpid();
-    pid = sysgetpid();
-    pid = sysgetpid();
-
-    // syscreate(newproc, 1024);    
 
     __spin_lock(&print_lock);
     printf("[%d] idleproc(%d, %d, %d)\r\n", pid, r0, r1, r2);
     __spin_unlock(&print_lock); 
 
-    pid = sysgetpid();
+    pid = syscreate(newproc, 1024);    
 
     __spin_lock(&print_lock);
-    printf("[%d] idleproc(%d, %d, %d)\r\n", pid, r0, r1, r2);
+    printf("[%d] created\r\n", pid);
     __spin_unlock(&print_lock); 
 
+    sysyield();    
 
     while(true) {
         asm("wfi"); 
