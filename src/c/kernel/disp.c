@@ -106,7 +106,9 @@ void dispatch() {
                 process = next();
                 break;
             case SYS_EXIT:
-                // Fourth
+                printf("exiting...\r\n");
+                destroy(process);
+                process = next();
                 break;
             case SYS_WAIT_PID:
                 // Fifth

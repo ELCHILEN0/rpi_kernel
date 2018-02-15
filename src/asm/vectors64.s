@@ -24,7 +24,7 @@
     STP X9, X10, [SP, #-16]!
     // enable interrupts... (reentrant)
 
-    .ifb \identify_and_clear_source
+    .ifnb \identify_and_clear_source
         // BL	\identify_and_clear_source
     .endif
 	BL	\handler
