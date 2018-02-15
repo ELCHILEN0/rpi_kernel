@@ -1,24 +1,29 @@
 # The ARM toolchain prefix (32 bit = arm-...-eabi, 64 bit = aarch64-...-gnueabi)
-TOOLCHAIN = arm-none-eabi
+# TOOLCHAIN = arm-none-eabi
 # TOOLCHAIN = /usr/local/gcc-arm-none-eabi-6-2017-q2-update/bin/arm-none-eabi
 # TOOLCHAIN = /root/x-tools/armv8-rpi3-linux-gnueabihf/bin/armv8-rpi3-linux-gnueabihf
 # TOOLCHAIN = /root/x-tools/aarch64-rpi3-linux-gnueabi/bin/aarch64-rpi3-linux-gnueabi
+TOOLCHAIN = /root/x-tools/gcc-linaro-5.5.0-2017.10-x86_64_aarch64-elf/bin/aarch64-elf
 
 AARCH = 
-CCFLAGS = -nostartfiles -ffreestanding -mfpu=vfp -mcpu=cortex-a53 -ggdb
+CCFLAGS = -Wall -nostartfiles -ffreestanding -mcpu=cortex-a53 -ggdb 
+LIBS = -L /root/x-tools/sysroot-newlib-linaro-2017.10-aarch64-elf/usr/lib/include -L /root/x-tools/sysroot-newlib-linaro-2017.10-aarch64-elf/usr/lib
+# LIBS = -lc -nostdlib
+# CCFLAGS = -nostartfiles -ffreestanding -mfpu=vfp -mcpu=cortex-a53 -ggdb
 
 # AARCH = -march=armv6 
 # CCFLAGS = -O2 -Wall -nostartfiles -ffreestanding $(AARCH)
 
-TARGET = kernel8-32
+TARGET = kernel8
 BUILD = build
 SOURCE = src
 
 COPY = /Volumes/boot
 
-SOBJ = bootcode.o vectors.o
-UOBJ = cstartup.o cstubs.o init.o peripheral.o gpio.o mailbox.o interrupts.o timer.o uart.o multicore.o cache.o
-HOBJ = cache.h gpio.h interrupts.h mailbox.h multicore.h peripheral.h timer.h uart.h
+SOBJ = bootcode64.o vectors64.o
+UOBJ = cstartup.o cstubs.o init.o peripheral.o gpio.o multicore.o uart.o mailbox.o interrupts.o timer.o
+# UOBJ = cstartup.o cstubs.o init.o peripheral.o gpio.o mailbox.o interrupts.o timer.o uart.o multicore.o cache.o
+# HOBJ = cache.h gpio.h interrupts.h mailbox.h multicore.h peripheral.h timer.h uart.h
 KOBJ = kinit.o create.o ctsw.o syscall.o disp.o
 
 HOBJ += kernel/kernel.h kernel/list.h
@@ -27,7 +32,7 @@ all: $(BUILD)/$(TARGET).img $(BUILD)/$(TARGET).list
 
 # ELF
 $(BUILD)/$(TARGET).elf: $(addprefix $(BUILD)/, $(SOBJ)) $(addprefix $(BUILD)/, $(UOBJ)) $(addprefix $(BUILD)/, $(KOBJ))
-	$(TOOLCHAIN)-gcc $(CCFLAGS) -T $(SOURCE)/linker.ld $^ -o $(BUILD)/$(TARGET).elf
+	$(TOOLCHAIN)-gcc $(CCFLAGS) -T $(SOURCE)/linker.ld $^ $(LIBS) -o $(BUILD)/$(TARGET).elf
 
 # ELF to LIST
 $(BUILD)/$(TARGET).list: $(BUILD)/$(TARGET).elf
@@ -56,7 +61,7 @@ clean:
 DOCKER_IMAGE = toolchain
 DOCKER_BUILD = /root/build
 start-toolchain:
-	docker run --rm -it -v $(CURDIR):$(DOCKER_BUILD) -v $(COPY):$(COPY) -w $(DOCKER_BUILD) $(DOCKER_IMAGE)
+	docker run --rm -it -v $(CURDIR):$(DOCKER_BUILD) -w $(DOCKER_BUILD) $(DOCKER_IMAGE)
 
 SERIAL_DEVICE = /dev/tty.usbserial-AH069DMB
 SERIAL_BAUD_RATE = 115200
@@ -65,17 +70,18 @@ serial-screen:
 
 # GDB_HOST = localhost
 GDB_HOST = docker.for.mac.host.internal
+GDB_ARGS = -ex "tui enable" -ex "layout split" -ex "set confirm off" 
 
 gdb-core-0:
-	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -tui -ex="target remote $(GDB_HOST):3333" -ex=continue
+	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -tui -ex "target remote $(GDB_HOST):3333" $(GDB_ARGS) -ex "load $(BUILD)/$(TARGET).elf"
 
 gdb-core-1:
-	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -ex="target remote $(GDB_HOST):3334" -ex=continue
+	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -ex="target remote $(GDB_HOST):3334" $(GDB_ARGS) -ex "file $(BUILD)/$(TARGET).elf"
 	
 gdb-core-2:
-	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -ex="target remote $(GDB_HOST):3335" -ex=continue
+	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -ex="target remote $(GDB_HOST):3335" $(GDB_ARGS) -ex "file $(BUILD)/$(TARGET).elf"
 	
 gdb-core-3:
-	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -ex="target remote $(GDB_HOST):3336" -ex=continue
+	$(TOOLCHAIN)-gdb $(BUILD)/$(TARGET).elf -ex="target remote $(GDB_HOST):3336" $(GDB_ARGS) -ex "file $(BUILD)/$(TARGET).elf"
 
 

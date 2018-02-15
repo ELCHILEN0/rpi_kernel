@@ -12,6 +12,11 @@
  * see ch. 12.1.3.
  */
 interrupt_handler_svc:
+  @ TODO: lr = lr
+  @ STMIA sp!, {sp-pc}
+  @ STMIA sp!, {r0-r12, lr}
+  @ push {sp-pc}
+  @ push {r0-r12}
   push {r0-r12, lr}
   ldr r0, [lr, #-4]
   bic r0, #0xFF000000
@@ -26,6 +31,7 @@ interrupt_handler_udef:
   MOVS PC, lr
 
 interrupt_handler_irq:
+  SUBS lr, lr, #4
   push {r0-r12, lr}
   bl interrupt_irq
   pop {r0-r12, lr}

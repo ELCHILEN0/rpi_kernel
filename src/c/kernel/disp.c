@@ -29,8 +29,7 @@ void dispatcher_init() {
  * process into a detatched but running state.
  */
 process_t *next( void ) {
-    int i;
-    for (i = PRIORITY_IDLE; i <= PRIORITY_HIGH; i++) {
+    for (int i = PRIORITY_HIGH; i >= PRIORITY_IDLE; i--) {
         struct list_head *ready_queue = &ready_queues[i];
 
         if (list_empty(ready_queue)) continue;
@@ -97,23 +96,25 @@ void dispatch() {
         switch (request) {
             case SYS_CREATE:
             {
-                // First
                 void *func = va_arg(args, void*);
                 int stack = va_arg(args, int);
                 process->ret = create(func, stack, PRIORITY_MED);
                 break;
             }
             case SYS_YIELD:
-                // Second
+                ready(process);
+                process = next();
                 break;
             case SYS_EXIT:
-                // Fourth
+                printf("exiting...\r\n");
+                destroy(process);
+                process = next();
                 break;
             case SYS_WAIT_PID:
                 // Fifth
                 break;
             case SYS_GET_PID:
-                // Third
+                process->ret = process->pid;
                 break;
             case SYS_KILL:
                 // Later
