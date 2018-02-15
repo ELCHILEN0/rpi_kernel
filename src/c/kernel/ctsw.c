@@ -12,7 +12,7 @@ void __attribute((naked)) identify_and_clear_source() {
     " ::: "x0", "x1");
 }
 
-enum interrupt_cause context_switch(pcb_t *process) {
+enum interrupt_source context_switch(pcb_t *process) {
     uint64_t interrupt_type, ret_code, args, stack_pointer;
 
     asm volatile(".global _kernel_save  \n\

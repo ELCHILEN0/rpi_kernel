@@ -22,7 +22,7 @@ int syscall( int req_id, ... ) {
     return ret_code;
 }
 
-pid_t syscreate( void (*func)(void), uint32_t stack ) {
+pid_t syscreate( void (*func)(void), uint64_t stack ) {
     return syscall(SYS_CREATE, func, stack);
 }
 
@@ -34,7 +34,7 @@ void sysexit( void ) {
     syscall(SYS_EXIT);
 }
 
-int syswaitpid( pid_t pid ) {
+uint64_t syswaitpid( pid_t pid ) {
     return syscall(SYS_WAIT_PID, pid);
 }
 

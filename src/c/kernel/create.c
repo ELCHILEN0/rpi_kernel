@@ -32,7 +32,7 @@ process_t *get_process(pid_t pid) {
     return NULL;
 }
 
-int create(void (*func)(), int stack_size, enum process_priority priority) {
+int create(void (*func)(), uint64_t stack_size, enum process_priority priority) {
     if (stack_size < PROC_STACK)
         stack_size = PROC_STACK;    
 
@@ -46,12 +46,13 @@ int create(void (*func)(), int stack_size, enum process_priority priority) {
 
     process_t *process = stack_pointer + stack_size - sizeof(process_t);
     process->stack_base = stack_pointer;
-    process->frame = (aarch64_frame_t *) (process - sizeof(aarch64_frame_t) - 1 * sizeof(long));
+    process->frame = (aarch64_frame_t *) (process - sizeof(aarch64_frame_t));
     
     // TODO: Create with args...
     for (int i = 0; i < 31; i++) {
         process->frame->reg[i] = 0;
     }
+    process->frame->reg[30] = (uint64_t) sysexit;
     process->ret = process->frame->reg[0];
 
     process->frame->elr = (uint64_t) func;
@@ -113,8 +114,8 @@ int create(void (*func)(), int stack_size, enum process_priority priority) {
  * message sender will have its return code set to -1 and will be rescheduled.
  */
 int destroy(process_t *process) {
-    process->state = STOPPED;
-    process_t *p, *pnext;
+    // process->state = TERMINATED;
+    // process_t *p, *pnext;
 
     /*
      * Unblock processes blocked waiting to deliver a message to the current

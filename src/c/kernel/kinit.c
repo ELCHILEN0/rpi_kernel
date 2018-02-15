@@ -6,8 +6,6 @@ void newproc() {
     __spin_lock(&print_lock);
     printf("newproc()\r\n");
     __spin_unlock(&print_lock); 
-
-    while (true);
 }
 
 void idleproc( uint32_t r0, uint32_t r1, uint32_t r2 ) {
