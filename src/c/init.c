@@ -30,10 +30,7 @@ void test_handler() {
     next_blinker_state = !next_blinker_state;    
 
     uart_putc('.');
-    core_timer_rearm(19200000);   
-    // core_timer_rearm(0x8FFF);
-    // local_timer_start(0x038FFFF);    
-    // core_timer_stop();  
+    core_timer_rearm(19200000);
 }
 
 void interrupt_handler() {
@@ -96,7 +93,23 @@ extern void enable_mmu();
 void cinit_core(void) {    
     // OK status (use till GPIO working)
     act_message[6] = 1;
-    mailbox_write(mailbox0, MB0_PROPERTY_TAGS_ARM_TO_VC, (uint32_t) &act_message);    
+    mailbox_write(mailbox0, MB0_PROPERTY_TAGS_ARM_TO_VC, (uint32_t) &act_message);
+
+    gpio_fsel(21, SEL_OUTPUT);
+    
+    __enable_interrupts();       
+    core_timer_init( CT_CTRL_SRC_APB, CT_CTRL_INC2, 0x80000000);
+    // core_timer_init( CT_CTRL_INC1, CT_CTRL_SRC_CRS, 0x00FFFFFF );
+    core_timer_interrupt_routing(0, CT_IRQ_NON_SECURE);
+    core_timer_rearm(19200000);
+
+    while(true);
+    // while (true) {
+    //     uint32_t code = mmio_read(0x40000060);
+    //     if (code == 0) continue;
+    //     test_handler();
+    //     // local_timer_start(0x038FFFF);
+    // }
 
     int core_id = get_core_id();
     switch(core_id) {
@@ -106,10 +119,11 @@ void cinit_core(void) {
             core_enable(2, (uint64_t) _init_core);
             core_enable(3, (uint64_t) _init_core);   
 
-            enable_mmu();        
+            enable_mmu();                
 
-            // init_vector_tables();
-            // register_interrupt_handler(vector_table_irq, 0x80, test_handler);
+            init_vector_tables();
+
+            register_interrupt_handler(vector_table_irq, 0x80, test_handler);
 
             gpio_fsel(5, SEL_OUTPUT);
             gpio_fsel(6, SEL_OUTPUT);
@@ -121,26 +135,9 @@ void cinit_core(void) {
             gpio_write(6, true);
             gpio_write(13, true);
             gpio_write(19, true);
-            // gpio_write(21, true);
+            gpio_write(21, true);
 
-            // TODO: Play around with these values...
-            // div = 2e31/prescaler
-            // timer_frequency = (2e31/prescaler) * input frequency
-            // APB clock is running at half the speed of the ARM clock
-            // CRS clock is running at 19.2 MHz ---- ?
-            // core_timer_init( CT_CTRL_SRC_CRS, CT_CTRL_INC1, 0xF );
-            core_timer_init( CT_CTRL_SRC_APB, CT_CTRL_INC2, 0x80000000 );  
-            // 19200000
-            // 10000000
-            __enable_interrupts();
-            core_timer_rearm(19200000);
-            while(true);
-
-            // Important notes... in general J-TAG and UART will need to be initialized especially when
-            // starting from 0x0.  However, with config.txt adding enable_uart, enable_jtag allow bypassing
-            // this device specific initialization
-            // enable_jtag();            
-            // uart_init(115200);
+            uart_init(115200); // TODO: Config flag may enable this
 
             master_core();
         }
