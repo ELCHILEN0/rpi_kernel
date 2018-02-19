@@ -13,7 +13,6 @@
 
 #include "mailbox.h"
 #include "multicore.h"
-#include "cache.h"
 
 #include "kernel/kernel.h"
 
@@ -25,36 +24,31 @@ extern void _init_core(void);
 
 spinlock_t print_lock;
 
-extern void _int_svc(void);
+void test_handler() {
+    static bool next_blinker_state = true;    
+    gpio_write(21, next_blinker_state);
+    next_blinker_state = !next_blinker_state;    
+
+    uart_putc('.');
+    core_timer_rearm(19200000);   
+    // core_timer_rearm(0x8FFF);
+    // local_timer_start(0x038FFFF);    
+    // core_timer_stop();  
+}
 
 void interrupt_handler() {
     static bool next_blinker_state = true;
     gpio_write(21, next_blinker_state);
     next_blinker_state = !next_blinker_state;
 
-    _int_svc();
+    // _int_syscall();
 }
 
 void time_slice() {
-    local_timer_reset();
 
     static bool next_blinker_state = true;
     gpio_write(13, next_blinker_state);
     next_blinker_state = !next_blinker_state;
-}
-
-void init_jtag() {
-    gpio_pull(22, false, true);
-    gpio_pull(24, false, true);
-    gpio_pull(25, false, true);
-    gpio_pull(26, false, true);
-    gpio_pull(27, false, true);
-
-    gpio_fsel(22, SEL_ALT4); // TRST
-    gpio_fsel(24, SEL_ALT4); // TDO
-    gpio_fsel(25, SEL_ALT4); // TCK
-    gpio_fsel(26, SEL_ALT4); // TDI
-    gpio_fsel(27, SEL_ALT4); // TMS
 }
 
 void master_core () {
@@ -62,20 +56,19 @@ void master_core () {
     printf("[core%d] Executing from 0x%X\r\n", get_core_id(), master_core);
     __spin_unlock(&print_lock);
 
-    register_interrupt_handler(vector_table_svc, 0x80, _int_svc);
-    register_interrupt_handler(vector_table_svc, 0x81, interrupt_handler);
-    register_interrupt_handler(vector_table_irq, 11, time_slice);
+    // register_interrupt_handler(vector_table_svc, 0x80, _int_syscall);
+    // register_interrupt_handler(vector_table_svc, 0x81, interrupt_handler);
+    // register_interrupt_handler(vector_table_irq, 11, time_slice);
 
-    local_timer_interrupt_routing(0);
-    local_timer_start(0x038FFFF);
+    __enable_interrupts();
 
-    kernel_init();
+    // kernel_init();
 
     while (true) {
-        for (int i = 0; i < 0x10000 * 30; i++);
+        for (int i = 0; i < 0x100000 * 30; i++);
         gpio_write(5, true);
 
-        for (int i = 0; i < 0x10000 * 30; i++);
+        for (int i = 0; i < 0x100000 * 30; i++);
         gpio_write(5, false);
     }
 }
@@ -86,7 +79,6 @@ void slave_core() {
 
     __spin_lock(&print_lock);
     printf("[core%d] Executing from 0x%X!\r\n", core_id, slave_core);
-    for (int i = 0; i < 0x1000000; i++) { asm("nop"); }
     __spin_unlock(&print_lock);
 
     while (true) {
@@ -94,21 +86,30 @@ void slave_core() {
         gpio_write(core_gpio[core_id - 1], true);
 
         for (int i = 0; i < 0x10000 * (core_id + 1) * 30; i++);
-        gpio_write(core_gpio[core_id - 1], false);
-  
+        gpio_write(core_gpio[core_id - 1], false);  
     }
 }
 
-void cinit_core( ) {
+extern void enter_el0();
+extern void enable_mmu();
+
+void cinit_core(void) {    
     // OK status (use till GPIO working)
     act_message[6] = 1;
-    mailbox_write(mailbox0, MB0_PROPERTY_TAGS_ARM_TO_VC, (uint32_t) &act_message);
+    mailbox_write(mailbox0, MB0_PROPERTY_TAGS_ARM_TO_VC, (uint32_t) &act_message);    
 
     int core_id = get_core_id();
     switch(core_id) {
         case 0:
         {
-            init_vector_tables();
+            core_enable(1, (uint64_t) _init_core);
+            core_enable(2, (uint64_t) _init_core);
+            core_enable(3, (uint64_t) _init_core);   
+
+            enable_mmu();        
+
+            // init_vector_tables();
+            // register_interrupt_handler(vector_table_irq, 0x80, test_handler);
 
             gpio_fsel(5, SEL_OUTPUT);
             gpio_fsel(6, SEL_OUTPUT);
@@ -116,24 +117,38 @@ void cinit_core( ) {
             gpio_fsel(19, SEL_OUTPUT);
             gpio_fsel(21, SEL_OUTPUT);
 
-            uart_init(115200);
-            init_jtag();
+            gpio_write(5, true);
+            gpio_write(6, true);
+            gpio_write(13, true);
+            gpio_write(19, true);
+            // gpio_write(21, true);
 
-            printf("[core%d] Started...\r\n", core_id, master_core);
-            // init_linear_addr_map();
-            // enable_mmu();       
+            // TODO: Play around with these values...
+            // div = 2e31/prescaler
+            // timer_frequency = (2e31/prescaler) * input frequency
+            // APB clock is running at half the speed of the ARM clock
+            // CRS clock is running at 19.2 MHz ---- ?
+            // core_timer_init( CT_CTRL_SRC_CRS, CT_CTRL_INC1, 0xF );
+            core_timer_init( CT_CTRL_SRC_APB, CT_CTRL_INC2, 0x80000000 );  
+            // 19200000
+            // 10000000
+            __enable_interrupts();
+            core_timer_rearm(19200000);
+            while(true);
 
-            // core_enable(1, (uint32_t) _init_core);
-            // core_enable(2, (uint32_t) _init_core);
-            // core_enable(3, (uint32_t) _init_core);     
+            // Important notes... in general J-TAG and UART will need to be initialized especially when
+            // starting from 0x0.  However, with config.txt adding enable_uart, enable_jtag allow bypassing
+            // this device specific initialization
+            // enable_jtag();            
+            // uart_init(115200);
 
-            master_core(); // No more coprocessor changes, J-TAG entrypoint
+            master_core();
         }
         break;
 
         default:
             enable_mmu();
-            slave_core(); // No more coprocessor changes, J-TAG entrypoint
+            slave_core();
             break;
     }
     

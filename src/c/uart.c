@@ -38,4 +38,5 @@ unsigned char uart_getc()
 
 	// while ( uart0->fr & (1 << 4) ) { }
 	// return uart0->dr;
+	return 0;
 }

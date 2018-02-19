@@ -2,6 +2,7 @@
 #define TIMER_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 typedef struct {
     volatile uint32_t control_status;
@@ -18,11 +19,22 @@ typedef struct {
  * may be sent to EVERY core.
  */
 typedef enum {
-    CT_CTRL_INC1 = (0 << 0),
-    CT_CTRL_INC2 = (1 << 9),
-    CT_CTRL_SRC_CRS= (0 << 0),
-    CT_CTRL_SRC_APB = (1 << 8),
+    CT_CTRL_INC1 =      (0 << 0),
+    CT_CTRL_INC2 =      (1 << 9),
+    CT_CTRL_SRC_CRS =   (0 << 0),   // Realtime Clock
+    CT_CTRL_SRC_APB =   (1 << 8),   // ARM CPU Frequency
 } core64_timer_control_t;
+
+typedef enum {
+    CT_FIQ_VIRT =       0x40,
+    CT_FIQ_HYP  =       0x30,
+    CT_FIQ_NON_SECURE = 0x20,
+    CT_FIQ_SECURE =     0x10,
+    CT_IRQ_VIRT =       0x4,
+    CT_IRQ_HYP =        0x3,
+    CT_IRQ_NON_SECURE = 0x2,
+    CT_IRQ_SECURE =     0x1,
+} core64_timer_interrupt_t;
 
 typedef volatile struct {
     uint32_t control;
@@ -56,6 +68,12 @@ extern void local_timer_interrupt_routing( unsigned int mode );
 extern void local_timer_start( unsigned int reload );
 extern void local_timer_reset( void );
 
+extern void core_timer_init( core64_timer_control_t src, core64_timer_control_t inc, uint32_t prescaler );
+extern void core_timer_interrupt_routing( uint8_t core_id, core64_timer_interrupt_t type );
+extern void core_timer_rearm( uint64_t ticks );
+extern void core_timer_stop();
+
 local_timer_t *local_timer;
+core64_timer_t *core64_timer;
 
 #endif

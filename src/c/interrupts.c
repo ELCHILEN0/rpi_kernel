@@ -13,7 +13,7 @@ interrupt_vector_t vector_table_svc[256];
 interrupt_vector_t vector_table_irq[26];
 
 void trap() {
-    printf("[interrupt] Unhandled Interrupt\r\n");
+    // printf("[interrupt] Unhandled Interrupt\r\n");
 }
 
 void init_vector_tables() {
@@ -27,9 +27,9 @@ void register_interrupt_handler(interrupt_vector_t vector_table[], unsigned int 
     vector_table[i].handler = handler;
 }
 
-__attribute((naked)) void interrupt_svc(int code) {
+void interrupt_svc(int code) {
     // The following line clobbers r0-r3 so that the vector handler will not overwrite them
-    asm volatile ("nop" ::: "r0", "r1", "r2", "r3");
+    // asm volatile ("nop" ::: "r0", "r1", "r2", "r3");
     interrupt_vector_t vector = vector_table_svc[code];
     vector.handler();
 }
@@ -52,86 +52,13 @@ void interrupt_irq() {
     if (irq_src == (1 << 11)) {
         static bool next_blinker_state = true;
 
-        local_timer_reset();
+        // local_timer_reset();
 
         gpio_write(13, next_blinker_state);
         next_blinker_state = !next_blinker_state;
     } else {
-        printf("[interupt] Unhandled IRQ\r\n");
+        // printf("[interupt] Unhandled IRQ\r\n");
     }
 
     // __enable_interrupts();    
-}
-
-void interrupt_fiq() {
-    printf("[interrupt] FIQ\r\n");
-}
-
-void interrupt_udef() {
-    printf("[interrupt] Undefined Instruction\r\n");
-    while(true);        
-}
-
-void interrupt_pabt() {
-    uint32_t ifsr;
-    asm("MRC p15, 0, %0, c5, c0, 1" :: "r" (ifsr));
-
-    char *fault_status[16] = {
-        "No function, reset value",
-        "Alignment fault",
-        "Debug event fault",
-        "Access Flag fault on Section",
-        "No function[b]",
-        "Translation fault on Section",
-        "Access Flag fault on Page",
-        "Translation fault on Page",
-        "Precise External Abort",
-        "Domain fault on Section",
-        "No function",
-        "Domain fault on Page",
-        "External abort on translation, first level",
-        "Permission fault on Section",
-        "External abort on translation, second level",
-        "Permission fault on Page",
-    };
-
-    uint32_t code = (ifsr & (0b1111));
-
-    printf("[interrupt] Prefetch Abort - (0x%X = %d) \r\n", ifsr, code, fault_status[code]);
-    while(true);
-}
-
-void interrupt_dabt() {
-    uint32_t dfsr;
-    asm("MRC p15, 0, %0, c5, c0, 0" :: "r" (dfsr));
-
-    char *fault_status[25] = {
-        "No function, reset value"
-        "Alignment fault"
-        "Debug event fault"
-        "Access Flag fault on Section"
-        "Cache maintenance operation fault"
-        "Translation fault on Section"
-        "Access Flag fault on Page"
-        "Translation fault on Page"
-        "Precise External Abort"
-        "Domain fault on Section"
-        "No function"
-        "Domain fault on Page"
-        "External abort on translation, first level"
-        "Permission fault on Section"
-        "External abort on translation, second level"
-        "Permission fault on Page"
-        "No function"
-        "No function"
-        "Imprecise External Abort"
-        "No function"
-        "No function"
-    };
-
-    uint32_t code = (dfsr & (1 << 10)) >> 6;
-    code |= (dfsr & (0b1111));
-
-    printf("[interrupt] Data Abort - (0x%X = %d) %s\r\n", dfsr, code, fault_status[code]);
-    while(true);    
 }

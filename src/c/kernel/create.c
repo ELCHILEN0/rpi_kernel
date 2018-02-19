@@ -32,7 +32,7 @@ process_t *get_process(pid_t pid) {
     return NULL;
 }
 
-int create(void (*func)(), int stack_size, enum process_priority priority) {
+int create(void (*func)(), uint64_t stack_size, enum process_priority priority) {
     if (stack_size < PROC_STACK)
         stack_size = PROC_STACK;    
 
@@ -46,17 +46,18 @@ int create(void (*func)(), int stack_size, enum process_priority priority) {
 
     process_t *process = stack_pointer + stack_size - sizeof(process_t);
     process->stack_base = stack_pointer;
-    process->frame = (arm_frame32_t *) (process - sizeof(arm_frame32_t) - 1 * sizeof(long));
+    process->frame = (aarch64_frame_t *) (process - sizeof(aarch64_frame_t));
     
     // TODO: Create with args...
-    for (int i = 0; i < 13; i++) {
-        process->frame->reg[i] = i * 10;
+    for (int i = 0; i < 31; i++) {
+        process->frame->reg[i] = 0;
     }
+    process->frame->reg[30] = (uint64_t) sysexit;
+    process->ret = process->frame->reg[0];
 
-    process->frame->sp = (uint32_t) &process->frame->lr;
-    process->frame->lr = (uint32_t) func; // process destructor...
-    process->frame->pc = (uint32_t) func;
-    // asm("MRS %0, CPSR" :: "r" (process->frame->cpsr));
+    process->frame->elr = (uint64_t) func;
+    process->frame->spsr = 0b00100; // EL1t
+    // process->frame->spsr = 0b00000; // EL0
     
     //process->state = READY;
     process->pid = next_pid++;
@@ -64,8 +65,6 @@ int create(void (*func)(), int stack_size, enum process_priority priority) {
     process->initial_priority = priority;
     process->current_priority = priority;
     
-    // int i = context_switch(process);
-
     // Process list entries
     INIT_LIST_HEAD(&process->process_list);
     INIT_LIST_HEAD(&process->process_hash_list);
@@ -73,8 +72,8 @@ int create(void (*func)(), int stack_size, enum process_priority priority) {
     // INIT_LIST_HEAD(&process->block_list);
     
     // Process Information Lists, different ways to access all processes
-    list_add(&process->process_list, &process_list);
-    list_add(&process->process_hash_list, get_process_bucket(process->pid));
+    // list_add(&process->process_list, &process_list);
+    // list_add(&process->process_hash_list, get_process_bucket(process->pid));
    
     // Proceses waiting for interaction from me
     // INIT_LIST_HEAD(&process->waiting_list);
@@ -112,43 +111,44 @@ int create(void (*func)(), int stack_size, enum process_priority priority) {
  * free the assocated process stack.  Additionally, every pending incoming
  * message sender will have its return code set to -1 and will be rescheduled.
  */
-// int destroy(process_control_block_t *process) {
-//     process->state = TERMINATED;
-//     process_t *p, *pnext;
+int destroy(process_t *process) {
+    // process->state = TERMINATED;
+    // process_t *p, *pnext;
 
-//     /*
-//      * Unblock processes blocked waiting to deliver a message to the current
-//      * process.
-//      */
-//     list_for_each_entry_safe(p, pnext, &process->senders_list, block_list) {
-//         ready(p);
-//         p->ret = SYSERR;
-//     }
+    /*
+     * Unblock processes blocked waiting to deliver a message to the current
+     * process.
+     */
+    // list_for_each_entry_safe(p, pnext, &process->senders_list, block_list) {
+    //     ready(p);
+    //     p->ret = SYSERR;
+    // }
 
-//     /*
-//      * Unblock processes blocked waiting to receive a message from the current
-//      * process.
-//      */
-//     list_for_each_entry_safe(p, pnext, &process->receivers_list, block_list) {
-//         ready(p);
-//         p->ret = SYSERR;
-//     }
+    /*
+     * Unblock processes blocked waiting to receive a message from the current
+     * process.
+     */
+    // list_for_each_entry_safe(p, pnext, &process->receivers_list, block_list) {
+    //     ready(p);
+    //     p->ret = SYSERR;
+    // }
     
-//     /*
-//      * Unblock processes waiting for the current process to die
-//      */
-//     list_for_each_entry_safe(p, pnext, &process->waiting_list, block_list) {
-//         ready(p);
-//         p->ret = SIG_OK;
-//     }
+    /*
+     * Unblock processes waiting for the current process to die
+     */
+    // list_for_each_entry_safe(p, pnext, &process->waiting_list, block_list) {
+    //     ready(p);
+    //     p->ret = SIG_OK;
+    // }
 
-//     list_del(&process->process_list);
-//     list_del(&process->process_hash_list);
-//     list_del(&process->sched_list);
-//     list_del(&process->block_list);
+    list_del(&process->process_list);
+    list_del(&process->process_hash_list);
+    list_del(&process->sched_list);
+    // list_del(&process->block_list);
 
-//     return kfree(process->stack_pointer);
-// }
+    free(process->stack_base);
+    return 0;
+}
 
 /**
  * The function shall find a running process by its pid and forcefully destroy

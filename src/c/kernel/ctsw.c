@@ -1,74 +1,127 @@
-/* ctsw.c : context switcher
- */
-
-// #include <xeroskernel.h>
-// #include <i386.h>
 #include "kernel.h"
 
+void __attribute((naked)) identify_and_clear_source() {
+    // 0x560000XX == aarch64 SVC exception (XX == code)
+    // TODO: Adapt for other interrupt types... read ESR
+    asm volatile(".global _identify_sp0    \n\
+    _identify_sp0:                         \n\
+        MSR SPSel, #0                   \n\
+        STP X0, X1, [SP, #-16]!         \n\
+        MOV X0, #1                      \n\
+        STR X0,     [SP, #-8]!          \n\
+    " ::: "x0", "x1");
+}
 
-/* Your code goes here - You will need to write some assembly code. You must
-   use the gnu conventions for specifying the instructions. (i.e this is the
-   format used in class and on the slides.) You are not allowed to change the
-   compiler/assembler options or issue directives to permit usage of Intel's
-   assembly language conventions.
-*/
-void _HardwareEntryPoint( void );
-void _KernelEntryPoint( void );
-// void _KeyboardEntryPoint( void );
+enum interrupt_source context_switch(pcb_t *process) {
+    uint64_t interrupt_type, ret_code, args, stack_pointer;
 
-static uint32_t kernel_stack, process_stack, prev_stack;
-static uint32_t ret_code, args, interrupt_type;
+    asm volatile(".global _kernel_save  \n\
+    _kernel_save:                       \n\
+        MSR SPSel, #1               \n\
+        STR X30, [SP, #-8]!         \n\
+        STP X28, X29, [SP, #-16]!   \n\
+        STP X26, X27, [SP, #-16]!   \n\
+        STP X24, X25, [SP, #-16]!   \n\
+        STP X22, X23, [SP, #-16]!   \n\
+        STP X20, X21, [SP, #-16]!   \n\
+        STP X18, X19, [SP, #-16]!   \n\
+        STP X16, X17, [SP, #-16]!   \n\
+        STP X14, X15, [SP, #-16]!   \n\
+        STP X12, X13, [SP, #-16]!   \n\
+        STP X10, X11, [SP, #-16]!   \n\
+        STP X8, X9, [SP, #-16]!     \n\
+        STP X6, X7, [SP, #-16]!     \n\
+        STP X4, X5, [SP, #-16]!     \n\
+        STP X2, X3, [SP, #-16]!     \n\
+        STP X0, X1, [SP, #-16]!     \n\
+                                    \n\
+        MRS	X9, SPSR_EL1            \n\
+        MRS	X10, ELR_EL1            \n\
+        STP X9, X10, [SP, #-16]!    \n\
+    " ::: "x9", "x10");
 
-enum ctsw_code context_switch(pcb_t *process) {
-    (void)kernel_stack; 
+    // Place previous interrupt return code in x0
+    process->frame->reg[0] = process->ret;
 
-    // TODO Syscall ret code...
-    // ret_code = process->ret;
-    // process->frame->reg[0] = ret_code;
-
-    process_stack = (uint32_t) process->frame;
-
-    __spin_lock(&print_lock);
-    printf("context switch gdb hook...\r\n");
-    __spin_unlock(&print_lock);  
-    bool debug = true;
-    while(debug);
-
-    // Push kernel r0-r12 (general registers)
-    asm volatile("PUSH {r0-r12}");
-    // asm volatile("STMIA sp!, {sp}");
-    // asm volatile("STMIA sp!, {r0-r12}");
-    // Swap kernel -> process stacks
+    // Switch to SP0, Load Process SP
     asm volatile(".global _kernel_to_process    \n\
     _kernel_to_process:                         \n\
-        MOV %0, sp          \n\
-        MOV sp, %1          \n\
-    "   : "=r" (kernel_stack)
-        : "r" (process_stack));
-    // Restore process r0-pc (all registers), restoring pc jumps to the function
-    asm volatile("LDMIA sp!, {r0-pc}^");
+        MSR SPSel, #0       \n\
+        MOV SP, %0          \n\
+    " :: "r" (process->frame));
+    
+    asm volatile(".global _process_load \n\
+    _process_load:                      \n\
+        LDP X9, X10, [SP], #16      \n\
+        MSR ELR_EL1, X10            \n\
+        MSR SPSR_EL1, X9            \n\
+                                    \n\
+        LDP X0, X1, [SP], #16       \n\
+        LDP X2, X3, [SP], #16       \n\
+        LDP X4, X5, [SP], #16       \n\
+        LDP X6, X7, [SP], #16       \n\
+        LDP X8, X9, [SP], #16       \n\
+        LDP X10, X11, [SP], #16     \n\
+        LDP X12, X13, [SP], #16     \n\
+        LDP X14, X15, [SP], #16     \n\
+        LDP X16, X17, [SP], #16     \n\
+        LDP X18, X19, [SP], #16     \n\
+        LDP X20, X21, [SP], #16     \n\
+        LDP X22, X23, [SP], #16     \n\
+        LDP X24, X25, [SP], #16     \n\
+        LDP X26, X27, [SP], #16     \n\
+        LDP X28, X29, [SP], #16     \n\
+        LDR X30, [SP], #8           \n\
+    ");
 
-    // Interrupt routine pushes registers (TODO verify and adjust)
-    asm volatile(".global _int_svc  \n\
-    _int_svc:                       \n\
-        mov %0, #1          \n\
-        mov %1, r1          \n\
-        mov %2, r2          \n\
-    "   : "=r" (interrupt_type), "=r" (ret_code), "=r" (args));
-    // Swap process -> kernel stacks
-    asm volatile(".global _process_to_kernel    \n\
-    _process_to_kernel:                         \n\
-        MOV %0, sp           \n\
-        MOV sp, %1           \n\
-    "   : "=r" (process_stack)
-        : "r" (kernel_stack));
-    // Restore kernel r0-r12 (general registers)
-    // asm volatile("LDMDB sp!, {r0-r12}^");
-    // asm volatile("LDMDB sp,  {sp}^");
-    asm volatile("POP {r0-r12}");
+    asm volatile("ERET");
 
-    debug = true;
-    while(debug);
+    // Store syscall params, and interrupt type id to the process stack
+    asm volatile(".global _int_syscall          \n\
+    _int_syscall:                               \n\
+        MSR SPSel, #0                   \n\
+        STP X0, X1, [SP, #-16]!         \n\
+        MOV X0, #1                      \n\
+        STR X0,     [SP, #-8]!          \n\
+    "); 
+
+    // Load kernel state...
+    asm volatile(".global _kernel_load          \n\
+    _kernel_load:                               \n\
+        MSR SPSel, #1               \n\
+        LDP X9, X10, [SP], #16      \n\
+        MSR ELR_EL1, X10            \n\
+        MSR SPSR_EL1, X9            \n\
+                                    \n\
+        LDP X0, X1, [SP], #16       \n\
+        LDP X2, X3, [SP], #16       \n\
+        LDP X4, X5, [SP], #16       \n\
+        LDP X6, X7, [SP], #16       \n\
+        LDP X8, X9, [SP], #16       \n\
+        LDP X10, X11, [SP], #16     \n\
+        LDP X12, X13, [SP], #16     \n\
+        LDP X14, X15, [SP], #16     \n\
+        LDP X16, X17, [SP], #16     \n\
+        LDP X18, X19, [SP], #16     \n\
+        LDP X20, X21, [SP], #16     \n\
+        LDP X22, X23, [SP], #16     \n\
+        LDP X24, X25, [SP], #16     \n\
+        LDP X26, X27, [SP], #16     \n\
+        LDP X28, X29, [SP], #16     \n\
+        LDR X30, [SP], #8           \n\
+    ");
+
+    // Handle the exception, saving the process SP and loading the syscall args
+    asm volatile(".global _process_save         \n\
+    _process_save:                              \n\
+        MSR SPSel, #0       \n\
+        LDR %0,     [SP], #8    \n\
+        LDP %1, %2, [SP], #16   \n\
+        MOV %3, SP          \n\
+        MSR SPSel, #1       \n\
+    " : "=r" (interrupt_type), "=r" (ret_code), "=r" (args), "=r" (stack_pointer));
+
+    process->frame = (aarch64_frame_t *) stack_pointer;
 
     switch (interrupt_type) {
         case 1:
@@ -82,29 +135,10 @@ enum ctsw_code context_switch(pcb_t *process) {
             __spin_unlock(&print_lock);
         break; 
     }
-  
-    process->frame = (arm_frame32_t *) process_stack;
-
-    // switch (interrupt_type) {
-    //     case 0:
-    //         process->ret = ret_code;
-    //         //process->ret = process->stack_frame->eax;
-    //         ret_code = INT_TIMER;
-    //     break;
-
-    //     case 1:
-    //         process->args = args;
-    //     break;
-    // }
-
-    // process->stack_frame = (arm_frame32_t *) process_stack;
-
+    
     return ret_code;
 }
 
-/*
- * Initialize the interupt entry point when context switching.
- */
 void context_init() {
     // set_evec((unsigned int) KERNEL_INT, (unsigned long) _KernelEntryPoint);
     // set_evec((unsigned int) TIMER_INT,  (unsigned long) _HardwareEntryPoint);

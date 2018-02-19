@@ -25,7 +25,13 @@ enum process_priority {
     PRIORITY_HIGH,
 };
 
-enum ctsw_code {
+enum process_state {
+    RUNNABLE,
+    BLOCKED,
+    STOPPED,
+};
+
+enum interrupt_source {
     SYS_CREATE,
     SYS_YIELD,
     SYS_EXIT,
@@ -36,29 +42,25 @@ enum ctsw_code {
 };
 
 typedef struct {
-    uint32_t reg[13];
-    uint32_t sp;
-    uint32_t lr;
-    uint32_t pc;
-    // uint32_t cpsr;
-    // union {
-    //     uint32_t spsr;
-        uint32_t stack_slots[0];
-    // }; // TODO: Offset of (Generic stack)
-} arm_frame32_t;
+    uint64_t spsr;    
+    uint64_t elr;
+    uint64_t reg[31];
+} aarch64_frame_t;
 
 typedef struct {
     pid_t pid;
-    uint32_t ret;
-    uint32_t args;
+    uint64_t ret;
+    uint64_t args;
+
+    // enum process_state state;
 
     enum process_priority initial_priority;
     enum process_priority current_priority;
     
     /* Stack */
-    uint32_t    stack_size;
-    uint32_t    *stack_base;
-    arm_frame32_t   *frame;
+    uint64_t    stack_size;
+    uint64_t    *stack_base;
+    aarch64_frame_t   *frame; // stack pointer...
 
     struct list_head process_list;
     struct list_head process_hash_list;
@@ -73,9 +75,15 @@ extern void dispatcher_init();
 extern void dispatch();
 
 extern void ready(process_t *process);
-extern enum ctsw_code context_switch(pcb_t *process);
+extern enum interrupt_source context_switch(pcb_t *process);
 
-extern int create(void (*func)(), int stack_size, enum process_priority);
+extern int create(void (*func)(), uint64_t stack_size, enum process_priority);
 
-extern pid_t syscreate( void(*func)(void), uint32_t stack_size);
+extern pid_t syscreate( void(*func)(void), uint64_t stack_size);
+extern pid_t sysgetpid( void );
+extern void sysyield( void );
+extern void sysexit( void );
+extern uint64_t syswaitpid( pid_t pid );
+// extern void syskill( pid_t pid, int sig );
+
 #endif
