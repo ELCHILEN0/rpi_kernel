@@ -58,6 +58,7 @@ void master_core () {
     // register_interrupt_handler(vector_table_irq, 11, time_slice);
 
     __enable_interrupts();
+    core_timer_rearm(19200000);
 
     // kernel_init();
 
@@ -95,35 +96,25 @@ void cinit_core(void) {
     act_message[6] = 1;
     mailbox_write(mailbox0, MB0_PROPERTY_TAGS_ARM_TO_VC, (uint32_t) &act_message);
 
-    gpio_fsel(21, SEL_OUTPUT);
-    
-    __enable_interrupts();       
-    core_timer_init( CT_CTRL_SRC_APB, CT_CTRL_INC2, 0x80000000);
-    // core_timer_init( CT_CTRL_INC1, CT_CTRL_SRC_CRS, 0x00FFFFFF );
-    core_timer_interrupt_routing(0, CT_IRQ_NON_SECURE);
-    core_timer_rearm(19200000);
-
-    while(true);
-    // while (true) {
-    //     uint32_t code = mmio_read(0x40000060);
-    //     if (code == 0) continue;
-    //     test_handler();
-    //     // local_timer_start(0x038FFFF);
-    // }
-
     int core_id = get_core_id();
     switch(core_id) {
         case 0:
         {
+            // timer_frequency = (2e31/prescaler) * input_frequency
+            // APB vs CRY ...   1/2 CPU Frequency vs Fixed Time Frequency
+            //                  Fixed Execution Instructions vs Fixed Execution Time
+            core_timer_init( CT_CTRL_SRC_APB, CT_CTRL_INC2, 0x80000000);
+            // core_timer_init( CT_CTRL_SRC_CRY, CT_CTRL_INC1, 0x80000000);
+            core_timer_interrupt_routing(0, CT_IRQ_NON_SECURE);
+
             core_enable(1, (uint64_t) _init_core);
             core_enable(2, (uint64_t) _init_core);
             core_enable(3, (uint64_t) _init_core);   
 
             enable_mmu();                
 
-            init_vector_tables();
-
-            register_interrupt_handler(vector_table_irq, 0x80, test_handler);
+            // init_vector_tables();
+            // register_interrupt_handler(vector_table_irq, 0x80, test_handler);
 
             gpio_fsel(5, SEL_OUTPUT);
             gpio_fsel(6, SEL_OUTPUT);
@@ -135,15 +126,21 @@ void cinit_core(void) {
             gpio_write(6, true);
             gpio_write(13, true);
             gpio_write(19, true);
-            gpio_write(21, true);
+            // gpio_write(21, true);
 
-            uart_init(115200); // TODO: Config flag may enable this
+            // Important notes... in general J-TAG and UART will need to be initialized especially when
+            // starting from 0x0.  However, with config.txt adding enable_uart, enable_jtag allow bypassing
+            // this device specific initialization
+            // enable_jtag();            
+            // uart_init(115200);
 
             master_core();
         }
         break;
 
         default:
+            core_timer_interrupt_routing(0, CT_IRQ_NON_SECURE);
+
             enable_mmu();
             slave_core();
             break;

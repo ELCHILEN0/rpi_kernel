@@ -21,8 +21,8 @@ typedef struct {
 typedef enum {
     CT_CTRL_INC1 =      (0 << 0),
     CT_CTRL_INC2 =      (1 << 9),
-    CT_CTRL_SRC_CRS =   (0 << 0),   // Realtime Clock
-    CT_CTRL_SRC_APB =   (1 << 8),   // ARM CPU Frequency
+    CT_CTRL_SRC_CRY =   (0 << 0),   // Quartz Clock Source
+    CT_CTRL_SRC_APB =   (1 << 8),   // 1/2 ARM CPU Frequency
 } core64_timer_control_t;
 
 typedef enum {
