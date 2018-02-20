@@ -41,8 +41,6 @@ void master_core () {
     register_interrupt_handler(0, true, ESR_ELx_EC_SVC64, (interrupt_vector_t) { .handle = svc_handler });    
 
     __enable_interrupts();
-    // asm("SVC 0x80");
-    // core_timer_rearm(19200000);
 
     kernel_init();
 

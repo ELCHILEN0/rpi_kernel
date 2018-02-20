@@ -10,8 +10,8 @@ int syscall( int req_id, ... ) {
 
     asm volatile("STP %0, %1, [SP, #-16]!" :: "r" (req_id), "r" (&args));
     asm volatile("SVC 0x80");
-    asm volatile("MOV %0, X0" : "=r" (ret_code));
     asm volatile("ADD SP, SP, #16");
+    asm volatile("MOV %0, X0" : "=g" (ret_code));
 
     va_end(args);
 

@@ -82,6 +82,7 @@ extern void dispatcher_init();
 // Context Switch Specific
 extern void switch_from(process_t *process);
 extern void switch_to  (process_t *process);
+extern void __load_context(void);
 
 // Dispatch and Scheduling
 extern process_t *next();

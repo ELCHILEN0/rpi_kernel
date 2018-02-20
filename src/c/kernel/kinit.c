@@ -4,28 +4,33 @@ extern spinlock_t print_lock;
 
 void newproc() {
     __spin_lock(&print_lock);
-    printf("newproc()\r\n");
+    printf("[newproc] started...\r\n");
     __spin_unlock(&print_lock); 
+
+    uint32_t pid = sysgetpid();;
+
+    __spin_lock(&print_lock);
+    printf("[newproc] pid = %d\r\n", pid);
+    __spin_unlock(&print_lock);
 
     while(true);
 }
 
 void idleproc( uint32_t r0, uint32_t r1, uint32_t r2 ) {
     __spin_lock(&print_lock);
-    printf("idleproc()\r\n");
+    printf("[idleproc] started...\r\n");
     __spin_unlock(&print_lock);
 
-    uint32_t pid = 10;
-    pid = sysgetpid();
+    uint32_t pid = sysgetpid();;
 
     __spin_lock(&print_lock);
-    printf("[%d] idleproc(%d, %d, %d)\r\n", pid, r0, r1, r2);
+    printf("[idleproc] pid = %d\r\n", pid);
     __spin_unlock(&print_lock); 
 
     pid = syscreate(newproc, 1024);    
 
     __spin_lock(&print_lock);
-    printf("[%d] created\r\n", pid);
+    printf("[idleproc] created %d\r\n", pid);
     __spin_unlock(&print_lock); 
 
     sysyield();    
@@ -35,7 +40,6 @@ void idleproc( uint32_t r0, uint32_t r1, uint32_t r2 ) {
     }
 }
 
-extern void __load_context(void);
 void kernel_init( void )
 {
     __spin_lock(&print_lock);
