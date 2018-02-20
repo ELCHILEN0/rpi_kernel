@@ -19,6 +19,11 @@
     MSR SPSel, \prev_stack
 
     // disable interrupts... (reentrant)
+    BL __load_context
+.endm
+
+.global __load_context
+__load_context:
     LDP X9, X10, [SP], #16
     MSR ELR_EL1, X10
     MSR SPSR_EL1, X9
@@ -26,7 +31,6 @@
     BL __load_regs  // load general purpose regs
     LDR X30, [SP], #8
 	ERET
-.endm
 
 /* 
  * Each entry in the vector table is 16 instructions long.  Since aarch64 has no PUSH/POP,

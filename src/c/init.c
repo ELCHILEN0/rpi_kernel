@@ -25,12 +25,6 @@ extern void _init_core(void);
 spinlock_t print_lock;
 
 void timer_handler() {
-    // static bool next_blinker_state = true;    
-    // gpio_write(21, next_blinker_state);
-    // next_blinker_state = !next_blinker_state;    
-
-    // uart_putc('.');
-    // core_timer_rearm(19200000);
     common_interrupt(INT_TIMER);
 }
 
@@ -40,7 +34,7 @@ void svc_handler() {
 
 void master_core () {
     __spin_lock(&print_lock);
-    printf("[core%d] Executing from 0x%X\r\n", get_core_id(), master_core);
+    printf("[core%d] Executing from 0x%lX\r\n", get_core_id(), (uint64_t) master_core);
     __spin_unlock(&print_lock);
 
     register_interrupt_handler(0, false, 1, (interrupt_vector_t) { .handle = timer_handler });
@@ -66,7 +60,7 @@ void slave_core() {
     int core_gpio[3] = { 6, 13, 19 };
 
     __spin_lock(&print_lock);
-    printf("[core%d] Executing from 0x%X!\r\n", core_id, slave_core);
+    printf("[core%d] Executing from 0x%lX!\r\n", core_id, (uint64_t) slave_core);
     __spin_unlock(&print_lock);
 
     // TODO: Wait till kernel initialized...

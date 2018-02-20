@@ -1,6 +1,3 @@
-/* create.c : create a process
- */
-
 #include "kernel.h"
 
 static pid_t next_pid = 0;

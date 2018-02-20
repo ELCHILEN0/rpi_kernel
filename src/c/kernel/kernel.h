@@ -11,6 +11,7 @@
 #include "list.h"
 
 #include "../multicore.h"
+#include "../timer.h"
 
 // Hash Function from: http://www.tldp.org/LDP/lki/lki-2.html
 #define PIDHASH_SZ (4096 >> 6)
@@ -78,15 +79,16 @@ extern void kernel_init();
 extern void process_init();
 extern void dispatcher_init();
 
-// TODO: ....
-void switch_from(process_t *process);
-void switch_to(process_t *process);
-void __attribute__ ((naked)) contextswitch(); // TODO: Remove
+// Context Switch Specific
+extern void switch_from(process_t *process);
+extern void switch_to  (process_t *process);
 
+// Dispatch and Scheduling
 extern process_t *next();
 extern void ready(process_t *process);
 extern void common_interrupt( int interrupt_type );
 
+// Helper Functions
 extern int create(void (*func)(), uint64_t stack_size, enum process_priority);
 
 extern pid_t syscreate( void(*func)(void), uint64_t stack_size);

@@ -129,7 +129,7 @@ void common_interrupt( int interrupt_type ) {
             break;
 
         default:
-            printf("Unhandled Request %d by %d\r\n", request, process->pid);
+            printf("Unhandled Request %ld by %d\r\n", request, process->pid);
             break;
     }
 

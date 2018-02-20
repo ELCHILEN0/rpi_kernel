@@ -35,19 +35,15 @@ void idleproc( uint32_t r0, uint32_t r1, uint32_t r2 ) {
     }
 }
 
-struct list_head my_list;
-
+extern void __load_context(void);
 void kernel_init( void )
 {
     __spin_lock(&print_lock);
     printf("kernel_init()\r\n");
     __spin_unlock(&print_lock); 
     
-    // Initialize process, dispatcher, context and device structures.
     process_init();
     dispatcher_init();
-
-    // Create idle and root process
 
     if (create(idleproc, 4096, PRIORITY_IDLE) < 0) {
         __spin_lock(&print_lock);
@@ -62,7 +58,8 @@ void kernel_init( void )
     // }
   
     switch_to(next());
-    contextswitch();
+    asm("MSR SPSel, #0");
+    __load_context();
 
     printf("[kernel] Exiting... this should not happen\r\n");
     while(true);
