@@ -2,6 +2,7 @@
 #include "peripheral.h"
 
 mailbox_t *mailbox0 = (mailbox_t *) MAILBOX_BASE;
+core_mailbox_t *core_mailbox = (core_mailbox_t *) 0x40000050;
 
 /*
  * With the exception of the property tags mailbox channel, when passing memory addresses
@@ -31,4 +32,9 @@ uint32_t mailbox_read_beta(mailbox_t *mailbox, mailbox0_channel_t channel) {
         if (read_channel == channel)
             return data;
     }
+}
+
+
+void core_mailbox_interrupt_routing( uint8_t core_id, core_mailbox_interrupt_t type ) {
+    core_mailbox->interrupt_routing[core_id] = type;
 }

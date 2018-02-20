@@ -58,10 +58,32 @@ typedef enum {
     MB0_PROPERTY_TAGS_VC_TO_ARM
 } mailbox0_channel_t;
 
+typedef enum {
+    MB3_FIQ = 0x40,
+    MB2_FIQ = 0x30,
+    MB1_FIQ = 0x20,
+    MB0_FIQ = 0x10,
+    MB3_IRQ = 0x4,
+    MB2_IRQ = 0x3,
+    MB1_IRQ = 0x2,
+    MB0_IRQ = 0x1,
+} core_mailbox_interrupt_t;
+
+typedef struct {
+    uint32_t interrupt_routing[4];
+    uint32_t _RESERVED_1[(0x80 - 0x60) / sizeof(uint32_t)];    
+    uint32_t set[4][4];
+    uint32_t rd_clr[4][4];
+} core_mailbox_t;
+
 extern mailbox_t *mailbox0;
+extern core_mailbox_t *core_mailbox;
 
 extern void mailbox_write(mailbox_t *mailbox, mailbox0_channel_t channel, uint32_t msg);
 
 // TODO: Verify it works...
 extern uint32_t mailbox_read_beta(mailbox_t *mailbox, mailbox0_channel_t channel);
+
+extern void core_mailbox_interrupt_routing( uint8_t core_id, core_mailbox_interrupt_t type );
+
 #endif

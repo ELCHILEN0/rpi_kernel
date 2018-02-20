@@ -12,6 +12,8 @@
 
 #include "../multicore.h"
 #include "../timer.h"
+#include "../mailbox.h"
+#include "../interrupts.h"
 
 // Hash Function from: http://www.tldp.org/LDP/lki/lki-2.html
 #define PIDHASH_SZ (4096 >> 6)
@@ -76,6 +78,9 @@ typedef struct {
 extern spinlock_t print_lock;
 
 extern void kernel_init();
+extern void kernel_start();
+extern void kernel_release_handler();
+
 extern void process_init();
 extern void dispatcher_init();
 
