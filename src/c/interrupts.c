@@ -59,6 +59,5 @@ void interrupt_handler_irq() {
 }
 
 void undefined_handler() {
-    printf("[interrupt] Undefined Handler\r\n");
-    while(true);
+    while(true); // Undefined Handler
 }

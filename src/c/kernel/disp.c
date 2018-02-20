@@ -25,11 +25,15 @@ void dispatcher_init() {
     // INIT_LIST_HEAD(&sleep_queue);
 }
 
+spinlock_t scheduler_lock;
+
 /**
  * The next function shall return the highest priority process and move the
  * process into a detatched but running state.
  */
 process_t *next( void ) {
+    __spin_lock(&scheduler_lock);
+
     for (int i = PRIORITY_HIGH; i >= PRIORITY_IDLE; i--) {
         struct list_head *ready_queue = &ready_queues[i];
 
@@ -40,9 +44,12 @@ process_t *next( void ) {
         // Reset its priority when it runs 
         //process->current_priority = process->initial_priority;
         running_list[get_core_id()] = process;
+        __spin_unlock(&scheduler_lock);
+        
         return process;
     }
 
+    __spin_unlock(&scheduler_lock);
     return NULL;
 }
 
@@ -53,12 +60,14 @@ process_t *next( void ) {
 void ready( process_t *process ) {
     // process->state = READY;
     // process->block_state = NONE;
-
+    __spin_lock(&scheduler_lock);
+    
     struct list_head *ready_queue = &ready_queues[process->current_priority];
 
     // list_del_init(&process->block_list);
     list_del_init(&process->sched_list);
     list_add_tail(&process->sched_list, ready_queue);
+    __spin_unlock(&scheduler_lock);    
 }
 
 /*

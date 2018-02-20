@@ -21,26 +21,14 @@ uint32_t act_message[] = {32, 0, 0x00038041, 8, 0, 130, 0, 0};
 extern void __enable_interrupts(void);
 extern void __disable_interrupts(void);
 extern void _init_core(void);
+extern void enable_mmu(void);
 
 spinlock_t print_lock;
-
-void timer_handler() {
-    common_interrupt(INT_TIMER);
-}
-
-void svc_handler() {    
-    common_interrupt(INT_SYSCALL);    
-}
 
 void master_core () {
     __spin_lock(&print_lock);
     printf("[core%d] Executing from 0x%lX\r\n", get_core_id(), (uint64_t) master_core);
-    __spin_unlock(&print_lock);
-
-    register_interrupt_handler(0, false, 1, (interrupt_vector_t) { .handle = timer_handler });
-    register_interrupt_handler(0, true, ESR_ELx_EC_SVC64, (interrupt_vector_t) { .handle = svc_handler });    
-
-    __enable_interrupts();
+    __spin_unlock(&print_lock);   
 
     kernel_init();
 
@@ -61,7 +49,7 @@ void slave_core() {
     printf("[core%d] Executing from 0x%lX!\r\n", core_id, (uint64_t) slave_core);
     __spin_unlock(&print_lock);
 
-    // TODO: Wait till kernel initialized...
+    kernel_init();    
 
     while (true) {
         for (int i = 0; i < 0x10000 * (core_id + 1) * 30; i++);
@@ -71,9 +59,6 @@ void slave_core() {
         gpio_write(core_gpio[core_id - 1], false);  
     }
 }
-
-extern void enter_el0();
-extern void enable_mmu();
 
 void cinit_core(void) {    
     // OK status (use till GPIO working)
@@ -123,7 +108,7 @@ void cinit_core(void) {
         break;
 
         default:
-            core_timer_interrupt_routing(0, CT_IRQ_NON_SECURE);
+            core_timer_interrupt_routing(core_id, CT_IRQ_NON_SECURE);
 
             enable_mmu();
             slave_core();

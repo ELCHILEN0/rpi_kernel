@@ -47,6 +47,10 @@ _init_core:
     MSR CPACR_EL1, X1
     ISB
 
+    // Initialize exception table
+    LDR    X1, =vector_table_el1
+    MSR    VBAR_EL1, X1
+
     // Jump to the core init vector
     MRS x0, MPIDR_EL1
     UBFX x0, x0, #0, #2
@@ -66,29 +70,11 @@ _core_vectors:
     B _init_core_3
 
 _init_core_0:
-    LDR    X1, =vector_table_el1
-    MSR    VBAR_EL1, X1
-
     MSR SPSel, #1
     ldr x0, =__el1_stack_end_core_0
     MOV sp, x0
-
-/*
-    MSR SPSel, #0 
-    ldr x0, =__el0_stack_end_core_0
-    MOV sp, x0   
-*/
-
-/*
-    bl enter_el0
-
-    ldr x0, =__el0_stack_end_core_0
-    mov sp, x0
-*/
     
-    /**
-    * Finally branch to higher level c routines.
-    */
+    // Branch to higher level c routines
     bl cstartup
     b hang
 

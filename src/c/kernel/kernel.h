@@ -76,6 +76,7 @@ typedef struct {
 } process_t, pcb_t;
 
 extern spinlock_t print_lock;
+extern spinlock_t scheduler_lock;
 
 extern void kernel_init();
 extern void kernel_start();
