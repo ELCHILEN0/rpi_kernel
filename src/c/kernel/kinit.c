@@ -6,11 +6,13 @@ void newproc() {
     __spin_lock(&print_lock);
     printf("newproc()\r\n");
     __spin_unlock(&print_lock); 
+
+    while(true);
 }
 
 void idleproc( uint32_t r0, uint32_t r1, uint32_t r2 ) {
     __spin_lock(&print_lock);
-    printf("idleproc()\r\n", r0);
+    printf("idleproc()\r\n");
     __spin_unlock(&print_lock);
 
     uint32_t pid = 10;
@@ -44,8 +46,7 @@ void kernel_init( void )
     // Initialize process, dispatcher, context and device structures.
     process_init();
     dispatcher_init();
-    // context_init();
-    // devices_init();
+
     // Create idle and root process
 
     if (create(idleproc, 4096, PRIORITY_IDLE) < 0) {
@@ -60,8 +61,8 @@ void kernel_init( void )
     //     return;
     // }
   
-    // Dispatch processes and wait for system calls
-    dispatch(); 
+    switch_to(next());
+    contextswitch();
 
     printf("[kernel] Exiting... this should not happen\r\n");
     while(true);

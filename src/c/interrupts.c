@@ -1,64 +1,64 @@
-#include <stddef.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdbool.h>
-
 #include "interrupts.h"
 
-#include "gpio.h"
-#include "timer.h"
-#include "peripheral.h"
+interrupt_vector_t vector_table_esr[4][ESR_ELx_EC_MAX + 1] = {
+    [0 ... 3][0 ... ESR_ELx_EC_MAX]  = { .identify = NULL, .handle = undefined_handler }
+    // TODO: Fill in with default stubs
+};
 
-interrupt_vector_t vector_table_svc[256];
-interrupt_vector_t vector_table_irq[26];
+interrupt_vector_t vector_table_int[4][INT_MAX + 1] = {
+    [0 ... 3][0 ... INT_MAX] = { .identify = NULL, .handle = undefined_handler }
+};
 
-void trap() {
-    // printf("[interrupt] Unhandled Interrupt\r\n");
+uint32_t *core_interrupt_src_irq = (uint32_t *) (VC_MMU_BASE | 0x60);
+uint32_t *core_interrupt_src_fiq = (uint32_t *) (VC_MMU_BASE | 0x70);
+
+void register_interrupt_handler(uint8_t core_id, bool sync, unsigned int entry, interrupt_vector_t vec) {
+    (sync ? vector_table_esr[core_id] :
+            vector_table_int[core_id])[entry] = vec;
 }
 
-void init_vector_tables() {
-    for (int i = 0; i < 256; i++) {
-        if (i < 26) register_interrupt_handler(vector_table_irq, i, &trap);
-        register_interrupt_handler(vector_table_svc, i, &trap);
-    }
+void interrupt_handler_sync() {
+    uint64_t esr;
+    asm volatile("MRS %0, ESR_EL1" : "=r" (esr));
+
+    interrupt_vector_t vec = vector_table_esr[get_core_id()][ESR_ELx_EC(esr)];
+    if (vec.identify)  
+        vec.identify();
+
+    vec.handle();
 }
 
-void register_interrupt_handler(interrupt_vector_t vector_table[], unsigned int i, void (*handler)()) {
-    vector_table[i].handler = handler;
+void interrupt_handler_fiq() {
+    uint8_t core_id = get_core_id();
+    unsigned int src = core_interrupt_src_fiq[core_id];
+
+    if (src == 0)
+        undefined_handler();
+
+    interrupt_vector_t vec = vector_table_int[core_id][__builtin_ffs(src) - 1];
+
+    if (vec.identify)  
+        vec.identify();
+
+    vec.handle();
 }
 
-void interrupt_svc(int code) {
-    // The following line clobbers r0-r3 so that the vector handler will not overwrite them
-    // asm volatile ("nop" ::: "r0", "r1", "r2", "r3");
-    interrupt_vector_t vector = vector_table_svc[code];
-    vector.handler();
+void interrupt_handler_irq() {
+    uint8_t core_id = get_core_id();
+    unsigned int src = core_interrupt_src_irq[core_id];
+
+    if (src == 0)
+        undefined_handler();
+    
+    interrupt_vector_t vec = vector_table_int[core_id][__builtin_ffs(src) - 1];
+
+    if (vec.identify)  
+        vec.identify();
+
+    vec.handle();
 }
 
-void interrupt_irq() {
-    // printf("[interrupt] IRQ\r\n");
-
-    // __disable_interrupts();
-
-
-    uint32_t irq_src = mmio_read(0x40000060);
-
-    for (int code = 0; code < 26; code++) {
-        if ((irq_src & (1 << code)) != 0) {
-            interrupt_vector_t vector = vector_table_irq[code];
-            vector.handler();
-        }
-    }
-
-    if (irq_src == (1 << 11)) {
-        static bool next_blinker_state = true;
-
-        // local_timer_reset();
-
-        gpio_write(13, next_blinker_state);
-        next_blinker_state = !next_blinker_state;
-    } else {
-        // printf("[interupt] Unhandled IRQ\r\n");
-    }
-
-    // __enable_interrupts();    
+void undefined_handler() {
+    printf("[interrupt] Undefined Handler\r\n");
+    while(true);
 }

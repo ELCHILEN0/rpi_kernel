@@ -24,28 +24,18 @@ extern void _init_core(void);
 
 spinlock_t print_lock;
 
-void test_handler() {
-    static bool next_blinker_state = true;    
-    gpio_write(21, next_blinker_state);
-    next_blinker_state = !next_blinker_state;    
+void timer_handler() {
+    // static bool next_blinker_state = true;    
+    // gpio_write(21, next_blinker_state);
+    // next_blinker_state = !next_blinker_state;    
 
-    uart_putc('.');
-    core_timer_rearm(19200000);
+    // uart_putc('.');
+    // core_timer_rearm(19200000);
+    common_interrupt(INT_TIMER);
 }
 
-void interrupt_handler() {
-    static bool next_blinker_state = true;
-    gpio_write(21, next_blinker_state);
-    next_blinker_state = !next_blinker_state;
-
-    // _int_syscall();
-}
-
-void time_slice() {
-
-    static bool next_blinker_state = true;
-    gpio_write(13, next_blinker_state);
-    next_blinker_state = !next_blinker_state;
+void svc_handler() {    
+    common_interrupt(INT_SYSCALL);    
 }
 
 void master_core () {
@@ -53,14 +43,14 @@ void master_core () {
     printf("[core%d] Executing from 0x%X\r\n", get_core_id(), master_core);
     __spin_unlock(&print_lock);
 
-    // register_interrupt_handler(vector_table_svc, 0x80, _int_syscall);
-    // register_interrupt_handler(vector_table_svc, 0x81, interrupt_handler);
-    // register_interrupt_handler(vector_table_irq, 11, time_slice);
+    register_interrupt_handler(0, false, 1, (interrupt_vector_t) { .handle = timer_handler });
+    register_interrupt_handler(0, true, ESR_ELx_EC_SVC64, (interrupt_vector_t) { .handle = svc_handler });    
 
     __enable_interrupts();
-    core_timer_rearm(19200000);
+    // asm("SVC 0x80");
+    // core_timer_rearm(19200000);
 
-    // kernel_init();
+    kernel_init();
 
     while (true) {
         for (int i = 0; i < 0x100000 * 30; i++);
@@ -78,6 +68,8 @@ void slave_core() {
     __spin_lock(&print_lock);
     printf("[core%d] Executing from 0x%X!\r\n", core_id, slave_core);
     __spin_unlock(&print_lock);
+
+    // TODO: Wait till kernel initialized...
 
     while (true) {
         for (int i = 0; i < 0x10000 * (core_id + 1) * 30; i++);

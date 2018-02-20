@@ -8,6 +8,7 @@
 
 struct list_head process_list;
 struct list_head ready_queues[PRIORITY_HIGH + 1];
+process_t *running_list[4];
 // struct list_head block_queue;
 // struct list_head sleep_queue;
 
@@ -38,6 +39,7 @@ process_t *next( void ) {
         // process->state = RUNNING;
         // Reset its priority when it runs 
         //process->current_priority = process->initial_priority;
+        running_list[get_core_id()] = process;
         return process;
     }
 
@@ -72,78 +74,64 @@ void ready( process_t *process ) {
 //     // list_add_tail(&process->sched_list, &block_queue);
 // }
 
-/*
- * The dispatch function will handle requests from processes to invoke a
- * system call.
- */
-void dispatch() {
-    process_t *process;
-    for ( process = next(); process; ) {
-        int request = context_switch(process);
-        
-        /*
-             Process Related            Process Creation and           exec()
-     Calls                      Termination                    fork()
-                                                               wait()
-                                                               exit()
-                                Process Identity               getpid()
-                                                               getppid()
-                                Process Control                signal()
-                                                               kill()
-        */
+void common_interrupt( int interrupt_type ) {
+    process_t *process = running_list[get_core_id()];
+    switch_from(process);
 
-        va_list args = *(va_list *)process->args;
-        switch (request) {
-            case SYS_CREATE:
-            {
-                void *func = va_arg(args, void*);
-                int stack = va_arg(args, int);
-                process->ret = create(func, stack, PRIORITY_MED);
-                ready(process);
-                process = next();
-                break;
-            }
-            case SYS_YIELD:
-                ready(process);
-                process = next();
-                break;
-            case SYS_EXIT:
-                printf("exiting...\r\n");
-                destroy(process);
-                process = next();
-                break;
-            case SYS_WAIT_PID:
-                // Fifth
-                break;
-            case SYS_GET_PID:
-                process->ret = process->pid;
-                break;
-            case SYS_KILL:
-                // Later
-                break;
-            // case SYS_SIG_RETURN:
-            //     // Later
-            //     break;
-            case (INT_TIMER):
-            {
-                // Gradually demote high priority processes once they excede their quantum
-                //if (process->current_priority > LOW)
-                //    process->current_priority--;
-                
-                // process->cpu_time++;
-               
-                // ready(process);
-                // process = next();
-                // tick();
-                // end_of_intr();
-                break;
-            }
-            default:
-                printf("Bad sys request %d, pid = %u\n", request, process->pid);
-                for (;;);
+    uint64_t request, args_ptr;
+    switch (interrupt_type) {
+        case INT_SYSCALL:
+        {
+            uint64_t *params = (uint64_t) process->frame + sizeof(aarch64_frame_t);
+            request = params[0];
+            args_ptr = params[1];
+            break;        
         }
+
+        case INT_TIMER:
+        {
+            request = SYS_TIME_SLICE;
+            break;
+        }
+        
+        default:
+            while(true); // Unhandled Interrupt 
     }
 
-    printf("Out of processes: dying\n");
-    for(;;);
+    va_list args = *(va_list *) args_ptr;
+    switch (request) {
+        case SYS_CREATE:
+        {
+            void *func = va_arg(args, void*);
+            int stack = va_arg(args, int);
+            process->ret = create(func, stack, PRIORITY_MED);
+            ready(process);
+            process = next();
+            break;
+        }
+        case SYS_YIELD:
+            ready(process);
+            process = next();
+            break;
+        case SYS_WAIT_PID:
+            // Fifth
+            break;
+        case SYS_GET_PID:
+            process->ret = process->pid;
+            break;
+        case SYS_KILL:
+            // Later
+            break;
+        case SYS_TIME_SLICE:
+            ready(process);
+            process = next();
+            core_timer_rearm(19200000);
+            break;
+
+        default:
+            printf("Unhandled Request %d by %d\r\n", request, process->pid);
+            break;
+    }
+
+    switch_to(process);
 }

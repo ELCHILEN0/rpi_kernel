@@ -8,6 +8,7 @@ struct list_head process_list;
 struct list_head process_hash_table[PIDHASH_SZ];
 
 void process_init( void ) {
+    // TODO: Static initialization...
     INIT_LIST_HEAD(&process_list);
 
     int i;

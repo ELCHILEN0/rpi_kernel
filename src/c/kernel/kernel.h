@@ -31,13 +31,18 @@ enum process_state {
     STOPPED,
 };
 
-enum interrupt_source {
+enum interrupt_request {
     SYS_CREATE,
     SYS_YIELD,
     SYS_EXIT,
     SYS_WAIT_PID,
     SYS_GET_PID,
     SYS_KILL,
+    SYS_TIME_SLICE,
+};
+
+enum interrupt_source {
+    INT_SYSCALL,
     INT_TIMER,
 };
 
@@ -72,10 +77,15 @@ extern spinlock_t print_lock;
 extern void kernel_init();
 extern void process_init();
 extern void dispatcher_init();
-extern void dispatch();
 
+// TODO: ....
+void switch_from(process_t *process);
+void switch_to(process_t *process);
+void __attribute__ ((naked)) contextswitch(); // TODO: Remove
+
+extern process_t *next();
 extern void ready(process_t *process);
-extern enum interrupt_source context_switch(pcb_t *process);
+extern void common_interrupt( int interrupt_type );
 
 extern int create(void (*func)(), uint64_t stack_size, enum process_priority);
 

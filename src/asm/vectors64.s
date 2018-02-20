@@ -1,7 +1,8 @@
 // https://developer.arm.com/products/architecture/a-profile/docs/100933/latest/example-exception-handlers
-.macro interrupt_handler handler:req,identify_and_clear_source
+.macro interrupt_handler handler:req,prev_stack:req,curr_stack:req
 .type handler, %function
-.type identify_and_clear_source, %function
+    MSR SPSel, \prev_stack
+
     STR X30, [SP, #-8]!
     BL __save_regs  // save general purpose regs
 
@@ -9,11 +10,13 @@
 	MRS	X10, ELR_EL1
     STP X9, X10, [SP, #-16]!
     // enable interrupts... (reentrant)
+    
+    MSR SPSel, \curr_stack
 
-    .ifnb \identify_and_clear_source
-        BL	\identify_and_clear_source
-    .endif
+    // Delegate identify_and_clear_source to the c handler
 	BL	\handler
+
+    MSR SPSel, \prev_stack
 
     // disable interrupts... (reentrant)
     LDP X9, X10, [SP], #16
@@ -27,7 +30,7 @@
 
 /* 
  * Each entry in the vector table is 16 instructions long.  Since aarch64 has no PUSH/POP,
- * jump to save/restore routine to restore all general purpose registers except X30.
+ * jump to save/restore routines applying to all general purpose registers except X30.
  */
 .global __save_regs
 __save_regs:
@@ -71,33 +74,29 @@ __load_regs:
 .global vector_table_el1
 vector_table_el1:
 curr_el_sp0_sync:
-    MSR SPSel, #0
-    interrupt_handler _kernel_load _identify_sp0
+    interrupt_handler interrupt_handler_sync, #0, #1
 .balign 0x80
 curr_el_sp0_irq:
-    MSR SPSel, #0
-    interrupt_handler test_handler _identify_sp0
+    interrupt_handler interrupt_handler_irq, #0, #1
 .balign 0x80
 curr_el_sp0_fiq:
-    MSR SPSel, #0
-    interrupt_handler test_handler _identify_sp0
+    interrupt_handler interrupt_handler_fiq, #0, #1
 .balign 0x80
 curr_el_sp0_serror:
-    MSR SPSel, #0
-    interrupt_handler test_handler _identify_sp0
+    b .
 
 .balign 0x80
 curr_el_spx_sync:
-    interrupt_handler test_handler
+    interrupt_handler interrupt_handler_sync, #1, #1
 .balign 0x80
 curr_el_spx_irq:
-    interrupt_handler test_handler
+    interrupt_handler interrupt_handler_irq, #1, #1
 .balign 0x80
 curr_el_spx_fiq:
-    interrupt_handler test_handler
+    interrupt_handler interrupt_handler_fiq, #1, #1
 .balign 0x80
 curr_el_spx_serror:
-    interrupt_handler test_handler
+    b .
 
 // These should be used when using USER mode
 .balign 0x80
@@ -125,6 +124,3 @@ lower_el_aarch32_fiq:
 .balign 0x80
 lower_el_aarch32_serror:
     b .
-                         
-
-// interrupt_handler _kernel_load _identify_sp0
