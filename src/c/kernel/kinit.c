@@ -10,13 +10,14 @@ void blink_proc() {
     printf("%-3d [core %d] blink_proc\r\n", pid, core_id);
     __spin_unlock(&newlib_lock);
 
+    // Blink at the rate of the original core...
     while (true) {
-        core_id = get_core_id(); // Relaxed core assignment when context switched to a different core
-        for (int i = 0; i < 0x10000 * (core_id + 1) * 30; i++);
-        gpio_write(core_gpio[core_id], true);
+        int curr_core = get_core_id();
+        for (int i = 0; i < 0x10000 * (2 + 1) * 30; i++);
+        gpio_write(core_gpio[curr_core], true);
 
-        for (int i = 0; i < 0x10000 * (core_id + 1) * 30; i++);
-        gpio_write(core_gpio[core_id], false);  
+        for (int i = 0; i < 0x10000 * (2 + 1) * 30; i++);
+        gpio_write(core_gpio[curr_core], false);
     }
 }
 
@@ -28,12 +29,21 @@ void root_proc() {
     printf("%-3d [core %d] root_proc\r\n", pid, core_id);
     __spin_unlock(&newlib_lock);
 
-    pid_t child_pid = syscreate(blink_proc, 1024);
-    __spin_lock(&newlib_lock);
-    printf("%-3d [core %d] created process with pid %d\r\n", pid, core_id, child_pid);
-    __spin_unlock(&newlib_lock);
+    if (core_id == 0) {
+        pid_t child_pid = syscreate(blink_proc, 1024);
+        __spin_lock(&newlib_lock);
+        printf("%-3d [core %d] created process with pid %d\r\n", pid, core_id, child_pid);
+        __spin_unlock(&newlib_lock);
+    }
 
-    while(true);
+    // for (int i = 0; i < 4; i++) {
+    //     pid_t child_pid = syscreate(blink_proc, 1024);
+    //     __spin_lock(&newlib_lock);
+    //     printf("%-3d [core %d] created process with pid %d\r\n", pid, core_id, child_pid);
+    //     __spin_unlock(&newlib_lock);
+    // }
+
+    while(true) sysyield();
 }
 
 // Low priority user-space process, possibly not required...
