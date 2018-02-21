@@ -17,23 +17,23 @@ void newproc() {
 }
 
 void idleproc( uint32_t r0, uint32_t r1, uint32_t r2 ) {
-    __spin_lock(&print_lock);
-    printf("[idleproc] started...\r\n");
-    __spin_unlock(&print_lock);
+    // __spin_lock(&print_lock);
+    // printf("[idleproc] started... %d\r\n", get_core_id());
+    // __spin_unlock(&print_lock);
 
-    uint32_t pid = sysgetpid();;
+    // uint32_t pid = sysgetpid();;
 
-    __spin_lock(&print_lock);
-    printf("[idleproc] pid = %d\r\n", pid);
-    __spin_unlock(&print_lock); 
+    // __spin_lock(&print_lock);
+    // printf("[idleproc] pid = %d\r\n", pid);
+    // __spin_unlock(&print_lock); 
 
-    pid = syscreate(newproc, 1024);    
+    // pid = syscreate(newproc, 1024);    
 
-    __spin_lock(&print_lock);
-    printf("[idleproc] created %d\r\n", pid);
-    __spin_unlock(&print_lock); 
+    // __spin_lock(&print_lock);
+    // printf("[idleproc] created %d\r\n", pid);
+    // __spin_unlock(&print_lock); 
 
-    sysyield();    
+    // sysyield();    
 
     while(true) {
         asm("wfi"); 
@@ -106,7 +106,6 @@ void kernel_init( void )
         // core_mailbox->set[2][0] = true;
         core_mailbox->set[1][0] = true;
         core_mailbox->set[0][0] = true;
-        // kernel_start();
     }
 
     while(true);

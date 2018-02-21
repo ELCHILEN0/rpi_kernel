@@ -30,6 +30,8 @@ process_t *get_process(pid_t pid) {
     return NULL;
 }
 
+static spinlock_t malloc_lock;
+
 int create(void (*func)(), uint64_t stack_size, enum process_priority priority) {
     if (stack_size < PROC_STACK)
         stack_size = PROC_STACK;    
@@ -38,7 +40,9 @@ int create(void (*func)(), uint64_t stack_size, enum process_priority priority) 
     if (next_pid == 0 && !list_empty(&process_list))
         return -1; 
 
+    __spin_lock(&malloc_lock);
     void *stack_pointer = malloc(stack_size); // TODO: Unsafe...
+    __spin_unlock(&malloc_lock);
     if (!stack_pointer)
         return -1;
 
