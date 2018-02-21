@@ -40,6 +40,7 @@ process_t *next( void ) {
         if (list_empty(ready_queue)) continue;
 
         process_t *process = list_entry(ready_queue->next, process_t, sched_list);
+        list_del_init(&process->sched_list);
         // process->state = RUNNING;
         // Reset its priority when it runs 
         //process->current_priority = process->initial_priority;

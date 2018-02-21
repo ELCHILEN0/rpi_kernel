@@ -99,3 +99,7 @@ caddr_t _sbrk(int incr) {
     heap_end += incr;
     return (caddr_t) prev_heap_end;
 }
+
+// TODO: Implement this, lots of things to think about, likely newlib will be abstracted behind syscalls
+// void __malloc_lock ( struct _reent *_r );
+// void __malloc_unlock ( struct _reent *_r );

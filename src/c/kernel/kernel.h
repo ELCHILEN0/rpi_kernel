@@ -75,7 +75,7 @@ typedef struct {
     struct list_head sched_list;
 } process_t, pcb_t;
 
-extern spinlock_t print_lock;
+extern spinlock_t newlib_lock;
 extern spinlock_t scheduler_lock;
 
 extern void kernel_init();

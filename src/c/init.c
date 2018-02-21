@@ -23,12 +23,12 @@ extern void __disable_interrupts(void);
 extern void _init_core(void);
 extern void enable_mmu(void);
 
-spinlock_t print_lock;
+spinlock_t newlib_lock;
 
 void master_core () {
-    __spin_lock(&print_lock);
+    __spin_lock(&newlib_lock);
     printf("[core%d] Executing from 0x%lX\r\n", get_core_id(), (uint64_t) master_core);
-    __spin_unlock(&print_lock);   
+    __spin_unlock(&newlib_lock);   
 
     kernel_init();
 
@@ -45,9 +45,9 @@ void slave_core() {
     int core_id = get_core_id();
     int core_gpio[3] = { 6, 13, 19 };
 
-    __spin_lock(&print_lock);
+    __spin_lock(&newlib_lock);
     printf("[core%d] Executing from 0x%lX!\r\n", core_id, (uint64_t) slave_core);
-    __spin_unlock(&print_lock);
+    __spin_unlock(&newlib_lock);
 
     kernel_init();    
 

@@ -1,39 +1,37 @@
 #include "kernel.h"
 
-extern spinlock_t print_lock;
-
 void newproc() {
-    __spin_lock(&print_lock);
+    __spin_lock(&newlib_lock);
     printf("[newproc] started...\r\n");
-    __spin_unlock(&print_lock); 
+    __spin_unlock(&newlib_lock); 
 
     uint32_t pid = sysgetpid();;
 
-    __spin_lock(&print_lock);
+    __spin_lock(&newlib_lock);
     printf("[newproc] pid = %d\r\n", pid);
-    __spin_unlock(&print_lock);
+    __spin_unlock(&newlib_lock);
 
     while(true);
 }
 
 void idleproc( uint32_t r0, uint32_t r1, uint32_t r2 ) {
-    // __spin_lock(&print_lock);
-    // printf("[idleproc] started... %d\r\n", get_core_id());
-    // __spin_unlock(&print_lock);
+    __spin_lock(&newlib_lock);
+    printf("[idleproc] started... %d\r\n", get_core_id()); // printf calls malloc, need a wrapper around all newlib
+    __spin_unlock(&newlib_lock);
 
-    // uint32_t pid = sysgetpid();;
+    uint32_t pid = sysgetpid();;
 
-    // __spin_lock(&print_lock);
+    // __spin_lock(&newlib_lock);
     // printf("[idleproc] pid = %d\r\n", pid);
-    // __spin_unlock(&print_lock); 
+    // __spin_unlock(&newlib_lock); 
 
     // pid = syscreate(newproc, 1024);    
 
-    // __spin_lock(&print_lock);
+    // __spin_lock(&newlib_lock);
     // printf("[idleproc] created %d\r\n", pid);
-    // __spin_unlock(&print_lock); 
+    // __spin_unlock(&newlib_lock); 
 
-    // sysyield();    
+    // sysyield();
 
     while(true) {
         asm("wfi"); 
@@ -49,9 +47,9 @@ void svc_handler() {
 }
 
 void kernel_release_handler() {
-    __spin_lock(&print_lock);
+    __spin_lock(&newlib_lock);
     printf("[interrupt] releasing core %d\r\n", get_core_id());
-    __spin_unlock(&print_lock); 
+    __spin_unlock(&newlib_lock); 
 
     core_mailbox->rd_clr[get_core_id()][0] = ~(0);         
 
@@ -67,9 +65,9 @@ void kernel_start() {
     register_interrupt_handler(core_id, false, 7, (interrupt_vector_t) { .handle = NULL }); 
 
     if (create(idleproc, 4096, PRIORITY_IDLE) < 0) {
-        __spin_lock(&print_lock);
+        __spin_lock(&newlib_lock);
         printf("failed to init idle() process\r\n");
-        __spin_unlock(&print_lock);            
+        __spin_unlock(&newlib_lock);            
         return;
     }
 
