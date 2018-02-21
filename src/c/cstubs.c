@@ -100,6 +100,18 @@ caddr_t _sbrk(int incr) {
     return (caddr_t) prev_heap_end;
 }
 
-// TODO: Implement this, lots of things to think about, likely newlib will be abstracted behind syscalls
-// void __malloc_lock ( struct _reent *_r );
-// void __malloc_unlock ( struct _reent *_r );
+/*
+#include <malloc.h>
+void __malloc_lock (struct _reent *reent);
+void __malloc_unlock (struct _reent *reent);
+
+The malloc family of routines call these functions when they need to lock the memory pool. 
+The version of these routines supplied in the library use the lock API defined in sys/lock.h. 
+If multiple threads of execution can call malloc, or if malloc can be called reentrantly, 
+then you need to define your own versions of these functions in order to safely lock the memory 
+pool during a call. If you do not, the memory pool may become corrupted.
+
+A call to malloc may call __malloc_lock recursively; that is, the sequence of calls may go
+__malloc_lock, __malloc_lock, __malloc_unlock, __malloc_unlock. Any implementation of these
+routines must be careful to avoid causing a thread to wait for a lock that it already holds.
+*/

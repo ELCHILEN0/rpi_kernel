@@ -48,17 +48,16 @@ _init_core:
     ISB
 
     // Initialize exception table
-    LDR    X1, =vector_table_el1
-    MSR    VBAR_EL1, X1
+    LDR X1, =vector_table_el1
+    MSR VBAR_EL1, X1
 
     // Jump to the core init vector
-    MRS x0, MPIDR_EL1
-    UBFX x0, x0, #0, #2
+    BL get_core_id
 
-    ADR x1, _core_vectors
-    MOV x2, #4
-    MADD x1, x0, x2, x1
-    BR x1
+    ADR X1, _core_vectors
+    MOV X2, #4
+    MADD X1, X0, X2, X1
+    BR X1
 
 hang:
     b hang
@@ -127,6 +126,12 @@ enter_el0:
 
     MSR	ELR_el1, x30
 	ERET
+
+.global get_core_id
+get_core_id:
+    MRS X0, MPIDR_EL1
+    UBFX X0, X0, #0, #2
+    RET
 
 .global __enable_interrupts
 __enable_interrupts:

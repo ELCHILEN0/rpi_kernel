@@ -10,9 +10,10 @@
 
 #include "list.h"
 
-#include "../multicore.h"
+#include "../gpio.h"
 #include "../timer.h"
 #include "../mailbox.h"
+#include "../multicore.h"
 #include "../interrupts.h"
 
 // Hash Function from: http://www.tldp.org/LDP/lki/lki-2.html
@@ -88,7 +89,7 @@ extern void dispatcher_init();
 // Context Switch Specific
 extern void switch_from(process_t *process);
 extern void switch_to  (process_t *process);
-extern void __load_context(void);
+// extern void __load_context(void);
 
 // Dispatch and Scheduling
 extern process_t *next();

@@ -49,7 +49,7 @@ void slave_core() {
     printf("[core%d] Executing from 0x%lX!\r\n", core_id, (uint64_t) slave_core);
     __spin_unlock(&newlib_lock);
 
-    kernel_init();    
+    kernel_init();
 
     while (true) {
         for (int i = 0; i < 0x10000 * (core_id + 1) * 30; i++);

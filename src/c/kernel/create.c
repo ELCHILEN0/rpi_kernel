@@ -1,7 +1,7 @@
 #include "kernel.h"
 
 static spinlock_t pid_lock;
-static pid_t next_pid = 0;
+static pid_t next_pid = 1;
 struct list_head process_list;
 struct list_head process_hash_table[PIDHASH_SZ];
 
@@ -35,16 +35,17 @@ int create(void (*func)(), uint64_t stack_size, enum process_priority priority) 
     if (stack_size < PROC_STACK)
         stack_size = PROC_STACK;    
 
-    // Ran out of pid_t to allocate
-    __spin_lock(&pid_lock);
-    if (next_pid == 0 && !list_empty(&process_list))
-        return -1;
-
     __spin_lock(&newlib_lock);
-    void *stack_pointer = malloc(stack_size); // TODO: Unsafe...
+    void *stack_pointer = malloc(stack_size);
     __spin_unlock(&newlib_lock);
     if (!stack_pointer)
-        return -1;
+        return 0;
+
+    __spin_lock(&pid_lock);
+    if (next_pid == 0)
+        return 0;
+    pid_t pid = next_pid++;
+    __spin_unlock(&pid_lock);  
 
     process_t *process = stack_pointer + stack_size - sizeof(process_t);
     process->stack_base = stack_pointer;
@@ -62,8 +63,7 @@ int create(void (*func)(), uint64_t stack_size, enum process_priority priority) 
     // process->frame->spsr = 0b00000; // EL0
     
     //process->state = READY;
-    process->pid = next_pid++;
-    __spin_unlock(&pid_lock); // TODO: Cleanup    
+    process->pid = pid;
     process->stack_size = stack_size;
     process->initial_priority = priority;
     process->current_priority = priority;

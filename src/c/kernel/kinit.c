@@ -1,25 +1,48 @@
 #include "kernel.h"
 
-void newproc() {
-    __spin_lock(&newlib_lock);
-    printf("[newproc] started...\r\n");
-    __spin_unlock(&newlib_lock); 
+void blink_proc() {
+    int core_id = get_core_id();
+    int core_gpio[4] = { 5, 6, 13, 19 };
 
-    uint32_t pid = sysgetpid();;
+    pid_t pid = sysgetpid();    
 
     __spin_lock(&newlib_lock);
-    printf("[newproc] pid = %d\r\n", pid);
+    printf("%-3d [core %d] blink_proc\r\n", pid, core_id);
+    __spin_unlock(&newlib_lock);
+
+    while (true) {
+        core_id = get_core_id(); // Relaxed core assignment when context switched to a different core
+        for (int i = 0; i < 0x10000 * (core_id + 1) * 30; i++);
+        gpio_write(core_gpio[core_id], true);
+
+        for (int i = 0; i < 0x10000 * (core_id + 1) * 30; i++);
+        gpio_write(core_gpio[core_id], false);  
+    }
+}
+
+void root_proc() {
+    uint8_t core_id = get_core_id();
+    pid_t pid = sysgetpid();
+
+    __spin_lock(&newlib_lock);
+    printf("%-3d [core %d] root_proc\r\n", pid, core_id);
+    __spin_unlock(&newlib_lock);
+
+    pid_t child_pid = syscreate(blink_proc, 1024);
+    __spin_lock(&newlib_lock);
+    printf("%-3d [core %d] created process with pid %d\r\n", pid, core_id, child_pid);
     __spin_unlock(&newlib_lock);
 
     while(true);
 }
 
-void idleproc( uint32_t r0, uint32_t r1, uint32_t r2 ) {
-    __spin_lock(&newlib_lock);
-    printf("[idleproc] started... %d\r\n", get_core_id()); // printf calls malloc, need a wrapper around all newlib
-    __spin_unlock(&newlib_lock);
+// Low priority user-space process, possibly not required...
+void idle_proc( uint32_t r0, uint32_t r1, uint32_t r2 ) {
+    // __spin_lock(&newlib_lock);
+    // printf("[idleproc] started... %d\r\n", get_core_id()); // printf calls malloc, need a wrapper around all newlib
+    // __spin_unlock(&newlib_lock);
 
-    uint32_t pid = sysgetpid();;
+    // uint32_t pid = sysgetpid();;
 
     // __spin_lock(&newlib_lock);
     // printf("[idleproc] pid = %d\r\n", pid);
@@ -33,9 +56,7 @@ void idleproc( uint32_t r0, uint32_t r1, uint32_t r2 ) {
 
     // sysyield();
 
-    while(true) {
-        asm("wfi"); 
-    }
+    while(true) asm("wfi");
 }
 
 void timer_handler() {
@@ -54,6 +75,11 @@ void kernel_release_handler() {
     core_mailbox->rd_clr[get_core_id()][0] = ~(0);         
 
     kernel_start();
+
+    __spin_lock(&newlib_lock);
+    printf("[kernel] unexpected execution\r\n");
+    __spin_lock(&newlib_lock);    
+    while(true);    
 }
 
 void kernel_start() {
@@ -64,30 +90,26 @@ void kernel_start() {
     register_interrupt_handler(core_id, false, 6, (interrupt_vector_t) { .handle = NULL }); 
     register_interrupt_handler(core_id, false, 7, (interrupt_vector_t) { .handle = NULL }); 
 
-    if (create(idleproc, 4096, PRIORITY_IDLE) < 0) {
-        __spin_lock(&newlib_lock);
-        printf("failed to init idle() process\r\n");
-        __spin_unlock(&newlib_lock);            
+    if (!create(idle_proc, 4096, PRIORITY_IDLE))
         return;
-    }
 
-    // if (create( &root, 1024, MED) < 0) {
-    //     kprintf("failed to init root() process");
-    //     return;
-    // }
+    if (!create(root_proc, 4096, PRIORITY_MED))
+        return;
   
     switch_to(next());
-    asm("MSR SPSel, #0");
-    __load_context();
 
-    printf("[kernel] Exiting... this should not happen\r\n");
-    while(true);    
+    // TODO: Possibly delegate this to the root_process.
+    core_timer_rearm(19200000);
+
+    asm("MSR SPSel, #0");
+    asm("BL __load_context");
 }
 
 void kernel_init( void )
 {
     uint8_t core_id = get_core_id();
 
+    // Setup Dispatch Handlers
     register_interrupt_handler(core_id, false, 1, (interrupt_vector_t) { .handle = timer_handler });
     register_interrupt_handler(core_id, true, ESR_ELx_EC_SVC64, (interrupt_vector_t) { .handle = svc_handler }); 
     
