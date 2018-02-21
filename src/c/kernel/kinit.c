@@ -38,24 +38,6 @@ void root_proc() {
 
 // Low priority user-space process, possibly not required...
 void idle_proc( uint32_t r0, uint32_t r1, uint32_t r2 ) {
-    // __spin_lock(&newlib_lock);
-    // printf("[idleproc] started... %d\r\n", get_core_id()); // printf calls malloc, need a wrapper around all newlib
-    // __spin_unlock(&newlib_lock);
-
-    // uint32_t pid = sysgetpid();;
-
-    // __spin_lock(&newlib_lock);
-    // printf("[idleproc] pid = %d\r\n", pid);
-    // __spin_unlock(&newlib_lock); 
-
-    // pid = syscreate(newproc, 1024);    
-
-    // __spin_lock(&newlib_lock);
-    // printf("[idleproc] created %d\r\n", pid);
-    // __spin_unlock(&newlib_lock); 
-
-    // sysyield();
-
     while(true) asm("wfi");
 }
 
@@ -122,8 +104,8 @@ void kernel_init( void )
         dispatcher_init();
 
         // Release Kernel Cores! (value doesnt matter)
-        // core_mailbox->set[3][0] = true;
-        // core_mailbox->set[2][0] = true;
+        core_mailbox->set[3][0] = true;
+        core_mailbox->set[2][0] = true;
         core_mailbox->set[1][0] = true;
         core_mailbox->set[0][0] = true;
     }
