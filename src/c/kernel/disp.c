@@ -115,8 +115,8 @@ void common_interrupt( int interrupt_type ) {
             void *func = va_arg(args, void*);
             int stack = va_arg(args, int);
             process->ret = create(func, stack, PRIORITY_MED);
-            ready(process);
-            process = next();
+            // ready(process);
+            // process = next();
             break;
         }
         case SYS_YIELD:

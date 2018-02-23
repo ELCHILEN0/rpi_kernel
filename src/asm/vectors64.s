@@ -1,24 +1,25 @@
-// https://developer.arm.com/products/architecture/a-profile/docs/100933/latest/example-exception-handlers
-.macro interrupt_handler handler:req,prev_stack:req,curr_stack:req
+// This subroutine saves the current context, executes the handler, then restores the saved context.
+// Note that the stack must maintain 16-byte alignment and thus even though SP is implicitly modified
+// with the LDP/STP instructions it must be treated as X31 to respect this alignment.
+.macro interrupt_handler handler:req,prev_stack:req,exec_stack:req
 .type handler, %function
     MSR SPSel, \prev_stack
 
-    STR X30, [SP, #-8]!
-    BL __save_regs  // save general purpose regs
+    // save general purpose registers, note the 16-byte alignment
+    STP X30, XZR, [SP, #-16]!
+    BL __save_regs
 
     MRS	X9, SPSR_EL1
 	MRS	X10, ELR_EL1
     STP X9, X10, [SP, #-16]!
     // enable interrupts... (reentrant)
-    
-    MSR SPSel, \curr_stack
 
-    // Delegate identify_and_clear_source to the c handler
+    // Delegate identify_and_clear_source to the c handler    
+    MSR SPSel, \exec_stack
 	BL	\handler
 
-    MSR SPSel, \prev_stack
-
     // disable interrupts... (reentrant)
+    MSR SPSel, \prev_stack
     BL __load_context
 .endm
 
@@ -28,8 +29,8 @@ __load_context:
     MSR ELR_EL1, X10
     MSR SPSR_EL1, X9
 
-    BL __load_regs  // load general purpose regs
-    LDR X30, [SP], #8
+    BL __load_regs
+    LDP X30, XZR, [SP], #16
 	ERET
 
 /* 

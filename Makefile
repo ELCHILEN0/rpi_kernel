@@ -8,11 +8,6 @@ TOOLCHAIN = /root/x-tools/gcc-linaro-5.5.0-2017.10-x86_64_aarch64-elf/bin/aarch6
 AARCH = 
 CCFLAGS = -Wall -nostartfiles -ffreestanding -mcpu=cortex-a53 -ggdb 
 LIBS = -L /root/x-tools/sysroot-newlib-linaro-2017.10-aarch64-elf/usr/lib/include -L /root/x-tools/sysroot-newlib-linaro-2017.10-aarch64-elf/usr/lib
-# LIBS = -lc -nostdlib
-# CCFLAGS = -nostartfiles -ffreestanding -mfpu=vfp -mcpu=cortex-a53 -ggdb
-
-# AARCH = -march=armv6 
-# CCFLAGS = -O2 -Wall -nostartfiles -ffreestanding $(AARCH)
 
 TARGET = kernel8
 BUILD = build

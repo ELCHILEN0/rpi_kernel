@@ -50,10 +50,11 @@ enum interrupt_source {
     INT_TIMER,
 };
 
+// For implementation details see the __load_context routine.
 typedef struct {
     uint64_t spsr;    
     uint64_t elr;
-    uint64_t reg[31];
+    uint64_t reg[32];
 } aarch64_frame_t;
 
 typedef struct {

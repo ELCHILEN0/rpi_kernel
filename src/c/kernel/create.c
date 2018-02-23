@@ -52,7 +52,7 @@ int create(void (*func)(), uint64_t stack_size, enum process_priority priority) 
     process->frame = (aarch64_frame_t *) (process - sizeof(aarch64_frame_t));
     
     // TODO: Create with args...
-    for (int i = 0; i < 31; i++) {
+    for (int i = 0; i < 32; i++) {
         process->frame->reg[i] = 0;
     }
     process->frame->reg[30] = (uint64_t) sysexit;
