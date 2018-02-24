@@ -23,6 +23,8 @@
     BL __load_context
 .endm
 
+// TODO: save/load context should be macros to avoid the BL/RET instructions + makes semantics cleaner
+
 .global __load_context
 __load_context:
     LDP X9, X10, [SP], #16

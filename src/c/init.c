@@ -72,7 +72,7 @@ void cinit_core(void) {
             // timer_frequency = (2e31/prescaler) * input_frequency
             // APB vs CRY ...   1/2 CPU Frequency vs Fixed Time Frequency
             //                  Fixed Execution Instructions vs Fixed Execution Time
-            core_timer_init( CT_CTRL_SRC_APB, CT_CTRL_INC2, 0x80000000);
+            core_timer_init( CT_CTRL_SRC_APB, CT_CTRL_INC2, 0x80000000 );
             // core_timer_init( CT_CTRL_SRC_CRY, CT_CTRL_INC1, 0x80000000);
             core_timer_interrupt_routing(0, CT_IRQ_NON_SECURE);
 

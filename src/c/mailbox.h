@@ -59,14 +59,14 @@ typedef enum {
 } mailbox0_channel_t;
 
 typedef enum {
-    MB3_FIQ = 0x40,
-    MB2_FIQ = 0x30,
+    MB3_FIQ = 0x80,
+    MB2_FIQ = 0x40,
     MB1_FIQ = 0x20,
     MB0_FIQ = 0x10,
-    MB3_IRQ = 0x4,
-    MB2_IRQ = 0x3,
-    MB1_IRQ = 0x2,
-    MB0_IRQ = 0x1,
+    MB3_IRQ = 0x08,
+    MB2_IRQ = 0x04,
+    MB1_IRQ = 0x02,
+    MB0_IRQ = 0x01,
 } core_mailbox_interrupt_t;
 
 typedef struct {

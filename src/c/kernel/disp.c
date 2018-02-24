@@ -88,6 +88,28 @@ void common_interrupt( int interrupt_type ) {
     process_t *process = running_list[get_core_id()];
     switch_from(process);
 
+    // TODO: Signal Frame
+    // int next_sig = msb(process->pending_signal);
+    // int curr_sig = msb(process->blocked_signal);    
+
+    // if (next_sig != -1 && next_sig > curr_sig) {
+        // aarch64_frame_t sig_frame = {
+        //     .spsr = process->frame->spsr,
+        //     .elr  = 0, // TODO: sigtramp
+        //     .reg  = {
+        //         [0 ... 31] = 0,
+        //         [0] = process->frame,
+        //         [1] = next_sig,
+        //         [30] = 0, // TODO: sigreturn
+        //     }
+        // };
+    //     // process->frame -= sizeof(aarch64_frame_t);
+    //     // memcpy(process->frame, sig_frame, sizeof(sig_frame));
+
+    //     process->pending_signal &= ~(1 << next_sig);
+    //     process->blocked_signal |= (1 << next_sig);
+    // }
+
     uint64_t request, args_ptr;
     switch (interrupt_type) {
         case INT_SYSCALL:
@@ -140,6 +162,7 @@ void common_interrupt( int interrupt_type ) {
 
         default:
             printf("Unhandled Request %ld by %d\r\n", request, process->pid);
+            while(true); // Unhandled Request (trace ESR/ELR)
             break;
     }
 

@@ -36,9 +36,9 @@ int create(void (*func)(), uint64_t stack_size, enum process_priority priority) 
         stack_size = PROC_STACK;    
 
     __spin_lock(&newlib_lock);
-    void *stack_pointer = malloc(stack_size);
+    void *stack_base = malloc(stack_size);
     __spin_unlock(&newlib_lock);
-    if (!stack_pointer)
+    if (!stack_base)
         return 0;
 
     __spin_lock(&pid_lock);
@@ -47,26 +47,29 @@ int create(void (*func)(), uint64_t stack_size, enum process_priority priority) 
     pid_t pid = next_pid++;
     __spin_unlock(&pid_lock);  
 
-    process_t *process = stack_pointer + stack_size - sizeof(process_t);
-    process->stack_base = stack_pointer;
-    process->frame = (aarch64_frame_t *) (process - sizeof(aarch64_frame_t));
+    process_t *process = stack_base + stack_size - sizeof(process_t);
+    process->stack_base = stack_base;
+    // process->frame = (aarch64_frame_t *) (process - sizeof(aarch64_frame_t));
     
-    // TODO: Create with args...
-    for (int i = 0; i < 32; i++) {
-        process->frame->reg[i] = 0;
-    }
-    process->frame->reg[30] = (uint64_t) sysexit;
-    process->ret = process->frame->reg[0];
-
-    process->frame->elr = (uint64_t) func;
-    process->frame->spsr = 0b00100; // EL1t
-    // process->frame->spsr = 0b00000; // EL0
+    aarch64_frame_t frame = {
+        // .spsr = 0b00000, // EL0
+        .spsr = 0b00100,    // EL1t
+        .elr  = (uint64_t) func,
+        .reg  = {
+            [0 ... 31] = 0,
+            [30] = (uint64_t) sysexit
+        }
+    };
+    process->frame = memcpy(process - sizeof(aarch64_frame_t), &frame, sizeof(frame));
     
     //process->state = READY;
     process->pid = pid;
     process->stack_size = stack_size;
     process->initial_priority = priority;
     process->current_priority = priority;
+
+    process->pending_signal = 0;
+    process->blocked_signal = 0;
     
     // Process list entries
     INIT_LIST_HEAD(&process->process_list);

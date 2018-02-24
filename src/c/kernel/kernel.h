@@ -6,6 +6,8 @@
 #include <stdbool.h>
 #include <sys/types.h>
 
+#include <string.h>
+
 #include <stdio.h>
 
 #include "list.h"
@@ -63,14 +65,19 @@ typedef struct {
     uint64_t args;
 
     // enum process_state state;
-
+    // Scheduling
     enum process_priority initial_priority;
     enum process_priority current_priority;
     
-    /* Stack */
+    // Context + Stack
     uint64_t    stack_size;
     uint64_t    *stack_base;
     aarch64_frame_t   *frame; // stack pointer...
+
+    // Signals (TODO)
+    // uint64_t    pending_signal;
+    // uint64_t    blocked_signal;
+    // void        (*sig[32])(void *);
 
     struct list_head process_list;
     struct list_head process_hash_list;
@@ -106,5 +113,8 @@ extern void sysyield( void );
 extern void sysexit( void );
 extern uint64_t syswaitpid( pid_t pid );
 // extern void syskill( pid_t pid, int sig );
+
+int msb(uint64_t x);
+int lsb(uint64_t x);
 
 #endif
