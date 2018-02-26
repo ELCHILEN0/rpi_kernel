@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <stdarg.h>
 #include <sys/types.h>
 
 #include <string.h>
@@ -44,6 +45,7 @@ enum interrupt_request {
     SYS_WAIT_PID,
     SYS_GET_PID,
     SYS_KILL,
+    SYS_SIG_RET,
     SYS_TIME_SLICE,
 };
 
@@ -71,13 +73,13 @@ typedef struct {
     
     // Context + Stack
     uint64_t    stack_size;
-    uint64_t    *stack_base;
-    aarch64_frame_t   *frame; // stack pointer...
+    void        *stack_base;
+    aarch64_frame_t   *frame;
 
     // Signals (TODO)
-    // uint64_t    pending_signal;
-    // uint64_t    blocked_signal;
-    // void        (*sig[32])(void *);
+    uint64_t    pending_signal;
+    uint64_t    blocked_signal;
+    void        (*sig[32])(void *);
 
     struct list_head process_list;
     struct list_head process_hash_list;
@@ -97,6 +99,7 @@ extern void dispatcher_init();
 // Context Switch Specific
 extern void switch_from(process_t *process);
 extern void switch_to  (process_t *process);
+extern void *align     (void *ptr);
 // extern void __load_context(void);
 
 // Dispatch and Scheduling
@@ -113,8 +116,11 @@ extern void sysyield( void );
 extern void sysexit( void );
 extern uint64_t syswaitpid( pid_t pid );
 // extern void syskill( pid_t pid, int sig );
+extern void syssigreturn( void *restore_frame );
 
 int msb(uint64_t x);
 int lsb(uint64_t x);
+
+void sig_tramp(void (*handler)(void *), aarch64_frame_t *restore_frame);
 
 #endif

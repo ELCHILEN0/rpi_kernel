@@ -1,6 +1,7 @@
 #include "kernel.h"
 
 static spinlock_t pid_lock;
+static spinlock_t process_list_lock;
 static pid_t next_pid = 1;
 struct list_head process_list;
 struct list_head process_hash_table[PIDHASH_SZ];
@@ -31,14 +32,21 @@ process_t *get_process(pid_t pid) {
     return NULL;
 }
 
+void test(void *test) {
+    __spin_lock(&newlib_lock);
+    printf("handled sig!\r\n");
+    __spin_unlock(&newlib_lock);
+}
+
 int create(void (*func)(), uint64_t stack_size, enum process_priority priority) {
     if (stack_size < PROC_STACK)
         stack_size = PROC_STACK;    
 
     __spin_lock(&newlib_lock);
+    process_t *process = malloc(sizeof(process_t));
     void *stack_base = malloc(stack_size);
     __spin_unlock(&newlib_lock);
-    if (!stack_base)
+    if (!process || !stack_base)
         return 0;
 
     __spin_lock(&pid_lock);
@@ -46,10 +54,6 @@ int create(void (*func)(), uint64_t stack_size, enum process_priority priority) 
         return 0;
     pid_t pid = next_pid++;
     __spin_unlock(&pid_lock);  
-
-    process_t *process = stack_base + stack_size - sizeof(process_t);
-    process->stack_base = stack_base;
-    // process->frame = (aarch64_frame_t *) (process - sizeof(aarch64_frame_t));
     
     aarch64_frame_t frame = {
         // .spsr = 0b00000, // EL0
@@ -60,7 +64,9 @@ int create(void (*func)(), uint64_t stack_size, enum process_priority priority) 
             [30] = (uint64_t) sysexit
         }
     };
-    process->frame = memcpy(process - sizeof(aarch64_frame_t), &frame, sizeof(frame));
+
+    process->frame = memcpy(align(stack_base + stack_size - sizeof(aarch64_frame_t)), &frame, sizeof(frame));
+    process->stack_base = stack_base;
     
     //process->state = READY;
     process->pid = pid;
@@ -68,7 +74,7 @@ int create(void (*func)(), uint64_t stack_size, enum process_priority priority) 
     process->initial_priority = priority;
     process->current_priority = priority;
 
-    process->pending_signal = 0;
+    process->pending_signal = 1;
     process->blocked_signal = 0;
     
     // Process list entries
@@ -78,8 +84,10 @@ int create(void (*func)(), uint64_t stack_size, enum process_priority priority) 
     // INIT_LIST_HEAD(&process->block_list);
     
     // Process Information Lists, different ways to access all processes
+    // __spin_lock(&process_list_lock);
     // list_add(&process->process_list, &process_list);
     // list_add(&process->process_hash_list, get_process_bucket(process->pid));
+    // __spin_unlock(&process_list_lock);
    
     // Proceses waiting for interaction from me
     // INIT_LIST_HEAD(&process->waiting_list);
@@ -94,6 +102,10 @@ int create(void (*func)(), uint64_t stack_size, enum process_priority priority) 
     //     process->sig_handlers[i] = NULL;
     // }
     // process->sig_handlers[SIGSTOP] = (void*) sysstop;
+    for (int i = 0; i < 31; i++) {
+        process->sig[i] = test;
+    }
+
     ready(process);    
 
     return process->pid;    

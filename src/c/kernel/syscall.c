@@ -1,7 +1,5 @@
 #include "kernel.h"
-#include <stdarg.h>
 
-/* Your code goes here */
 int syscall( int req_id, ... ) {
     int ret_code;
  
@@ -40,4 +38,8 @@ pid_t sysgetpid( void ) {
 
 int syskill( pid_t pid, int sig ) {
     return syscall(SYS_KILL, pid, sig);
+}
+
+void syssigreturn(void *frame) {
+    return syscall(SYS_SIG_RET, frame);
 }

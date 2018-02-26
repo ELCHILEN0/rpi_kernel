@@ -34,7 +34,10 @@ void root_proc() {
         __spin_lock(&newlib_lock);
         printf("%-3d [core %d] created process with pid %d\r\n", pid, core_id, child_pid);
         __spin_unlock(&newlib_lock);
+        syskill(child_pid, 0);
+        
     }
+
 
     // for (int i = 0; i < 4; i++) {
     //     pid_t child_pid = syscreate(blink_proc, 1024);

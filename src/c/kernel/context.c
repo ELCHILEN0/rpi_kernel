@@ -29,3 +29,14 @@ void switch_to(process_t *process)  {
         MSR SPSel, #1       \n\
     " :: "r" (process->frame));
 }
+
+void context_switch( int interrupt_type ) {
+    // TODO: Refactor disp.c
+}
+
+/**
+ * The align fucntion shall align a pointer to the lower 16-byte boundary.
+ */
+void *align(void *ptr) {
+    return (void *) ((uint64_t) ptr & -16);
+}
