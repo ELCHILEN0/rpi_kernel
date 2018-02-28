@@ -1,51 +1,58 @@
-/* disp.c : dispatcher
- */
-
-#include <stdarg.h>
 #include "kernel.h"
 
-// int getCPUtimes(process_t *p, process_status_t *ps);
-
 struct list_head process_list;
-struct list_head ready_queues[PRIORITY_HIGH + 1];
-process_t *running_list[4];
-// struct list_head block_queue;
-// struct list_head sleep_queue;
 
-/* Your code goes here */
+// Three Queues Required (Run, Turnstile, Sleep)
+// Turnstile is a dependency graph...
+// typedef struct {
+//     spinlock_t lock;
+//     struct list_head ready_queue[PRIORITY_HIGH + 1];
+//     process_t *curr[NUM_CORES];
+// } runqueue_t;
+
+struct list_head ready_queue[PRIORITY_HIGH + 1];
+struct list_head sleep_queue[NUM_CORES]; // Each core has its own sleep queue, avoids conflicting ticks.
+struct list_head block_queue;
+
+process_t *running_list[NUM_CORES];
+
+spinlock_t scheduler_lock;
+
 /**
  * Initialize the process table and schedule lists.
  */
-void dispatcher_init() {
+void disp_init() {
     for (int i = PRIORITY_IDLE; i <= PRIORITY_HIGH; i++) {
-        INIT_LIST_HEAD(&ready_queues[i]);
+        INIT_LIST_HEAD(&ready_queue[i]);
     }
 
-    // INIT_LIST_HEAD(&block_queue);
-    // INIT_LIST_HEAD(&sleep_queue);
-}
+    for (int i = 0; i < NUM_CORES; i++) {
+        INIT_LIST_HEAD(&sleep_queue[i]);
+    }
 
-spinlock_t scheduler_lock;
+    INIT_LIST_HEAD(&block_queue);    
+}
 
 /**
  * The next function shall return the highest priority process and move the
  * process into a detatched but running state.
  */
 process_t *next( void ) {
+    // TODO: More engrained locking... (specific to data structure...)
     __spin_lock(&scheduler_lock);
 
     for (int i = PRIORITY_HIGH; i >= PRIORITY_IDLE; i--) {
-        struct list_head *ready_queue = &ready_queues[i];
+        struct list_head *ready_queue = &ready_queue[i];
 
         if (list_empty(ready_queue)) continue;
 
         process_t *process = list_entry(ready_queue->next, process_t, sched_list);
         list_del_init(&process->sched_list);
-        // process->state = RUNNING;
-        // Reset its priority when it runs 
-        //process->current_priority = process->initial_priority;
         running_list[get_core_id()] = process;
         __spin_unlock(&scheduler_lock);
+        
+        // Reset its priority when it runs 
+        // process->current_priority = process->initial_priority;
         
         return process;
     }
@@ -59,11 +66,11 @@ process_t *next( void ) {
  * priority ready queue, at the end.
  */
 void ready( process_t *process ) {
-    // process->state = READY;
+    process->state = RUNNABLE;
     // process->block_state = NONE;
     __spin_lock(&scheduler_lock);
     
-    struct list_head *ready_queue = &ready_queues[process->current_priority];
+    struct list_head *ready_queue = &ready_queue[process->current_priority];
 
     // list_del_init(&process->block_list);
     list_del_init(&process->sched_list);
@@ -76,13 +83,13 @@ void ready( process_t *process ) {
  * the functions block_state will be set as specified.  The process shall be 
  * removed from any existing scheduler queues.
  */
-// void block( process_t *process, enum blocked_state reason ) {
-//     // process->state = BLOCKED;
-//     // process->block_state = reason;
+void block( process_t *process /*, enum blocked_state reason*/ ) {
+    process->state = BLOCKED;
+    // process->block_state = reason;
 
-//     // list_del_init(&process->sched_list);
-//     // list_add_tail(&process->sched_list, &block_queue);
-// }
+    list_del_init(&process->sched_list);
+    list_add_tail(&process->sched_list, &block_queue);
+}
 
 void common_interrupt( int interrupt_type ) {
     process_t *process = running_list[get_core_id()];
@@ -142,6 +149,7 @@ void common_interrupt( int interrupt_type ) {
             break;
         }
         case SYS_YIELD:
+            // TODO: Rearm quantum..., give more quantum to next invocation.
             ready(process);
             process = next();
             break;
@@ -154,10 +162,27 @@ void common_interrupt( int interrupt_type ) {
         case SYS_KILL:
             // Later
             break;
+        case SYS_SLEEP:
+        {
+            unsigned int ms = va_arg(args, unsigned int);
+            int code = sleep_p(process, ms);
+            if (code == BLOCK) {
+                block(process);
+                process = next();
+            } else {
+                // Immediate wakeup
+                process->ret = 0;
+            }
+            break;        
+        }
         case SYS_TIME_SLICE:
+            process->tick_count++;
+
+            tick();
+
             ready(process);
             process = next();
-            core_timer_rearm(19200000);
+            core_timer_rearm(NUM_TICKS);
             break;
 
         default:

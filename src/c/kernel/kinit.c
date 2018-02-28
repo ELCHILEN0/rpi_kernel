@@ -70,7 +70,7 @@ void kernel_release_handler() {
 
     __spin_lock(&newlib_lock);
     printf("[kernel] unexpected execution\r\n");
-    __spin_lock(&newlib_lock);    
+    __spin_lock(&newlib_lock);
     while(true);    
 }
 
@@ -110,8 +110,8 @@ void kernel_init( void )
     core_mailbox_interrupt_routing(core_id, MB0_IRQ | MB1_IRQ | MB2_IRQ | MB3_IRQ);
 
     if (core_id == 0) {
-        process_init();
-        dispatcher_init();
+        proc_init();
+        disp_init();
 
         // Release Kernel Cores! (value doesnt matter)
         core_mailbox->set[3][0] = true;

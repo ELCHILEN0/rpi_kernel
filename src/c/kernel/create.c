@@ -5,7 +5,7 @@ static pid_t next_pid = 1;
 struct list_head process_list;
 struct list_head process_hash_table[PIDHASH_SZ];
 
-void process_init( void ) {
+void proc_init( void ) {
     // TODO: Static initialization...
     INIT_LIST_HEAD(&process_list);
 
@@ -49,7 +49,6 @@ int create(void (*func)(), uint64_t stack_size, enum process_priority priority) 
 
     process_t *process = stack_base + stack_size - sizeof(process_t);
     process->stack_base = stack_base;
-    // process->frame = (aarch64_frame_t *) (process - sizeof(aarch64_frame_t));
     
     aarch64_frame_t frame = {
         // .spsr = 0b00000, // EL0
@@ -61,12 +60,15 @@ int create(void (*func)(), uint64_t stack_size, enum process_priority priority) 
         }
     };
     process->frame = memcpy(process - sizeof(aarch64_frame_t), &frame, sizeof(frame));
-    
-    //process->state = READY;
+
     process->pid = pid;
     process->stack_size = stack_size;
+
+    process->state = NEW;    
     process->initial_priority = priority;
     process->current_priority = priority;
+
+    process->tick_count = 0;
 
     process->pending_signal = 0;
     process->blocked_signal = 0;
@@ -118,8 +120,7 @@ int create(void (*func)(), uint64_t stack_size, enum process_priority priority) 
  * message sender will have its return code set to -1 and will be rescheduled.
  */
 int destroy(process_t *process) {
-    // process->state = TERMINATED;
-    // process_t *p, *pnext;
+    process->state = ZOMBIE;
 
     /*
      * Unblock processes blocked waiting to deliver a message to the current
@@ -147,12 +148,23 @@ int destroy(process_t *process) {
     //     p->ret = SIG_OK;
     // }
 
+    process_t *p, *pnext;
+    list_for_each_entry_safe(p, pnext, &process->blocked_waiters, blocked_on) {
+        ready(p);
+        if (p->blocked_cause == 0) {
+            p->ret = 0;
+        } else {
+            p->ret = 1;
+        }
+    }
+
     list_del(&process->process_list);
     list_del(&process->process_hash_list);
     list_del(&process->sched_list);
-    // list_del(&process->block_list);
+    list_del(&process->block_list);
 
     free(process->stack_base);
+    free(process);
     return 0;
 }
 
