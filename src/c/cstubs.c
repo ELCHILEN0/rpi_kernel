@@ -5,6 +5,9 @@
 
 #include "uart.h"
 
+// TODO: Important!
+// TODO: linker wrap option, wrap some of the syscalls (eg. malloc/printf to kernel/nonkernel specific)
+
 int uart_write( void *reent, int fd, const char *buf, int len ) {
     for (size_t i = 0; i < len; i++) {
 	    uart_putc(buf[i]);

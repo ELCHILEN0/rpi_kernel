@@ -22,6 +22,7 @@ void blink_proc() {
 }
 
 void root_proc() {
+    // while(true);
     uint8_t core_id = get_core_id();
     pid_t pid = sysgetpid();
 
@@ -82,10 +83,11 @@ void kernel_start() {
     register_interrupt_handler(core_id, false, 6, (interrupt_vector_t) { .handle = NULL }); 
     register_interrupt_handler(core_id, false, 7, (interrupt_vector_t) { .handle = NULL }); 
 
-    if (!create(idle_proc, 4096, PRIORITY_IDLE))
-        return;
-
-    if (!create(root_proc, 4096, PRIORITY_MED))
+    process_t idle_proc_stub = { };
+    process_t root_proc_stub = { };
+    proc_create(&idle_proc_stub, idle_proc, 4096, PRIORITY_IDLE);
+    proc_create(&root_proc_stub, root_proc, 4096, PRIORITY_MED);
+    if (!idle_proc_stub.ret || !root_proc_stub.ret)
         return;
   
     switch_to(next());

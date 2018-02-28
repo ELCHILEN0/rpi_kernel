@@ -5,12 +5,10 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdarg.h>
-#include <sys/types.h>
-// #include <unistd.h>
-
-#include <string.h>
-
 #include <stdio.h>
+
+#include <sys/types.h>
+#include <string.h>
 
 #include "list.h"
 
@@ -29,9 +27,20 @@
 
 #define PROC_STACK (4096 * 4)
 
-enum sysutil_ret_code {
+enum syscall_return_state {
     OK,
+    SCHED,
     BLOCK,
+    EXIT,
+};
+
+enum blocked_state {
+    WAIT,
+    SLEEP,
+    // SEND,
+    // RECV,
+    // READ,
+    // WRITE,
 };
 
 enum process_priority {
@@ -86,8 +95,8 @@ typedef struct {
     
     // Context + Stack
     uint64_t    stack_size;
-    uint64_t    *stack_base;
-    aarch64_frame_t   *frame; // SP_EL0 - sizeof(aarch64_frame_t)
+    void        *stack_base;
+    aarch64_frame_t *frame; // SP_EL0 - sizeof(aarch64_frame_t)
 
     // Signals (TODO)
     uint64_t    pending_signal;
@@ -103,15 +112,13 @@ typedef struct {
     struct list_head sched_list;
     struct list_head block_list;
 
-    // struct list_head block_entry;
-    // struct list_head sched_entry;
-
     // TODO: waiters
     // blocked_on is an entry in a process waiters list...
     // can sched_list be merged with block_list and blocked_on...
     // if I am blocked blocked_on will point to the first process I am blocked on (eg p2->blocked_waiters)
-    uint64_t blocked_cause;
-    struct list_head blocked_on;
+    enum blocked_state blocked_cause;
+    // struct list_head blocked_on;
+    spinlock_t blocked_waiters_lock;
     struct list_head blocked_waiters;
 } process_t, pcb_t;
 
@@ -142,9 +149,11 @@ extern void block(process_t *process);
 extern void common_interrupt( int interrupt_type );
 
 // Helper Functions
-extern int create(void (*func)(), uint64_t stack_size, enum process_priority);
-extern int sleep_p(process_t *process, unsigned int ms);
-extern void tick();
+extern enum syscall_return_state proc_create(process_t *proc, void (*func)(), uint64_t stack_size, enum process_priority);
+extern enum syscall_return_state proc_tick  (process_t *proc);
+extern enum syscall_return_state proc_exit  (process_t *proc);
+extern enum syscall_return_state proc_wait  (process_t *proc, pid_t pid);
+extern enum syscall_return_state proc_sleep (process_t *proc, unsigned int ms);
 
 // Syscalls
 extern pid_t syscreate( void(*func)(void), uint64_t stack_size);

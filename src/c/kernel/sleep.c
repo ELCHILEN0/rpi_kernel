@@ -6,12 +6,12 @@ uint64_t ms_to_ticks(uint64_t ms) {
     return (ms + NUM_TICKS - 1) / NUM_TICKS; // TODO: Fix
 }
 
-int sleep_p(process_t *process, unsigned int ms) {
+enum syscall_return_state proc_sleep(process_t *proc, unsigned int ms) {
     uint8_t core_id = get_core_id();   
 
     // Ticks to sleep
-    process->tick_delta = ms_to_ticks(ms);
-    if (process->tick_delta <= 0)
+    proc->tick_delta = ms_to_ticks(ms);
+    if (proc->tick_delta <= 0)
         return OK;
     
     // Find dlist position
@@ -19,28 +19,30 @@ int sleep_p(process_t *process, unsigned int ms) {
     list_for_each(cursor, &sleep_queue[core_id]) {
         process_t *entry = list_entry(cursor, process_t, block_list);
 
-        if (process->tick_delta <= entry->tick_delta)
+        if (proc->tick_delta <= entry->tick_delta)
             break;
 
-        process->tick_delta -= entry->tick_delta;
+        proc->tick_delta -= entry->tick_delta;
     }
 
     // Add to dlist
-    list_add_tail(&process->block_list, cursor);
+    list_add_tail(&proc->block_list, cursor);
 
     // Adjust next offset
-    if (list_has_next(&process->block_list, &sleep_queue[core_id])) {
-        process_t *entry = list_entry(process->block_list.next, process_t, block_list);
-        entry->tick_delta -= process->tick_delta;
+    if (list_has_next(&proc->block_list, &sleep_queue[core_id])) {
+        process_t *entry = list_entry(proc->block_list.next, process_t, block_list);
+        entry->tick_delta -= proc->tick_delta;
     }
 
     return BLOCK;
 }
 
-void tick() {
+enum syscall_return_state proc_tick(process_t *proc) {
+    proc->tick_count++;
+
     uint8_t core_id = get_core_id();
 
-    if (list_empty(&sleep_queue[core_id])) return;
+    if (list_empty(&sleep_queue[core_id])) return SCHED;
 
     // O(1) decrement first list.head
     process_t *next, *process = list_entry(sleep_queue[core_id].next, process_t, block_list);
@@ -54,4 +56,6 @@ void tick() {
         ready(process);
         process->ret = 0;
     }
+
+    return SCHED;
 }

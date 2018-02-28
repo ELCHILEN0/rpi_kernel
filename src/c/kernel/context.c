@@ -18,7 +18,7 @@ void switch_from(process_t *process) {
 /*
  * The switch_to function shall load a process stack to be restored on an ERET.
  */
-void switch_to(process_t *process)  {
+void switch_to(process_t *process) {
     // Place previous interrupt return code in x0
     process->frame->reg[0] = process->ret;
 
@@ -28,4 +28,8 @@ void switch_to(process_t *process)  {
         MOV SP, %0          \n\
         MSR SPSel, #1       \n\
     " :: "r" (process->frame));
+}
+
+void *align(void *ptr) {
+    return (void *) ((uint64_t) ptr & -16);
 }

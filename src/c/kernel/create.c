@@ -31,25 +31,27 @@ process_t *get_process(pid_t pid) {
     return NULL;
 }
 
-int create(void (*func)(), uint64_t stack_size, enum process_priority priority) {
+enum syscall_return_state proc_create(process_t *proc, void (*func)(), uint64_t stack_size, enum process_priority priority) {
     if (stack_size < PROC_STACK)
         stack_size = PROC_STACK;    
 
     __spin_lock(&newlib_lock);
+    process_t *process = malloc(sizeof(process_t));
     void *stack_base = malloc(stack_size);
     __spin_unlock(&newlib_lock);
-    if (!stack_base)
-        return 0;
+    if (!process || !stack_base) {
+        proc->ret = -1;
+        return OK;
+    }
 
-    __spin_lock(&pid_lock);
-    if (next_pid == 0)
-        return 0;
-    pid_t pid = next_pid++;
-    __spin_unlock(&pid_lock);  
+    pid_t pid = __atomic_fetch_add(&next_pid, 1, __ATOMIC_SEQ_CST); // TODO: __ATOMIC_RELAXED
+    if (next_pid == 0) {
+        proc->ret = -1;
+        return OK;
+    } else {
+        proc->ret = pid;
+    }
 
-    process_t *process = stack_base + stack_size - sizeof(process_t);
-    process->stack_base = stack_base;
-    
     aarch64_frame_t frame = {
         // .spsr = 0b00000, // EL0
         .spsr = 0b00100,    // EL1t
@@ -59,113 +61,85 @@ int create(void (*func)(), uint64_t stack_size, enum process_priority priority) 
             [30] = (uint64_t) sysexit
         }
     };
-    process->frame = memcpy(process - sizeof(aarch64_frame_t), &frame, sizeof(frame));
 
     process->pid = pid;
+
+    process->stack_base = stack_base;
     process->stack_size = stack_size;
+    process->frame = memcpy(align(stack_base + stack_size - sizeof(aarch64_frame_t)), &frame, sizeof(frame));
 
     process->state = NEW;    
     process->initial_priority = priority;
     process->current_priority = priority;
 
     process->tick_count = 0;
+    process->tick_delta = 0;
 
     process->pending_signal = 0;
     process->blocked_signal = 0;
     
-    // Process list entries
+    // Process List
     INIT_LIST_HEAD(&process->process_list);
     INIT_LIST_HEAD(&process->process_hash_list);
+
+    // Scheduling List Entries
     INIT_LIST_HEAD(&process->sched_list);
-    // INIT_LIST_HEAD(&process->block_list);
+    INIT_LIST_HEAD(&process->block_list);
     
-    // Process Information Lists, different ways to access all processes
-    // list_add(&process->process_list, &process_list);
-    // list_add(&process->process_hash_list, get_process_bucket(process->pid));
-   
-    // Proceses waiting for interaction from me
-    // INIT_LIST_HEAD(&process->waiting_list);
-    // INIT_LIST_HEAD(&process->senders_list);
-    // INIT_LIST_HEAD(&process->receivers_list);
+    // Scheduling List
+    INIT_LIST_HEAD(&process->blocked_waiters);
 
-    // process->sigs_pending = 0;
-    // process->sigs_running = 0;
+    // TODO: Sigs (Pending, Blocked, Handlers)
 
-    // // TODO: memset entire process to 0
-    // for (int i = SIGHUP; i < SIGSTOP; i++) {
-    //     process->sig_handlers[i] = NULL;
-    // }
-    // process->sig_handlers[SIGSTOP] = (void*) sysstop;
-    ready(process);    
-
-    return process->pid;    
+    ready(process);
+    return OK;    
 }
 
-/**
- * The wait function will cause a processs to wait until the
- */
-// int wait(process_t* process, pid_t pid) {
-//     process_t* target = get_process(pid);
+enum syscall_return_state proc_wait(process_t* proc, pid_t pid) {
+    process_t* process = get_process(pid);
 
-//     if (pid == 0 || !target || process->pid == target->pid)
-//         return SYSERR;
+    if (pid == 0 || !process || proc->pid == process->pid)
+        return OK;
 
-//     list_add(&target->waiting_list, &process->block_list);
-//     return BLOCKERR; 
-// }
+    __spin_lock(&process->blocked_waiters_lock);
+    list_add(&process->blocked_waiters, &proc->block_list);
+    __spin_unlock(&process->blocked_waiters_lock);    
+    return BLOCK; 
+}
 
 /*
  * The destroy function will unschedule the process from the dispatcher and
  * free the assocated process stack.  Additionally, every pending incoming
  * message sender will have its return code set to -1 and will be rescheduled.
  */
-int destroy(process_t *process) {
-    process->state = ZOMBIE;
-
-    /*
-     * Unblock processes blocked waiting to deliver a message to the current
-     * process.
-     */
-    // list_for_each_entry_safe(p, pnext, &process->senders_list, block_list) {
-    //     ready(p);
-    //     p->ret = SYSERR;
-    // }
-
-    /*
-     * Unblock processes blocked waiting to receive a message from the current
-     * process.
-     */
-    // list_for_each_entry_safe(p, pnext, &process->receivers_list, block_list) {
-    //     ready(p);
-    //     p->ret = SYSERR;
-    // }
-    
-    /*
-     * Unblock processes waiting for the current process to die
-     */
-    // list_for_each_entry_safe(p, pnext, &process->waiting_list, block_list) {
-    //     ready(p);
-    //     p->ret = SIG_OK;
-    // }
+enum syscall_return_state proc_exit(process_t *proc) {
+    proc->state = ZOMBIE;
 
     process_t *p, *pnext;
-    list_for_each_entry_safe(p, pnext, &process->blocked_waiters, blocked_on) {
+    list_for_each_entry_safe(p, pnext, &proc->blocked_waiters, block_list) {
         ready(p);
-        if (p->blocked_cause == 0) {
-            p->ret = 0;
-        } else {
-            p->ret = 1;
+
+        switch (p->blocked_cause) {
+            case SLEEP:
+                p->ret = 0;
+            break;
+
+            case WAIT:
+                p->ret = 1;
+            break;
         }
     }
 
-    list_del(&process->process_list);
-    list_del(&process->process_hash_list);
-    list_del(&process->sched_list);
-    list_del(&process->block_list);
+    list_del(&proc->process_list);
+    list_del(&proc->process_hash_list);
+    list_del(&proc->sched_list);
+    list_del(&proc->block_list);
 
-    free(process->stack_base);
-    free(process);
-    return 0;
+    list_del(&proc->blocked_waiters);
+
+    free(proc->stack_base);
+    free(proc);
+    return EXIT;
 }
 
 /**
