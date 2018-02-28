@@ -30,6 +30,8 @@ void root_proc() {
     printf("%-3d [core %d] root_proc\r\n", pid, core_id);
     __spin_unlock(&newlib_lock);
 
+    syssleep(1000 * 3);
+
     if (core_id == 0) {
         pid_t child_pid = syscreate(blink_proc, 1024);
         __spin_lock(&newlib_lock);

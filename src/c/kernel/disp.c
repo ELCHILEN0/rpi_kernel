@@ -38,27 +38,27 @@ void disp_init() {
  * process into a detatched but running state.
  */
 process_t *next( void ) {
-    // TODO: More engrained locking... (specific to data structure...)
-    __spin_lock(&scheduler_lock);
-
     for (int i = PRIORITY_HIGH; i >= PRIORITY_IDLE; i--) {
+        __spin_lock(&scheduler_lock);
+        // TODO: More engrained locking... (specific to data structure...)
         struct list_head *queue = &ready_queue[i];
 
-        if (list_empty(queue)) continue;
+        if (list_empty(queue)) {
+            __spin_unlock(&scheduler_lock);            
+            continue;
+        }
 
-        process_t *process = list_entry(queue->next, process_t, sched_list);
+        process_t *process = list_entry(queue->next, process_t, sched_list);        
         list_del_init(&process->sched_list);
         running_list[get_core_id()] = process;
-        __spin_unlock(&scheduler_lock);
         
         // Reset its priority when it runs 
-        // process->current_priority = process->initial_priority;
-        
+        // process->current_priority = process->initial_priority;    
+        __spin_unlock(&scheduler_lock);            
         return process;
     }
 
-    __spin_unlock(&scheduler_lock);
-    return NULL;
+    return NULL; // TODO: while(true); ... never run out of processes
 }
 
 /*
@@ -70,10 +70,8 @@ void ready( process_t *process ) {
     // process->block_state = NONE;
 
     __spin_lock(&scheduler_lock);
-    struct list_head *queue = &ready_queue[process->current_priority];
-
     list_del_init(&process->sched_list);
-    list_add_tail(&process->sched_list, queue);
+    list_add_tail(&process->sched_list, &ready_queue[process->current_priority]);
     __spin_unlock(&scheduler_lock);    
 }
 
@@ -86,8 +84,10 @@ void block( process_t *process /*, enum blocked_state reason*/ ) {
     process->state = BLOCKED;
     // process->block_state = reason;
 
+    __spin_lock(&scheduler_lock);
     list_del_init(&process->sched_list);
     list_add_tail(&process->sched_list, &block_queue);
+    __spin_unlock(&scheduler_lock);        
 }
 
 // TODO: Separate into context + disp...

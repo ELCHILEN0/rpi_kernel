@@ -40,6 +40,10 @@ enum syscall_return_state proc_create(process_t *proc, void (*func)(), uint64_t 
     void *stack_base = malloc(stack_size);
     __spin_unlock(&newlib_lock);
     if (!process || !stack_base) {
+        // TODO: is this free of races...
+        free(process);
+        free(stack_base);
+
         proc->ret = -1;
         return OK;
     }
@@ -75,6 +79,7 @@ enum syscall_return_state proc_create(process_t *proc, void (*func)(), uint64_t 
     process->tick_count = 0;
     process->tick_delta = 0;
 
+    // TODO: Sigs (Handlers)
     process->pending_signal = 0;
     process->blocked_signal = 0;
     
@@ -88,8 +93,6 @@ enum syscall_return_state proc_create(process_t *proc, void (*func)(), uint64_t 
     
     // Scheduling List
     INIT_LIST_HEAD(&process->blocked_waiters);
-
-    // TODO: Sigs (Pending, Blocked, Handlers)
 
     ready(process);
     return OK;    

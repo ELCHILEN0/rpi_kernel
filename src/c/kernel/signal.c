@@ -3,7 +3,7 @@
 int msb(uint64_t x) {
     if (!x) return -1;
 
-    return __builtin_clz(x);
+    return 32 - __builtin_clz(x); // TODO: Can 32 be derived...
 }
 
 int lsb(uint64_t x) {

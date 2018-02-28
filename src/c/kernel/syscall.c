@@ -40,3 +40,7 @@ pid_t sysgetpid( void ) {
 int syskill( pid_t pid, int sig ) {
     return syscall(SYS_KILL, pid, sig);
 }
+
+uint64_t syssleep(unsigned int ms) {
+    return syscall(SYS_SLEEP, ms);
+}

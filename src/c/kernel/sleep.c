@@ -37,12 +37,10 @@ enum syscall_return_state proc_sleep(process_t *proc, unsigned int ms) {
     return BLOCK;
 }
 
-enum syscall_return_state proc_tick(process_t *proc) {
-    proc->tick_count++;
-
+void global_tick() {
     uint8_t core_id = get_core_id();
 
-    if (list_empty(&sleep_queue[core_id])) return SCHED;
+    if (list_empty(&sleep_queue[core_id])) return;
 
     // O(1) decrement first list.head
     process_t *next, *process = list_entry(sleep_queue[core_id].next, process_t, block_list);
@@ -56,6 +54,12 @@ enum syscall_return_state proc_tick(process_t *proc) {
         ready(process);
         process->ret = 0;
     }
+}
+
+enum syscall_return_state proc_tick(process_t *proc) {
+    proc->tick_count++;
+
+    global_tick();
 
     return SCHED;
 }

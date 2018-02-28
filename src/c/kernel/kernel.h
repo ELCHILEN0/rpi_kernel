@@ -117,7 +117,7 @@ typedef struct {
     // can sched_list be merged with block_list and blocked_on...
     // if I am blocked blocked_on will point to the first process I am blocked on (eg p2->blocked_waiters)
     enum blocked_state blocked_cause;
-    // struct list_head blocked_on;
+
     spinlock_t blocked_waiters_lock;
     struct list_head blocked_waiters;
 } process_t, pcb_t;
@@ -136,10 +136,12 @@ extern void kernel_release_handler();
 
 extern void proc_init();
 extern void disp_init();
+// extern void intr_init();
 
 // Context Switch
 extern void switch_from(process_t *process);
 extern void switch_to  (process_t *process);
+extern void *align(void *ptr);
 // extern void __load_context(void);
 
 // Dispatch and Scheduling
@@ -162,6 +164,7 @@ extern void sysyield( void );
 extern void sysexit( void );
 extern uint64_t syswaitpid( pid_t pid );
 // extern void syskill( pid_t pid, int sig );
+extern uint64_t syssleep(unsigned int ms);
 
 int msb(uint64_t x);
 int lsb(uint64_t x);
