@@ -22,7 +22,6 @@ void blink_proc() {
 }
 
 void root_proc() {
-    // while(true);
     uint8_t core_id = get_core_id();
     pid_t pid = sysgetpid();
 
@@ -30,7 +29,7 @@ void root_proc() {
     printf("%-3d [core %d] root_proc\r\n", pid, core_id);
     __spin_unlock(&newlib_lock);
 
-    syssleep(1000 * 3);
+    syssleep(1000);
 
     if (core_id == 0) {
         pid_t child_pid = syscreate(blink_proc, 1024);
@@ -46,7 +45,7 @@ void root_proc() {
     //     __spin_unlock(&newlib_lock);
     // }
 
-    while(true) sysyield();
+    // while(true) sysyield();
 }
 
 // Low priority user-space process, possibly not required...
