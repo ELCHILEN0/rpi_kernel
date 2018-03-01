@@ -177,6 +177,10 @@ void common_interrupt( int interrupt_type ) {
             break;        
         }
         case SYS_TIME_SLICE:
+            // __spin_lock(&newlib_lock);
+            // printf(".\r\n");
+            // __spin_unlock(&newlib_lock);
+
             code = proc_tick(process);
             break;
 
@@ -193,7 +197,7 @@ void common_interrupt( int interrupt_type ) {
         case SCHED:
             ready(process);
             process = next();
-            core_timer_rearm(NUM_TICKS); // TODO: Account for time spent in syscall?            
+            core_timer_rearm(TICK_REARM); // TODO: Account for time spent in syscall?            
             break;
 
         case BLOCK:

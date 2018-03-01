@@ -3,7 +3,7 @@
 struct list_head sleep_queue[NUM_CORES]; // Each core has its own sleep queue, avoids conflicting ticks.
 
 uint64_t ms_to_ticks(uint64_t ms) {
-    return (ms + NUM_TICKS - 1) / NUM_TICKS; // TODO: Fix
+    return ms / (1000 / CLOCK_DIVD);
 }
 
 enum syscall_return_state proc_sleep(process_t *proc, unsigned int ms) {

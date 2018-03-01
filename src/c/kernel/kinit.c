@@ -38,8 +38,6 @@ void root_proc() {
     printf("%-3d [core %d] root_proc\r\n", pid, core_id);
     __spin_unlock(&newlib_lock);
 
-    syssleep(10 * 1000);
-
     pid_t child_pid;
 
     if (core_id == 0) {
@@ -77,6 +75,8 @@ void kernel_release_handler() {
     while(true);    
 }
 
+extern void __disable_interrupts(void);
+
 void kernel_start() {
     uint8_t core_id = get_core_id();
     
@@ -94,8 +94,8 @@ void kernel_start() {
   
     switch_to(next());
 
-    // TODO: Possibly delegate this to the root_process.
-    core_timer_rearm(19200000);
+    __disable_interrupts();
+    core_timer_rearm(TICK_REARM);
 
     asm("MSR SPSel, #0");
     asm("BL __load_context");

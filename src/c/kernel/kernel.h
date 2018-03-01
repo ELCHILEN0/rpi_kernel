@@ -19,7 +19,13 @@
 #include "../interrupts.h"
 
 #define NUM_CORES 4
-#define NUM_TICKS 19200000
+#define CLOCK_FREQ 19200000
+#define CLOCK_DIVD 10
+#define TICK_REARM (CLOCK_FREQ / CLOCK_DIVD)
+
+// Clock Frequencey 19.2 MHz
+// ~ a time slice of 1 S = 19.2e6
+// ~ a time slice of 1 MS = 19.2e6/1e3
 
 // Hash Function from: http://www.tldp.org/LDP/lki/lki-2.html
 #define PIDHASH_SZ (4096 >> 6)
