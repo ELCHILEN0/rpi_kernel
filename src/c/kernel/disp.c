@@ -152,7 +152,6 @@ void common_interrupt( int interrupt_type ) {
             code = proc_exit(process);
             break;
         case SYS_YIELD:
-            // TODO: Rearm quantum..., give more quantum to next invocation.
             code = SCHED;
             break;
         case SYS_WAIT_PID:
@@ -179,7 +178,6 @@ void common_interrupt( int interrupt_type ) {
         }
         case SYS_TIME_SLICE:
             code = proc_tick(process);
-            core_timer_rearm(NUM_TICKS); // TODO: Account for time spent in syscall?
             break;
 
         default:
@@ -195,6 +193,7 @@ void common_interrupt( int interrupt_type ) {
         case SCHED:
             ready(process);
             process = next();
+            core_timer_rearm(NUM_TICKS); // TODO: Account for time spent in syscall?            
             break;
 
         case BLOCK:

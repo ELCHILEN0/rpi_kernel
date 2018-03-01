@@ -1,5 +1,14 @@
 #include "kernel.h"
 
+// Low priority user-space process, possibly not required...
+void idle_proc( uint32_t r0, uint32_t r1, uint32_t r2 ) {
+    while(true) asm("wfi");
+}
+
+void yield_proc() {
+    while(true) sysyield();
+}
+
 void blink_proc() {
     int core_id = get_core_id();
     int core_gpio[4] = { 5, 6, 13, 19 };
@@ -29,28 +38,20 @@ void root_proc() {
     printf("%-3d [core %d] root_proc\r\n", pid, core_id);
     __spin_unlock(&newlib_lock);
 
-    syssleep(1000);
+    syssleep(10 * 1000);
+
+    pid_t child_pid;
 
     if (core_id == 0) {
-        pid_t child_pid = syscreate(blink_proc, 1024);
+        child_pid = syscreate(blink_proc, 1024);
+
         __spin_lock(&newlib_lock);
         printf("%-3d [core %d] created process with pid %d\r\n", pid, core_id, child_pid);
         __spin_unlock(&newlib_lock);
+    } else {
+        syscreate(yield_proc, 512);
+        syscreate(yield_proc, 512);
     }
-
-    // for (int i = 0; i < 4; i++) {
-    //     pid_t child_pid = syscreate(blink_proc, 1024);
-    //     __spin_lock(&newlib_lock);
-    //     printf("%-3d [core %d] created process with pid %d\r\n", pid, core_id, child_pid);
-    //     __spin_unlock(&newlib_lock);
-    // }
-
-    // while(true) sysyield();
-}
-
-// Low priority user-space process, possibly not required...
-void idle_proc( uint32_t r0, uint32_t r1, uint32_t r2 ) {
-    while(true) asm("wfi");
 }
 
 void timer_handler() {
