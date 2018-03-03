@@ -19,15 +19,29 @@ void blink_proc() {
     printf("%-3d [core %d] blink_proc\r\n", pid, core_id);
     __spin_unlock(&newlib_lock);
 
-    // Blink at the rate of the original core...
     while (true) {
         int curr_core = get_core_id();
-        for (int i = 0; i < 0x10000 * (2 + 1) * 30; i++);
+        for (int i = 0; i < 0x10000 * 3 * 30; i++);
         gpio_write(core_gpio[curr_core], true);
 
-        for (int i = 0; i < 0x10000 * (2 + 1) * 30; i++);
+        for (int i = 0; i < 0x10000 * 3 * 30; i++);
         gpio_write(core_gpio[curr_core], false);
     }
+}
+
+void sleep_proc() {
+    int core_id = get_core_id();
+    pid_t pid = sysgetpid();    
+    
+    __spin_lock(&newlib_lock);
+    printf("%-3d [core %d] sleep_proc\r\n", pid, core_id);
+    __spin_unlock(&newlib_lock);
+
+    syssleep(1 * 1000);
+
+    __spin_lock(&newlib_lock);
+    printf("%-3d [core %d] sleep_proc - woke\r\n", pid, core_id);
+    __spin_unlock(&newlib_lock);
 }
 
 void root_proc() {
@@ -38,10 +52,8 @@ void root_proc() {
     printf("%-3d [core %d] root_proc\r\n", pid, core_id);
     __spin_unlock(&newlib_lock);
 
-    pid_t child_pid;
-
     if (core_id == 0) {
-        child_pid = syscreate(blink_proc, 1024);
+        pid_t child_pid = syscreate(blink_proc, 1024);
 
         __spin_lock(&newlib_lock);
         printf("%-3d [core %d] created process with pid %d\r\n", pid, core_id, child_pid);
@@ -50,6 +62,18 @@ void root_proc() {
         syscreate(yield_proc, 512);
         syscreate(yield_proc, 512);
     }
+
+    pid_t child_pid = syscreate(sleep_proc, 512);
+
+    __spin_lock(&newlib_lock);
+    printf("%-3d [core %d] waiting for %d\r\n", pid, core_id, child_pid);
+    __spin_unlock(&newlib_lock);
+
+    syswaitpid(child_pid);
+
+    __spin_lock(&newlib_lock);
+    printf("%-3d [core %d] %d has terminated!\r\n", pid, core_id, child_pid);
+    __spin_unlock(&newlib_lock);
 }
 
 void timer_handler() {

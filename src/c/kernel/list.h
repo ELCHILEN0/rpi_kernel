@@ -193,10 +193,10 @@ static inline int list_empty(const struct list_head *head)
         return head->next == head;
 }
 
-static inline int list_has_next(const struct list_head *list,
-                                const struct list_head *head)
+static inline int list_is_tail(const struct list_head *list,
+                               const struct list_head *head)
 {
-        return list->next != head;
+        return list->next == head;
 }
 
 static inline void __list_splice(struct list_head *list,

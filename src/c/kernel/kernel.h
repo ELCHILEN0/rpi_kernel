@@ -95,7 +95,8 @@ typedef struct {
     uint64_t args;
 
     // Scheduling
-    enum process_state state;    
+    enum process_state state;
+    enum blocked_state block_state;  
     enum process_priority initial_priority;
     enum process_priority current_priority;
     
@@ -116,24 +117,30 @@ typedef struct {
     struct list_head process_list;
     struct list_head process_hash_list;
     struct list_head sched_list;
-    struct list_head block_list;
 
-    // TODO: waiters
-    // blocked_on is an entry in a process waiters list...
-    // can sched_list be merged with block_list and blocked_on...
-    // if I am blocked blocked_on will point to the first process I am blocked on (eg p2->blocked_waiters)
-    enum blocked_state blocked_cause;
+    spinlock_t block_lock;
+    // Scheduling Dependencies, processes blocked on an action by this process
+    // struct {
+        struct list_head waiting;
+        struct list_head sending;
+        struct list_head recving;
+        // TODO: Can we add ready list here too, if we want to implement some sort of tree of sucessors
+    // };
 
-    spinlock_t blocked_waiters_lock;
-    struct list_head blocked_waiters;
 } process_t, pcb_t;
+
+// typedef struct {
+//     struct list_head sleeping; // 1 - 1 ...
+//     struct list_head waiting;  // 1 - many...
+//     struct list_head sending;  // 1 - many...
+//     struct list_head recving;  // 1 - many...
+// } waiters_t;
 
 extern spinlock_t newlib_lock;
 extern spinlock_t scheduler_lock;
 
 extern struct list_head ready_queue[];
 extern struct list_head sleep_queue[];
-extern struct list_head block_queue;
 
 // Initialization
 extern void kernel_init();
@@ -153,7 +160,7 @@ extern void *align(void *ptr);
 // Dispatch and Scheduling
 extern process_t *next();
 extern void ready(process_t *process);
-extern void block(process_t *process);
+extern void block(process_t *process, struct list_head *queue, enum blocked_state reason);
 extern void common_interrupt( int interrupt_type );
 
 // Helper Functions

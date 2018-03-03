@@ -12,7 +12,6 @@ struct list_head process_list;
 
 struct list_head ready_queue[PRIORITY_HIGH + 1];
 struct list_head sleep_queue[NUM_CORES]; // Each core has its own sleep queue, avoids conflicting ticks.
-struct list_head block_queue;
 
 process_t *running_list[NUM_CORES];
 
@@ -28,9 +27,7 @@ void disp_init() {
 
     for (int i = 0; i < NUM_CORES; i++) {
         INIT_LIST_HEAD(&sleep_queue[i]);
-    }
-
-    INIT_LIST_HEAD(&block_queue);    
+    }    
 }
 
 /**
@@ -40,22 +37,21 @@ void disp_init() {
 process_t *next( void ) {
     for (int i = PRIORITY_HIGH; i >= PRIORITY_IDLE; i--) {
         __spin_lock(&scheduler_lock);
-        // TODO: More engrained locking... (specific to data structure...)
-        struct list_head *queue = &ready_queue[i];
+        struct list_head *head = &ready_queue[i];     
 
-        if (list_empty(queue)) {
-            __spin_unlock(&scheduler_lock);            
-            continue;
+        process_t *process, *next;
+        list_for_each_entry_safe(process, next, head, sched_list) {
+            list_del_init(&process->sched_list);
+            __spin_unlock(&scheduler_lock);
+
+            // Reset its priority when it runs 
+            // process->current_priority = process->initial_priority;
+            running_list[get_core_id()] = process;
+
+            return process;
         }
 
-        process_t *process = list_entry(queue->next, process_t, sched_list);        
-        list_del_init(&process->sched_list);
-        running_list[get_core_id()] = process;
-        
-        // Reset its priority when it runs 
-        // process->current_priority = process->initial_priority;    
-        __spin_unlock(&scheduler_lock);            
-        return process;
+        __spin_unlock(&scheduler_lock);         
     }
 
     return NULL; // TODO: while(true); ... never run out of processes
@@ -70,7 +66,7 @@ void ready( process_t *process ) {
     // process->block_state = NONE;
 
     __spin_lock(&scheduler_lock);
-    list_del_init(&process->sched_list);
+    list_del_init(&process->sched_list);    
     list_add_tail(&process->sched_list, &ready_queue[process->current_priority]);
     __spin_unlock(&scheduler_lock);    
 }
@@ -80,13 +76,13 @@ void ready( process_t *process ) {
  * the functions block_state will be set as specified.  The process shall be 
  * removed from any existing scheduler queues.
  */
-void block( process_t *process /*, enum blocked_state reason*/ ) {
+void block( process_t *process, struct list_head *queue, enum blocked_state reason ) {
     process->state = BLOCKED;
-    // process->block_state = reason;
+    process->block_state = reason;
 
     __spin_lock(&scheduler_lock);
     list_del_init(&process->sched_list);
-    list_add_tail(&process->sched_list, &block_queue);
+    list_add_tail(&process->sched_list, queue);
     __spin_unlock(&scheduler_lock);        
 }
 
@@ -177,10 +173,6 @@ void common_interrupt( int interrupt_type ) {
             break;        
         }
         case SYS_TIME_SLICE:
-            // __spin_lock(&newlib_lock);
-            // printf(".\r\n");
-            // __spin_unlock(&newlib_lock);
-
             code = proc_tick(process);
             break;
 
@@ -196,15 +188,10 @@ void common_interrupt( int interrupt_type ) {
         
         case SCHED:
             ready(process);
-            process = next();
-            core_timer_rearm(TICK_REARM); // TODO: Account for time spent in syscall?            
-            break;
+            core_timer_rearm(TICK_REARM); // TODO: Account for time spent in syscall?                        
+            // Fall through...
 
         case BLOCK:
-            block(process);
-            process = next();
-            break;
-
         case EXIT:
             process = next();
             break;

@@ -1,9 +1,11 @@
 #include "kernel.h"
 
-static spinlock_t pid_lock;
 static pid_t next_pid = 1;
+
+spinlock_t process_list_lock;
+spinlock_t process_hash_lock;
 struct list_head process_list;
-struct list_head process_hash_table[PIDHASH_SZ];
+struct list_head process_hash[PIDHASH_SZ];
 
 void proc_init( void ) {
     // TODO: Static initialization...
@@ -11,21 +13,24 @@ void proc_init( void ) {
 
     int i;
     for (i = 0; i < PIDHASH_SZ; i++) {
-        INIT_LIST_HEAD(&process_hash_table[i]);
+        INIT_LIST_HEAD(&process_hash[i]);
     }
 }
 
 struct list_head *get_process_bucket(pid_t pid) {
-    return &process_hash_table[pid_hashfn(pid)];
+    return &process_hash[pid_hashfn(pid)];
 }
 
 process_t *get_process(pid_t pid) {
     process_t *p;
-    struct list_head *list = get_process_bucket(pid);
-    list_for_each_entry(p, list, process_hash_list) {
-        if (p->pid == pid)
+    __spin_lock(&process_hash_lock);    
+    list_for_each_entry(p, get_process_bucket(pid), process_hash_list) {
+        if (p->pid == pid) {
+            __spin_unlock(&process_hash_lock);
             return p;
+        }
     }
+    __spin_unlock(&process_hash_lock);
     
     // Ensure that references are handled apropriately here
     return NULL;
@@ -89,10 +94,20 @@ enum syscall_return_state proc_create(process_t *proc, void (*func)(), uint64_t 
 
     // Scheduling List Entries
     INIT_LIST_HEAD(&process->sched_list);
-    INIT_LIST_HEAD(&process->block_list);
     
     // Scheduling List
-    INIT_LIST_HEAD(&process->blocked_waiters);
+    INIT_LIST_HEAD(&process->waiting);
+    INIT_LIST_HEAD(&process->sending);
+    INIT_LIST_HEAD(&process->recving);
+
+    __spin_lock(&process_list_lock);
+    __spin_lock(&process_hash_lock);
+    list_add(&process->process_list, &process_list);
+    list_add(&process->process_hash_list, get_process_bucket(process->pid));
+    __spin_unlock(&process_hash_lock);
+    __spin_unlock(&process_list_lock);
+
+    process->block_lock.flag = 0;
 
     ready(process);
     return OK;    
@@ -104,9 +119,9 @@ enum syscall_return_state proc_wait(process_t* proc, pid_t pid) {
     if (pid == 0 || !process || proc->pid == process->pid)
         return OK;
 
-    __spin_lock(&process->blocked_waiters_lock);
-    list_add(&process->blocked_waiters, &proc->block_list);
-    __spin_unlock(&process->blocked_waiters_lock);    
+    __spin_lock(&process->block_lock);
+    list_add(&process->waiting, &proc->sched_list);
+    __spin_unlock(&process->block_lock);
     return BLOCK; 
 }
 
@@ -119,26 +134,16 @@ enum syscall_return_state proc_exit(process_t *proc) {
     proc->state = ZOMBIE;
 
     process_t *p, *pnext;
-    list_for_each_entry_safe(p, pnext, &proc->blocked_waiters, block_list) {
+    list_for_each_entry_safe(p, pnext, &proc->waiting, sched_list) {
         ready(p);
-
-        switch (p->blocked_cause) {
-            case SLEEP:
-                p->ret = 0;
-            break;
-
-            case WAIT:
-                p->ret = 1;
-            break;
-        }
+        p->ret = 0;
     }
+
+    // TODO: Cleanup sleepers...
 
     list_del(&proc->process_list);
     list_del(&proc->process_hash_list);
     list_del(&proc->sched_list);
-    list_del(&proc->block_list);
-
-    list_del(&proc->blocked_waiters);
 
     free(proc->stack_base);
     free(proc);
