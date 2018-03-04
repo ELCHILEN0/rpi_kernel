@@ -5,6 +5,58 @@ void idle_proc( uint32_t r0, uint32_t r1, uint32_t r2 ) {
     while(true) asm("wfi");
 }
 
+// TODO: (N*M) x (M*P) matrix sizes...
+#define SMALL_MATRIX_X 1024
+#define SMALL_MATRIX_Y 1024
+#define SMALL_MATRIX_Z 1024
+typedef uint64_t small_matrix_t[SMALL_MATRIX_X][SMALL_MATRIX_Y][SMALL_MATRIX_Z];
+// uint64_t perf_segment[10][1024][1024][1024];
+// uint64_t perf_
+small_matrix_t samples[10][2];
+small_matrix_t output[10];
+
+// RPI 3 Specs: 16KB L1P (Instruction) and 16KB L1D(Data) and 512KB L2
+int perf_id = 0;
+void perf_proc() {
+    int perf_id = __atomic_fetch_add(&perf_id, 1, __ATOMIC_RELAXED) % 10;
+
+    // small_matrix_t sample[2] = samples[perf_id];
+    // uint64_t mat0[][][] = samples[perf_id][0];
+
+    /*
+    l=5;m=2;n=3;p=4;q=6;
+    A=randn(l,m,n);
+    B=randn(n,p,q);
+    C=zeros(l,m,p,q);
+
+    for h = 1:l
+        for i = 1:m
+            for j = 1:p
+                for g = 1:q
+                    for k = 1:n
+                        C(h,i,j,g) = C(h,i,j,g) + A(h,i,k)*B(k,j,g);
+                    end
+                end
+            end
+        end
+    end
+    */
+    for (int l = 0; l < SMALL_MATRIX_X; l++) {
+        for (int m = 0; m < SMALL_MATRIX_Y; m++) {
+            uint64_t sum = 0;
+            for (int k = 0; k < SMALL_MATRIX_Z; i++) {
+                // TODO: Fix, doesnt really matter though...
+                sum += samples[perf_id][0][i][j][k] * samples[perf_id][0][i][j][k];
+                output[perf_id][i][j][k] = sum;
+            }
+        }
+    }
+
+    // TODO: Incorporate syscalls, send/recv/wait ? splitting up task with communication overheads...
+
+
+}
+
 void yield_proc() {
     while(true) sysyield();
 }
