@@ -136,6 +136,13 @@ enum syscall_return_state proc_exit(process_t *proc) {
         p->ret = 0;
     }
 
+    __spin_lock(&newlib_lock);
+    printf("%-3d [core %d] exiting\r\n", proc->pid, get_core_id());
+    for (int i = 0; i < NUM_CORES; i++) {
+        printf("usr_count: %lld, sys_count: %lld\r\n", proc->usr_count[i], proc->sys_count[i]);
+    }
+    __spin_unlock(&newlib_lock);
+
     // TODO: Cleanup sleepers...
 
     list_del(&proc->process_list);

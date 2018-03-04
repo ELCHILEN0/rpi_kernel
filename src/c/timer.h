@@ -72,6 +72,7 @@ extern void core_timer_init( core64_timer_control_t src, core64_timer_control_t 
 extern void core_timer_interrupt_routing( uint8_t core_id, core64_timer_interrupt_t type );
 extern void core_timer_rearm( uint64_t ticks );
 extern void core_timer_stop();
+extern uint64_t core_timer_count();
 
 local_timer_t *local_timer;
 core64_timer_t *core64_timer;

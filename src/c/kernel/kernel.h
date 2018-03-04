@@ -111,9 +111,9 @@ typedef struct {
     // void        (*sig[32])(void *);
 
     // Timers
-    // uint64_t start_count;
-    // uint64_t sys_count;
-    // uint64_t usr_count;
+    uint64_t core_counter;
+    uint64_t sys_count[NUM_CORES];
+    uint64_t usr_count[NUM_CORES];
 
     uint64_t tick_count;
     uint64_t tick_delta;

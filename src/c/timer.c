@@ -38,3 +38,9 @@ extern void core_timer_rearm(uint64_t ticks) {
 extern void core_timer_stop() {
     asm volatile("MSR CNTP_CTL_EL0, %0" :: "r" (0));
 }
+
+extern uint64_t core_timer_count() {
+    uint64_t count;
+    asm volatile("MRS %0, CNTPCT_EL0" : "=r" (count));
+    return count;
+}

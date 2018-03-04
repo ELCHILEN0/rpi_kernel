@@ -88,8 +88,16 @@ void block( process_t *process, struct list_head *queue, enum blocked_state reas
 
 // TODO: Separate into context + disp...
 void common_interrupt( int interrupt_type ) {
-    process_t *process = running_list[get_core_id()];
-    switch_from(process);
+    process_t *curr, *sched;
+    curr = running_list[get_core_id()];
+    sched = curr;
+
+    // process_t *process = running_list[get_core_id()];
+    switch_from(curr);
+
+    uint64_t counter = core_timer_count();
+    curr->usr_count[get_core_id()] = counter - curr->core_counter;
+    curr->core_counter = counter;
 
     // TODO: Signal Frame
     // int next_sig = msb(process->pending_signal);
@@ -117,7 +125,7 @@ void common_interrupt( int interrupt_type ) {
     switch (interrupt_type) {
         case INT_SYSCALL:
         {
-            uint64_t *params = (void *) process->frame + sizeof(aarch64_frame_t);
+            uint64_t *params = (void *) curr->frame + sizeof(aarch64_frame_t);
             request = params[0];
             args_ptr = params[1];
             break;        
@@ -141,11 +149,11 @@ void common_interrupt( int interrupt_type ) {
         {
             void *func = va_arg(args, void *);
             int stack_size = va_arg(args, int);
-            code = proc_create(process, func, stack_size, PRIORITY_MED);
+            code = proc_create(curr, func, stack_size, PRIORITY_MED);
             break;
         }
         case SYS_EXIT:
-            code = proc_exit(process);
+            code = proc_exit(curr);
             break;
         case SYS_YIELD:
             code = SCHED;
@@ -153,11 +161,11 @@ void common_interrupt( int interrupt_type ) {
         case SYS_WAIT_PID:
         {
             pid_t pid = va_arg(args, pid_t);
-            code = proc_wait(process, pid);
+            code = proc_wait(curr, pid);
             break;
         }
         case SYS_GET_PID:
-            process->ret = process->pid;
+            curr->ret = curr->pid;
             break;
         case SYS_KILL:
             // Later
@@ -165,19 +173,19 @@ void common_interrupt( int interrupt_type ) {
         case SYS_SLEEP:
         {
             unsigned int ms = va_arg(args, unsigned int);
-            code = proc_sleep(process, ms);
+            code = proc_sleep(curr, ms);
             if (code != BLOCK) {
                 // Immediate wakeup
-                process->ret = 0;
+                curr->ret = 0;
             }
             break;        
         }
         case SYS_TIME_SLICE:
-            code = proc_tick(process);
+            code = proc_tick(curr);
             break;
 
         default:
-            printf("%-3d [core %d] dispatcher: unhandled request %ld\r\n", process->pid, get_core_id(), request);
+            printf("%-3d [core %d] dispatcher: unhandled request %ld\r\n", curr->pid, get_core_id(), request);
             while(true); // Unhandled Request (trace ESR/ELR)
             break;
     }
@@ -187,15 +195,19 @@ void common_interrupt( int interrupt_type ) {
             break;
         
         case SCHED:
-            ready(process);
+            ready(curr);
             core_timer_rearm(TICK_REARM); // TODO: Account for time spent in syscall?                        
             // Fall through...
 
         case BLOCK:
         case EXIT:
-            process = next();
+            sched = next();
             break;
     }
 
-    switch_to(process);
+    counter = core_timer_count();
+    curr->sys_count[get_core_id()] = counter - curr->core_counter;
+    sched->core_counter = counter;
+
+    switch_to(sched);
 }
