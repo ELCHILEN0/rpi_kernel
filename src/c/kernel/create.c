@@ -125,11 +125,8 @@ enum syscall_return_state proc_wait(process_t* proc, pid_t pid) {
     return BLOCK; 
 }
 
-/*
- * The destroy function will unschedule the process from the dispatcher and
- * free the assocated process stack.  Additionally, every pending incoming
- * message sender will have its return code set to -1 and will be rescheduled.
- */
+// Unschedule and return a processes resources to the kernel, any processes blocked on the
+// process will be scheduled and have their return code set appropriately.
 enum syscall_return_state proc_exit(process_t *proc) {
     proc->state = ZOMBIE;
 

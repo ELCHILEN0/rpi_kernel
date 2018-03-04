@@ -111,6 +111,10 @@ typedef struct {
     // void        (*sig[32])(void *);
 
     // Timers
+    // uint64_t start_count;
+    // uint64_t sys_count;
+    // uint64_t usr_count;
+
     uint64_t tick_count;
     uint64_t tick_delta;
 
@@ -126,15 +130,8 @@ typedef struct {
         struct list_head recving;
         // TODO: Can we add ready list here too, if we want to implement some sort of tree of sucessors
     // };
-
 } process_t, pcb_t;
 
-// typedef struct {
-//     struct list_head sleeping; // 1 - 1 ...
-//     struct list_head waiting;  // 1 - many...
-//     struct list_head sending;  // 1 - many...
-//     struct list_head recving;  // 1 - many...
-// } waiters_t;
 
 extern spinlock_t newlib_lock;
 extern spinlock_t scheduler_lock;
