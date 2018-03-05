@@ -73,35 +73,6 @@ void cinit_core(void) {
         case 0:
         {
             // TODO: BuildID
-            pmu_enable();
-            pmu_config_pmn(0, 0x8);
-            pmu_config_pmn(1, 0x11);
-            pmu_config_pmn(2, 0x13);
-            pmu_config_pmn(3, 0x19);
-
-            pmu_enable_pmn(0);
-            pmu_enable_pmn(1);
-            pmu_enable_pmn(2);
-            pmu_enable_pmn(3);
-
-            pmu_enable_ccnt();
-
-            // pmu_reset_ccnt();
-            // pmu_reset_pmn();
-
-            uint64_t perf[5] = {
-                    pmu_read_ccnt(),
-                    pmu_read_pmn(0),
-                    pmu_read_pmn(1),
-                    pmu_read_pmn(2),
-                    pmu_read_pmn(3),
-                };
-
-            printf("counter: %lud\r\n", perf[0]);
-            printf("instrs: %lud\r\n", perf[1]);
-            printf("cycles: %lud\r\n", perf[2]);
-            printf("mem access: %lud\r\n", perf[3]);
-            printf("bus access: %lud\r\n", perf[4]);
 
             // timer_frequency = (2e31/prescaler) * input_frequency
             // APB vs CRY ...   1/2 CPU Frequency vs Fixed Time Frequency

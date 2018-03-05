@@ -13,6 +13,7 @@
 #include "list.h"
 
 #include "../gpio.h"
+#include "../perf.h"
 #include "../timer.h"
 #include "../mailbox.h"
 #include "../multicore.h"

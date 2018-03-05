@@ -95,10 +95,16 @@ void common_interrupt( int interrupt_type ) {
     // process_t *process = running_list[get_core_id()];
     switch_from(curr);
 
-    uint64_t counter = core_timer_count();
-    // if (curr->core_counter == 0) // Process hasn't run
-    curr->usr_count[get_core_id()] += counter - curr->core_counter;
-    curr->core_counter = counter;
+    // uint64_t ccnt;
+
+    // ccnt = pmu_read_ccnt();
+    // curr->usr_count[get_core_id()] += ccnt - curr->core_counter;
+    // curr->core_counter = ccnt;    
+
+    // Note, that this value will be incorrect for the first process spawned, unless a reset is done before spawning!
+    curr->usr_count[get_core_id()] += pmu_read_ccnt(); // TODO: Request specific metrics    
+    pmu_reset_ccnt();
+    pmu_reset_pmn();
 
     // TODO: Signal Frame
     // int next_sig = msb(process->pending_signal);
@@ -208,9 +214,12 @@ void common_interrupt( int interrupt_type ) {
             break;
     }
 
-    counter = core_timer_count();
-    curr->sys_count[get_core_id()] = counter - curr->core_counter;
-    sched->core_counter = counter;
+    // ccnt = pmu_read_ccnt();
+    // curr->sys_count[get_core_id()] += ccnt - curr->core_counter;
+    // curr->core_counter = ccnt;    
+    curr->sys_count[get_core_id()] += pmu_read_ccnt(); // TODO: Request specific metrics
+    pmu_reset_ccnt();
+    pmu_reset_pmn();
 
     switch_to(sched);
 }

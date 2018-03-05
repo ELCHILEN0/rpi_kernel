@@ -128,17 +128,17 @@ void perf_strided() {
 void perf_root() {
     pid_t core_id = get_core_id();
 
-    // syscreate(perf_strided, 1024);
+    syscreate(perf_strided, 1024);
     // Single Core:
-    // syscreate(perf_strided, 1024);
-    // syscreate(perf_strided, 1024);
+    syscreate(perf_strided, 1024);
+    syscreate(perf_strided, 1024);
     // syscreate(perf_strided, 1024);
 
-    syscreate(perf_proc, 1024);
+    // syscreate(perf_proc, 1024);
     // Single Core:
-    syscreate(perf_proc, 1024);
-    syscreate(perf_proc, 1024);
-    syscreate(perf_proc, 1024);
+    // syscreate(perf_proc, 1024);
+    // syscreate(perf_proc, 1024);
+    // syscreate(perf_proc, 1024);
 
     while(true) sysyield();
 }
@@ -276,6 +276,35 @@ void kernel_init( void )
     register_interrupt_handler(core_id, false, 4, (interrupt_vector_t) { .handle = kernel_release_handler });
     core_mailbox_interrupt_routing(core_id, MB0_IRQ | MB1_IRQ | MB2_IRQ | MB3_IRQ);
 
+    // Setup Performance Monitor Unit
+    pmu_enable();
+    pmu_config_pmn(0, 0x8);
+    pmu_config_pmn(1, 0x11);
+    pmu_config_pmn(2, 0x13);
+    pmu_config_pmn(3, 0x19);
+
+    pmu_enable_pmn(0);
+    pmu_enable_pmn(1);
+    pmu_enable_pmn(2);
+    pmu_enable_pmn(3);
+
+    pmu_enable_ccnt();
+
+    pmu_reset_ccnt();
+    pmu_reset_pmn();
+
+    // The following test confirms that pmu_reset_ccnt() is on a per-core basis.
+    // while(true) {
+    //     __spin_lock(&newlib_lock);
+    //     printf("%d: %lu, %lu\r\n", get_core_id(), pmu_read_pmn(1), pmu_read_ccnt());
+    //     if (get_core_id() % 2 == 0) {
+    //         pmu_reset_pmn();
+    //         pmu_reset_ccnt();
+    //     }
+    //     __spin_unlock(&newlib_lock);
+    //     for (int i = 0; i < 0x10000000; i++);
+    // }
+
     if (core_id == 0) {
         proc_init();
         disp_init();
@@ -283,7 +312,7 @@ void kernel_init( void )
         // Release Kernel Cores! (value doesnt matter)
         // core_mailbox->set[3][0] = true;
         // core_mailbox->set[2][0] = true;
-        // core_mailbox->set[1][0] = true;
+        core_mailbox->set[1][0] = true;
         core_mailbox->set[0][0] = true;
     }
 
