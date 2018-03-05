@@ -96,7 +96,8 @@ void common_interrupt( int interrupt_type ) {
     switch_from(curr);
 
     uint64_t counter = core_timer_count();
-    curr->usr_count[get_core_id()] = counter - curr->core_counter;
+    // if (curr->core_counter == 0) // Process hasn't run
+    curr->usr_count[get_core_id()] += counter - curr->core_counter;
     curr->core_counter = counter;
 
     // TODO: Signal Frame
@@ -185,7 +186,9 @@ void common_interrupt( int interrupt_type ) {
             break;
 
         default:
+            __spin_lock(&newlib_lock);        
             printf("%-3d [core %d] dispatcher: unhandled request %ld\r\n", curr->pid, get_core_id(), request);
+            __spin_unlock(&newlib_lock);            
             while(true); // Unhandled Request (trace ESR/ELR)
             break;
     }

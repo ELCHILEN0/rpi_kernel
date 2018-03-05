@@ -60,6 +60,8 @@ void slave_core() {
     }
 }
 
+extern uint32_t *__build_id;
+
 void cinit_core(void) {    
     // OK status (use till GPIO working)
     act_message[6] = 1;
@@ -69,6 +71,8 @@ void cinit_core(void) {
     switch(core_id) {
         case 0:
         {
+            // TODO: BuildID
+
             // timer_frequency = (2e31/prescaler) * input_frequency
             // APB vs CRY ...   1/2 CPU Frequency vs Fixed Time Frequency
             //                  Fixed Execution Instructions vs Fixed Execution Time

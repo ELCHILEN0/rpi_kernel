@@ -38,11 +38,12 @@ process_t *get_process(pid_t pid) {
 
 enum syscall_return_state proc_create(process_t *proc, void (*func)(), uint64_t stack_size, enum process_priority priority) {
     if (stack_size < PROC_STACK)
-        stack_size = PROC_STACK;    
+        stack_size = PROC_STACK;   
 
     __spin_lock(&newlib_lock);
     process_t *process = malloc(sizeof(process_t));
     void *stack_base = malloc(stack_size);
+    // printf("process: %d, stack: %d\r\n", process, stack_base);
     __spin_unlock(&newlib_lock);
     if (!process || !stack_base) {
         // TODO: is this free of races...
@@ -70,6 +71,7 @@ enum syscall_return_state proc_create(process_t *proc, void (*func)(), uint64_t 
             [30] = (uint64_t) sysexit
         }
     };
+    process->ret = frame.reg[0];
 
     process->pid = pid;
 
@@ -81,8 +83,14 @@ enum syscall_return_state proc_create(process_t *proc, void (*func)(), uint64_t 
     process->initial_priority = priority;
     process->current_priority = priority;
 
-    process->tick_count = 0;
+    process->tick_count = 0; // TODO: Remove (Deprecated)
     process->tick_delta = 0;
+
+    process->core_counter = 0;
+    for (int i = 0; i < NUM_CORES; i++) {
+        process->usr_count[i] = 0;
+        process->sys_count[i] = 0;
+    }
 
     // TODO: Sigs (Handlers)
     process->pending_signal = 0;

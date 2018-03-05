@@ -5,56 +5,142 @@ void idle_proc( uint32_t r0, uint32_t r1, uint32_t r2 ) {
     while(true) asm("wfi");
 }
 
-// TODO: (N*M) x (M*P) matrix sizes...
-#define SMALL_MATRIX_X 1024
-#define SMALL_MATRIX_Y 1024
-#define SMALL_MATRIX_Z 1024
-typedef uint64_t small_matrix_t[SMALL_MATRIX_X][SMALL_MATRIX_Y][SMALL_MATRIX_Z];
-// uint64_t perf_segment[10][1024][1024][1024];
-// uint64_t perf_
-small_matrix_t samples[10][2];
-small_matrix_t output[10];
+#define SMALL_MATRIX_M 60
+#define SMALL_MATRIX_N 200
+#define SMALL_MATRIX_P 40
 
 // RPI 3 Specs: 16KB L1P (Instruction) and 16KB L1D(Data) and 512KB L2
+// 16 KB = 2K * uint64_t (8B)
+// Areas of interest:
+// Cache utilization with per/core processes, process migration -> how to improve scheduling
+// Splitting up the task between processors, easily parallelizable independent vs problems with communication via shared memory
+#define PERF_SAMPLES 5
+uint64_t samples_a[PERF_SAMPLES][SMALL_MATRIX_M][SMALL_MATRIX_N] = {
+    [0 ... PERF_SAMPLES - 1][0 ... SMALL_MATRIX_M - 1][0 ... SMALL_MATRIX_N - 1] = 0xa
+};
+uint64_t samples_b[PERF_SAMPLES][SMALL_MATRIX_N][SMALL_MATRIX_P] = {
+    [0 ... PERF_SAMPLES - 1][0 ... SMALL_MATRIX_N - 1][0 ... SMALL_MATRIX_P - 1] = 0xb
+};
+uint64_t samples_o[PERF_SAMPLES][SMALL_MATRIX_M][SMALL_MATRIX_P] = {
+    [0 ... PERF_SAMPLES - 1][0 ... SMALL_MATRIX_M - 1][0 ... SMALL_MATRIX_P - 1] = 0    
+};
+
+void inner_multiply(uint64_t **a, uint64_t **b, uint64_t **o,   int m_start, int m_end,
+                                                                int p_start, int p_end,
+                                                                int n_len) {
+    for (int m = m_start; m < m_end; m++) {
+        for (int p = p_start; p < p_end; p++) {
+
+            uint64_t sum = 0;
+
+            for (int n = 0; n < n_len; n++) {
+                // uint64_t tmp = a[m][n] * b[n][p];
+                // __atomic_fetch_add(&o[m][p], tmp, __ATOMIC_RELAXED);
+                sum += a[m][n] * b[n][p];
+            }
+
+            o[m][p] = sum;
+
+        }
+    }
+}
+
 int perf_id = 0;
 void perf_proc() {
-    int perf_id = __atomic_fetch_add(&perf_id, 1, __ATOMIC_RELAXED) % 10;
+    int sample_id = __atomic_fetch_add(&perf_id, 1, __ATOMIC_RELAXED) % PERF_SAMPLES;
+    __spin_lock(&newlib_lock);
+    printf("(%d, %d) -> (%d, %d)\r\n", 0, 0, SMALL_MATRIX_P, SMALL_MATRIX_M);
+    __spin_unlock(&newlib_lock);
 
-    // small_matrix_t sample[2] = samples[perf_id];
-    // uint64_t mat0[][][] = samples[perf_id][0];
+    for (int rep = 0; rep < 100; rep++) {
+        // Why is this failing?
+        // inner_multiply(samples_a[sample_id], samples_b[sample_id], samples_o[sample_id], 
+        //             0, SMALL_MATRIX_M,
+        //             0, SMALL_MATRIX_P,
+        //             SMALL_MATRIX_N);
 
-    /*
-    l=5;m=2;n=3;p=4;q=6;
-    A=randn(l,m,n);
-    B=randn(n,p,q);
-    C=zeros(l,m,p,q);
+        for (int m = 0; m < SMALL_MATRIX_M; m++) {
+            for (int p = 0; p < SMALL_MATRIX_P; p++) {
 
-    for h = 1:l
-        for i = 1:m
-            for j = 1:p
-                for g = 1:q
-                    for k = 1:n
-                        C(h,i,j,g) = C(h,i,j,g) + A(h,i,k)*B(k,j,g);
-                    end
-                end
-            end
-        end
-    end
-    */
-    for (int l = 0; l < SMALL_MATRIX_X; l++) {
-        for (int m = 0; m < SMALL_MATRIX_Y; m++) {
-            uint64_t sum = 0;
-            for (int k = 0; k < SMALL_MATRIX_Z; i++) {
-                // TODO: Fix, doesnt really matter though...
-                sum += samples[perf_id][0][i][j][k] * samples[perf_id][0][i][j][k];
-                output[perf_id][i][j][k] = sum;
+                uint64_t sum = 0;
+                for (int n = 0; n < SMALL_MATRIX_N; n++) {
+                    sum += samples_a[sample_id][m][n] * samples_o[sample_id][n][p];
+                }
+                samples_o[sample_id][m][p] = sum;
+
+            }
+        }
+                    
+    }
+
+    __spin_lock(&newlib_lock);
+    printf("done %d\r\n", sample_id);
+    __spin_unlock(&newlib_lock);
+}
+
+#define STRIDE ((SMALL_MATRIX_M * SMALL_MATRIX_P) / 4) // Should evenly divide
+
+int stride_id = 0;
+void perf_strided() {
+    int sample_id = 4;
+
+    int corner_id = __atomic_fetch_add(&stride_id, 1, __ATOMIC_RELAXED);    
+
+    int x = corner_id % 2;
+    int y = corner_id / 2;
+    int x_div = 2; // TODO: Compute
+    int y_div = 2; // TODO: Compute
+
+    int m_start = SMALL_MATRIX_M * x/x_div;
+    int p_start = SMALL_MATRIX_P * y/y_div;
+
+    int m_end = SMALL_MATRIX_M * (x + 1)/x_div;
+    int p_end = SMALL_MATRIX_P * (y + 1)/y_div;
+
+    __spin_lock(&newlib_lock);
+    printf("%d (%d, %d) -> (%d, %d)\r\n", corner_id, m_start, p_start, m_end, p_end);
+    __spin_unlock(&newlib_lock);
+
+    for (int rep = 0; rep < 100; rep++) {
+        // inner_multiply(samples_a[sample_id], samples_b[sample_id], samples_o[sample_id],
+        //     m_start, m_end,
+        //     p_start, p_end,
+        //     SMALL_MATRIX_N); 
+
+        for (int m = m_start; m < m_end; m++) {
+            for (int p = p_start; p < p_end; p++) {
+
+                uint64_t sum = 0;
+                for (int n = 0; n < SMALL_MATRIX_N; n++) {
+                    sum += samples_a[sample_id][m][n] * samples_o[sample_id][n][p];
+                }
+                samples_o[sample_id][m][p] = sum;
+
             }
         }
     }
 
-    // TODO: Incorporate syscalls, send/recv/wait ? splitting up task with communication overheads...
+    __spin_lock(&newlib_lock);
+    printf("done %d\r\n", corner_id);
+    __spin_unlock(&newlib_lock);
+}
 
+void perf_root() {
+    pid_t core_id = get_core_id();
 
+    // syscreate(perf_strided, 1024);
+    // Single Core:
+    // syscreate(perf_strided, 1024);
+    // syscreate(perf_strided, 1024);
+    // syscreate(perf_strided, 1024);
+
+    syscreate(perf_proc, 1024);
+    // Single Core:
+    syscreate(perf_proc, 1024);
+    syscreate(perf_proc, 1024);
+    syscreate(perf_proc, 1024);
+
+    while(true) sysyield();
 }
 
 void yield_proc() {
@@ -104,28 +190,29 @@ void root_proc() {
     printf("%-3d [core %d] root_proc\r\n", pid, core_id);
     __spin_unlock(&newlib_lock);
 
+    pid_t child_pid;
     if (core_id == 0) {
-        pid_t child_pid = syscreate(blink_proc, 1024);
+        child_pid = syscreate(blink_proc, 1024);
 
         __spin_lock(&newlib_lock);
         printf("%-3d [core %d] created process with pid %d\r\n", pid, core_id, child_pid);
         __spin_unlock(&newlib_lock);
+
+        child_pid = syscreate(sleep_proc, 1024);
+
+        __spin_lock(&newlib_lock);
+        printf("%-3d [core %d] waiting for %d\r\n", pid, core_id, child_pid);
+        __spin_unlock(&newlib_lock);
+
+        syswaitpid(child_pid);
+
+        __spin_lock(&newlib_lock);
+        printf("%-3d [core %d] %d has terminated!\r\n", pid, core_id, child_pid);
+        __spin_unlock(&newlib_lock);
     } else {
-        syscreate(yield_proc, 512);
-        syscreate(yield_proc, 512);
+        syscreate(yield_proc, 1024);
+        syscreate(yield_proc, 1024);
     }
-
-    pid_t child_pid = syscreate(sleep_proc, 512);
-
-    __spin_lock(&newlib_lock);
-    printf("%-3d [core %d] waiting for %d\r\n", pid, core_id, child_pid);
-    __spin_unlock(&newlib_lock);
-
-    syswaitpid(child_pid);
-
-    __spin_lock(&newlib_lock);
-    printf("%-3d [core %d] %d has terminated!\r\n", pid, core_id, child_pid);
-    __spin_unlock(&newlib_lock);
 }
 
 void timer_handler() {
@@ -164,7 +251,7 @@ void kernel_start() {
     process_t idle_proc_stub = { };
     process_t root_proc_stub = { };
     proc_create(&idle_proc_stub, idle_proc, 4096, PRIORITY_IDLE);
-    proc_create(&root_proc_stub, root_proc, 4096, PRIORITY_MED);
+    proc_create(&root_proc_stub, perf_root, 4096, PRIORITY_MED);
     if (!idle_proc_stub.ret || !root_proc_stub.ret)
         return;
   
@@ -194,9 +281,9 @@ void kernel_init( void )
         disp_init();
 
         // Release Kernel Cores! (value doesnt matter)
-        core_mailbox->set[3][0] = true;
-        core_mailbox->set[2][0] = true;
-        core_mailbox->set[1][0] = true;
+        // core_mailbox->set[3][0] = true;
+        // core_mailbox->set[2][0] = true;
+        // core_mailbox->set[1][0] = true;
         core_mailbox->set[0][0] = true;
     }
 

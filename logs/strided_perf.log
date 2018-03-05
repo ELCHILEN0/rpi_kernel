@@ -1,0 +1,115 @@
+Test Setup:
+a = (60x20); b = (20x40)
+a = (60x200); b = (200x40)
+
+STRIDE = 60*40/4 = 600 => Equal Operations on 4 cores
+Only Operations are idle_proc + mult_proc
+
+// Single Core Execution N=20
+0 (0, 0) -> (30, 20)
+1 (30, 0) -> (60, 20)
+2 (0, 20) -> (30, 40)
+3 (30, 20) -> (60, 40)
+done 0
+3   [core 0] exiting
+usr_count: 3448130, sys_count: 80
+usr_count: 0, sys_count: 0
+usr_count: 0, sys_count: 0
+usr_count: 0, sys_count: 0
+done 2
+5   [core 0] exiting
+usr_count: 3422392, sys_count: 46
+usr_count: 0, sys_count: 0
+usr_count: 0, sys_count: 0
+usr_count: 0, sys_count: 0
+done 1
+4   [core 0] exiting
+usr_count: 3422356, sys_count: 46
+usr_count: 0, sys_count: 0
+usr_count: 0, sys_count: 0
+usr_count: 0, sys_count: 0
+done 3
+6   [core 0] exiting
+usr_count: 3425664, sys_count: 42
+usr_count: 0, sys_count: 0
+usr_count: 0, sys_count: 0
+usr_count: 0, sys_count: 0
+
+// Single Core Execution N=200
+0 (0, 0) -> (30, 20)
+1 (30, 0) -> (60, 20)
+2 (0, 20) -> (30, 40)
+3 (30, 20) -> (60, 40)
+done 0
+3   [core 0] exiting
+usr_count: 33462158, sys_count: 44
+usr_count: 0, sys_count: 0
+usr_count: 0, sys_count: 0
+usr_count: 0, sys_count: 0
+done 2
+5   [core 0] exiting
+usr_count: 33440020, sys_count: 44
+usr_count: 0, sys_count: 0
+usr_count: 0, sys_count: 0
+usr_count: 0, sys_count: 0
+done 1
+4   [core 0] exiting
+usr_count: 33431026, sys_count: 50
+usr_count: 0, sys_count: 0
+usr_count: 0, sys_count: 0
+usr_count: 0, sys_count: 0
+done 3
+6   [core 0] exiting
+usr_count: 33436658, sys_count: 52
+usr_count: 0, sys_count: 0
+usr_count: 0, sys_count: 0
+usr_count: 0, sys_count: 0
+
+// Multi Core Execution...
+0 (0, 0) -> (30, 20)
+1 (30, 0) -> (60, 20)
+3 (30, 20) -> (60, 40)
+2 (0, 20) -> (30, 40)
+done 0
+9   [core 1] exiting
+usr_count: 0, sys_count: 0
+usr_count: 33527688, sys_count: 46
+usr_count: 0, sys_count: 0
+usr_count: 0, sys_count: 0
+done 3
+done 1
+done 2
+12  [core 2] exiting
+usr_count: 17280048, sys_count: 48
+usr_count: 0, sys_count: 0
+usr_count: 16749182, sys_count: 52
+usr_count: 0, sys_count: 0
+10  [core 3] exiting
+usr_count: 0, sys_count: 0
+usr_count: 0, sys_count: 0
+usr_count: 0, sys_count: 0
+usr_count: 34056988, sys_count: 48
+11  [core 0] exiting
+usr_count: 16803218, sys_count: 50
+usr_count: 0, sys_count: 0
+usr_count: 17279998, sys_count: 50
+usr_count: 0, sys_count: 0
+
+// Comparisons for N=200...
+[ // singlecore
+33462158,
+33440020,
+33431026,
+33436658,
+]
+
+[ // multicore
+33527688,
+34029230,
+34056988,
+34083216,
+]
+
+// TODO: Revisit counting, systick appears to be counted but the number is very low.
+// Note, that the contention between syscalls seems to be fairly low here, eg. good distribution of sys_count across the cores.
+// Worst case performance is giving a 2% LOSS on multicore, note that the first test on multicore gave nearly the same rate as single core, as expected (~.2%)

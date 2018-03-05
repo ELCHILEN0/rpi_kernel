@@ -59,5 +59,6 @@ void interrupt_handler_irq() {
 }
 
 void undefined_handler() {
-    while(true); // Undefined Handler
+    bool catch = true;
+    while(catch); // Undefined Handler
 }

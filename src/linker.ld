@@ -3,18 +3,12 @@ ENTRY(_init_core)
 MEMORY
 {
     /* Kernel boots at 0x8000 on 32 bit, 0x80000 on 64 bit.  Unless changed in config to 0x0. */
-    RAM     (rwx)   : ORIGIN = 0x80000, LENGTH = 256M
-    ROM     (rx)    : ORIGIN = 0x20000000, LENGTH = 512M
+    RAM     (rwx)   : ORIGIN = 0x80000, LENGTH = 960M
+    ROM     (rx)    : ORIGIN = 0x20000000, LENGTH = 1024M
 }
 
 SECTIONS {
     __text_start = .;
-    /*
-    .init : {
-        *(.init)
-    } > RAM
-    */
-
     .text : {
         *(.text)
     } > RAM
@@ -86,7 +80,10 @@ SECTIONS {
         __el1_stack_end_core_3 = .;
     } > RAM
 
-    /DISCARD/ : {
+    .note.gnu.build-id : {
+        __build_id = .;
         *(.note.gnu.build-id);
     }
+
+    /DISCARD/ : { }
 }
