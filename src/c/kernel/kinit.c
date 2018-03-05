@@ -131,7 +131,7 @@ void perf_root() {
     syscreate(perf_strided, 1024);
     // Single Core:
     syscreate(perf_strided, 1024);
-    syscreate(perf_strided, 1024);
+    // syscreate(perf_strided, 1024);
     // syscreate(perf_strided, 1024);
 
     // syscreate(perf_proc, 1024);

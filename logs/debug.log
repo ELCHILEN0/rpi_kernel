@@ -1,0 +1,27 @@
+0 (0, 0) -> (30, 20)
+1 (30, 0) -> (60, 20)
+2 (0, 20) -> (30, 40)
+3 (30, 20) -> (60, 40)
+done 0
+5   [core 0] exiting
+usr_count: 53948941, sys_count: 957
+usr_count: 0, sys_count: 0
+usr_count: 0, sys_count: 0
+usr_count: 0, sys_count: 0
+done 2
+7   [core 1] exiting
+usr_count: 29999919, sys_count: 648
+usr_count: 0, sys_count: 0
+usr_count: 0, sys_count: 0
+usr_count: 0, sys_count: 0
+done 1
+6   [core 1] exiting
+usr_count: 0, sys_count: 0
+usr_count: 0, sys_count: 0
+usr_count: 0, sys_count: 0
+usr_count: 0, sys_count: 0
+8   [core 0] exiting
+usr_count: 30017932, sys_count: 678
+usr_count: 0, sys_count: 0
+usr_count: 0, sys_count: 0
+usr_count: 0, sys_count: 0

@@ -104,7 +104,7 @@ void common_interrupt( int interrupt_type ) {
     // Note, that this value will be incorrect for the first process spawned, unless a reset is done before spawning!
     curr->usr_count[get_core_id()] += pmu_read_ccnt(); // TODO: Request specific metrics    
     pmu_reset_ccnt();
-    pmu_reset_pmn();
+    // pmu_reset_pmn();
 
     // TODO: Signal Frame
     // int next_sig = msb(process->pending_signal);
@@ -219,7 +219,7 @@ void common_interrupt( int interrupt_type ) {
     // curr->core_counter = ccnt;    
     curr->sys_count[get_core_id()] += pmu_read_ccnt(); // TODO: Request specific metrics
     pmu_reset_ccnt();
-    pmu_reset_pmn();
+    // pmu_reset_pmn();
 
     switch_to(sched);
 }
