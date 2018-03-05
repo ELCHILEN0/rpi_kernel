@@ -86,8 +86,8 @@ void cinit_core(void) {
 
             pmu_enable_ccnt();
 
-            pmu_reset_ccnt();
-            pmu_reset_pmn();
+            // pmu_reset_ccnt();
+            // pmu_reset_pmn();
             for (int i = 0; i < 100; i++) {
                 asm volatile("nop");
             }

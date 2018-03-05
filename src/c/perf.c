@@ -27,8 +27,11 @@ void pmu_reset_ccnt() {
 }
 
 uint64_t pmu_read_ccnt() {
+    // uint64_t reg;
+    // asm("MRS %0, PMCCNTR_EL0" :: "=r" (reg));
+    // return reg;
     uint64_t reg;
-    asm("MRS %0, PMCCNTR_EL0" :: "r" (reg));
+    asm volatile("MRS %0, PMCCNTR_EL0" : "=r" (reg));
     return reg;
 }
 
@@ -42,7 +45,7 @@ void pmu_enable_ccnt() {
 uint64_t pmu_read_pmn(uint8_t counter) {
     // counter &= 0x1F;
     uint64_t reg = counter & 0x1F;
-    asm("MRS %0, PMSELR_EL0" : "=r" (reg));
+    asm("MSR PMSELR_EL0, %0" :: "r" (reg));
     asm("ISB");
     uint64_t val;
     asm("MRS %0, PMXEVCNTR_EL0" : "=r" (val));
@@ -51,7 +54,7 @@ uint64_t pmu_read_pmn(uint8_t counter) {
 
 void pmu_config_pmn(uint8_t counter, uint32_t event) {
     uint64_t reg = counter & 0x1F;
-    asm("MSR PMSELR_EL0, %0" : "=r" (reg));
+    asm("MSR PMSELR_EL0, %0" :: "r" (reg));
     asm("ISB");
     asm("MSR PMXEVTYPER_EL0, %0" : "=r" (event));
 }
