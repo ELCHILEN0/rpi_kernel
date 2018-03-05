@@ -6,7 +6,7 @@ void idle_proc( uint32_t r0, uint32_t r1, uint32_t r2 ) {
 }
 
 #define SMALL_MATRIX_M 60
-#define SMALL_MATRIX_N 200
+#define SMALL_MATRIX_N 20//0
 #define SMALL_MATRIX_P 40
 
 // RPI 3 Specs: 16KB L1P (Instruction) and 16KB L1D(Data) and 512KB L2

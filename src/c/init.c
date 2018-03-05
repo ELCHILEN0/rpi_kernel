@@ -13,6 +13,7 @@
 
 #include "mailbox.h"
 #include "multicore.h"
+#include "perf.h"
 
 #include "kernel/kernel.h"
 
@@ -72,6 +73,35 @@ void cinit_core(void) {
         case 0:
         {
             // TODO: BuildID
+            pmu_enable();
+            pmu_config_pmn(0, 0x8);
+            pmu_config_pmn(1, 0x13);
+            pmu_config_pmn(2, 0x66);
+            pmu_config_pmn(3, 0x67);
+
+            pmu_enable_pmn(0);
+            pmu_enable_pmn(1);
+            pmu_enable_pmn(2);
+            pmu_enable_pmn(3);
+
+            pmu_enable_ccnt();
+
+            pmu_reset_ccnt();
+            pmu_reset_pmn();
+            for (int i = 0; i < 100; i++) {
+                asm volatile("nop");
+            }
+            uint64_t perf[5] = {
+                    pmu_read_ccnt(),
+                    pmu_read_pmn(0),
+                    pmu_read_pmn(1),
+                    pmu_read_pmn(2),
+                    pmu_read_pmn(3),
+                };
+
+            while(true);
+            // printf("perf: %d, %d\r\n", perf[0], perf[1]);
+
 
             // timer_frequency = (2e31/prescaler) * input_frequency
             // APB vs CRY ...   1/2 CPU Frequency vs Fixed Time Frequency

@@ -16,7 +16,7 @@ SOURCE = src
 COPY = /Volumes/boot
 
 SOBJ = bootcode64.o vectors64.o
-UOBJ = cstartup.o cstubs.o init.o peripheral.o gpio.o multicore.o uart.o mailbox.o interrupts.o timer.o
+UOBJ = cstartup.o cstubs.o init.o peripheral.o gpio.o multicore.o uart.o mailbox.o interrupts.o timer.o perf.o
 # UOBJ = cstartup.o cstubs.o init.o peripheral.o gpio.o mailbox.o interrupts.o timer.o uart.o multicore.o cache.o
 HOBJ =  peripheral.h gpio.h multicore.h uart.h mailbox.h interrupts.h timer.h
 KOBJ = kinit.o context.o syscall.o disp.o create.o signal.o sleep.o
