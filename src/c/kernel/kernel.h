@@ -174,6 +174,8 @@ extern void sysexit( void );
 extern uint64_t syswaitpid( pid_t pid );
 // extern void syskill( pid_t pid, int sig );
 extern uint64_t syssleep(unsigned int ms);
+extern void sys_printk(char *str);
+extern void *sys_malloc(size_t len);
 
 int msb(uint64_t x);
 int lsb(uint64_t x);
