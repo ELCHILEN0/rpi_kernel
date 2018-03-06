@@ -138,18 +138,18 @@ enum syscall_return_state proc_wait(process_t* proc, pid_t pid) {
 enum syscall_return_state proc_exit(process_t *proc) {
     proc->state = ZOMBIE;
 
+    __spin_lock(&newlib_lock);
+    printf("%-3d [core %d] exiting\r\n", proc->pid, get_core_id());
+    for (int i = 0; i < NUM_CORES; i++) {
+        printf("%d: usr_count: %lu, sys_count: %lu\r\n", i, proc->usr_count[i], proc->sys_count[i]);
+    }
+    __spin_unlock(&newlib_lock);
+
     process_t *p, *pnext;
     list_for_each_entry_safe(p, pnext, &proc->waiting, sched_list) {
         ready(p);
         p->ret = 0;
     }
-
-    __spin_lock(&newlib_lock);
-    printf("%-3d [core %d] exiting\r\n", proc->pid, get_core_id());
-    for (int i = 0; i < NUM_CORES; i++) {
-        printf("usr_count: %lu, sys_count: %lu\r\n", proc->usr_count[i], proc->sys_count[i]);
-    }
-    __spin_unlock(&newlib_lock);
 
     // TODO: Cleanup sleepers...
 

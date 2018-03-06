@@ -268,14 +268,6 @@ void kernel_init( void )
 {
     uint8_t core_id = get_core_id();
 
-    // Setup Dispatch Handlers
-    register_interrupt_handler(core_id, false, 1, (interrupt_vector_t) { .handle = timer_handler });
-    register_interrupt_handler(core_id, true, ESR_ELx_EC_SVC64, (interrupt_vector_t) { .handle = svc_handler }); 
-    
-    // Setup Release Handler
-    register_interrupt_handler(core_id, false, 4, (interrupt_vector_t) { .handle = kernel_release_handler });
-    core_mailbox_interrupt_routing(core_id, MB0_IRQ | MB1_IRQ | MB2_IRQ | MB3_IRQ);
-
     // Setup Performance Monitor Unit
     pmu_enable();
     pmu_config_pmn(0, 0x8);
@@ -292,6 +284,14 @@ void kernel_init( void )
 
     pmu_reset_ccnt();
     pmu_reset_pmn();
+
+    // Setup Dispatch Handlers
+    register_interrupt_handler(core_id, false, 1, (interrupt_vector_t) { .handle = timer_handler });
+    register_interrupt_handler(core_id, true, ESR_ELx_EC_SVC64, (interrupt_vector_t) { .handle = svc_handler }); 
+    
+    // Setup Release Handler
+    register_interrupt_handler(core_id, false, 4, (interrupt_vector_t) { .handle = kernel_release_handler });
+    core_mailbox_interrupt_routing(core_id, MB0_IRQ | MB1_IRQ | MB2_IRQ | MB3_IRQ);
 
     // The following test confirms that pmu_reset_ccnt() is on a per-core basis.
     // while(true) {
