@@ -9,9 +9,36 @@ void yield_proc() {
     while(true) sysyield();
 }
 
-#define SMALL_MATRIX_M 60
-#define SMALL_MATRIX_N 20
-#define SMALL_MATRIX_P 80
+// Small Matrix
+#define MATRIX_M 10
+#define MATRIX_N 100
+#define MATRIX_P 9
+
+// Large Matrix
+// #define MATRIX_M 40
+// #define MATRIX_N 100
+// #define MATRIX_P 28
+
+// ab+bc+ac = 2000
+// a > 0
+// 0 < b < 2000/a
+// 0 < c < (2000 - ab)/(a + b)
+
+// The memory access are the same, no eviction will be required
+// a = 10
+// b = 100
+// c = 9.09 ~ 9
+
+// baseline
+// test single multiply across a region 1x the size of l1, l2 cache (no thrashing)
+// test strided multiply across a region 1x the size of l1, l2 cache (no thrashing)
+// a = 40
+// b = 100
+// c = 28.57 ~ 28
+
+// test single multiply accross a region 4x the size (thrashing)
+// test strided multiply across a region 4x the size (less->no thrashing)
+
 
 // RPI 3 Specs: 16KB L1P (Instruction) and 16KB L1D(Data) and 512KB L2
 // 16 KB = 2K * uint64_t (8B)
@@ -19,14 +46,14 @@ void yield_proc() {
 // Cache utilization with per/core processes, process migration -> how to improve scheduling
 // Splitting up the task between processors, easily parallelizable independent vs problems with communication via shared memory
 #define PERF_SAMPLES 5
-uint64_t samples_a[PERF_SAMPLES][SMALL_MATRIX_M][SMALL_MATRIX_N] = {
-    [0 ... PERF_SAMPLES - 1][0 ... SMALL_MATRIX_M - 1][0 ... SMALL_MATRIX_N - 1] = 0xa
+uint64_t samples_a[PERF_SAMPLES][MATRIX_M][MATRIX_N] = {
+    [0 ... PERF_SAMPLES - 1][0 ... MATRIX_M - 1][0 ... MATRIX_N - 1] = 0xa
 };
-uint64_t samples_b[PERF_SAMPLES][SMALL_MATRIX_N][SMALL_MATRIX_P] = {
-    [0 ... PERF_SAMPLES - 1][0 ... SMALL_MATRIX_N - 1][0 ... SMALL_MATRIX_P - 1] = 0xb
+uint64_t samples_b[PERF_SAMPLES][MATRIX_N][MATRIX_P] = {
+    [0 ... PERF_SAMPLES - 1][0 ... MATRIX_N - 1][0 ... MATRIX_P - 1] = 0xb
 };
-uint64_t samples_o[PERF_SAMPLES][SMALL_MATRIX_M][SMALL_MATRIX_P] = {
-    [0 ... PERF_SAMPLES - 1][0 ... SMALL_MATRIX_M - 1][0 ... SMALL_MATRIX_P - 1] = 0    
+uint64_t samples_o[PERF_SAMPLES][MATRIX_M][MATRIX_P] = {
+    [0 ... PERF_SAMPLES - 1][0 ... MATRIX_M - 1][0 ... MATRIX_P - 1] = 0    
 };
 
 void inner_multiply(uint64_t **a, uint64_t **b, uint64_t **o,   int m_start, int m_end,
@@ -53,21 +80,21 @@ int perf_id = 0;
 void perf_proc() {
     int sample_id = __atomic_fetch_add(&perf_id, 1, __ATOMIC_RELAXED) % PERF_SAMPLES;
     // __spin_lock(&newlib_lock);
-    // printf("(%d, %d) -> (%d, %d)\r\n", 0, 0, SMALL_MATRIX_P, SMALL_MATRIX_M);
+    // printf("(%d, %d) -> (%d, %d)\r\n", 0, 0, MATRIX_P, MATRIX_M);
     // __spin_unlock(&newlib_lock);
 
     for (int rep = 0; rep < 100; rep++) {
         // Why is this failing?
         // inner_multiply(&samples_a[sample_id], &samples_b[sample_id], &samples_o[sample_id], 
-        //             0, SMALL_MATRIX_M,
-        //             0, SMALL_MATRIX_P,
-        //             SMALL_MATRIX_N);
+        //             0, MATRIX_M,
+        //             0, MATRIX_P,
+        //             MATRIX_N);
 
-        for (int m = 0; m < SMALL_MATRIX_M; m++) {
-            for (int p = 0; p < SMALL_MATRIX_P; p++) {
+        for (int m = 0; m < MATRIX_M; m++) {
+            for (int p = 0; p < MATRIX_P; p++) {
 
                 uint64_t sum = 0;
-                for (int n = 0; n < SMALL_MATRIX_N; n++) {
+                for (int n = 0; n < MATRIX_N; n++) {
                     sum += samples_a[sample_id][m][n] * samples_o[sample_id][n][p];
                 }
                 samples_o[sample_id][m][p] = sum;
@@ -90,11 +117,11 @@ void perf_strided() {
     int x = corner_id % STRIDE;
     int y = corner_id / STRIDE;
 
-    int m_start = SMALL_MATRIX_M * x/STRIDE;
-    int p_start = SMALL_MATRIX_P * y/STRIDE;
+    int m_start = MATRIX_M * x/STRIDE;
+    int p_start = MATRIX_P * y/STRIDE;
 
-    int m_end = SMALL_MATRIX_M * (x + 1)/STRIDE;
-    int p_end = SMALL_MATRIX_P * (y + 1)/STRIDE;
+    int m_end = MATRIX_M * (x + 1)/STRIDE;
+    int p_end = MATRIX_P * (y + 1)/STRIDE;
 
     // __spin_lock(&newlib_lock);
     // printf("%d (%d, %d) -> (%d, %d)\r\n", corner_id, m_start, p_start, m_end, p_end);
@@ -104,13 +131,13 @@ void perf_strided() {
         // inner_multiply(&samples_a[sample_id], &samples_b[sample_id], &samples_o[sample_id],
         //     m_start, m_end,
         //     p_start, p_end,
-        //     SMALL_MATRIX_N); 
+        //     MATRIX_N); 
 
         for (int m = m_start; m < m_end; m++) {
             for (int p = p_start; p < p_end; p++) {
 
                 uint64_t sum = 0;
-                for (int n = 0; n < SMALL_MATRIX_N; n++) {
+                for (int n = 0; n < MATRIX_N; n++) {
                     sum += samples_a[sample_id][m][n] * samples_o[sample_id][n][p];
                 }
                 samples_o[sample_id][m][p] = sum;
