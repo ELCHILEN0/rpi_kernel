@@ -208,8 +208,10 @@ void common_interrupt( int interrupt_type ) {
             break;
     }
 
-    for (int i = 0; i < PERF_COUNTERS; i++) {
-        curr->perf_count[1][get_core_id()][i] += pmu_read_pmn(i);
+    if (code != EXIT) {
+        for (int i = 0; i < PERF_COUNTERS; i++) {
+            curr->perf_count[1][get_core_id()][i] += pmu_read_pmn(i);
+        }
     }
     // pmu_reset_ccnt();
     pmu_reset_pmn();

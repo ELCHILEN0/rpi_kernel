@@ -44,3 +44,30 @@ int syskill( pid_t pid, int sig ) {
 uint64_t syssleep(unsigned int ms) {
     return syscall(SYS_SLEEP, ms);
 }
+
+// POSIX Thread API ...
+// TODO: Mutex, Semaphore, Cond
+// TODO: All processes can be represented as PThreads
+
+/*
+int pthread_create(pthread_t * thread, const pthread_attr_t * attr, void * (*start_routine)(void *), void * arg)
+{
+    return syscall(SYS_CREATE, thread, start_routine, arg);
+}
+
+pthread_t pthread_self(void) {
+    return syscall(SYS_GET_PID);
+}
+
+void pthread_exit(void * status) {
+    syscall(SYS_EXIT, status);
+}
+
+int pthread_join(pthread_t thread, void ** status) {
+    return syscall(SYS_WAIT_PID, thread, status);
+}
+
+int pthread_equal(pthread_t thread_1, pthread_t thread_2) {
+    return thread_1 == thread_2;
+}
+*/
