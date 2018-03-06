@@ -20,13 +20,14 @@
 #include "../interrupts.h"
 
 #define NUM_CORES 4
-#define CLOCK_FREQ 19200000
-#define CLOCK_DIVD 10
-#define TICK_REARM (CLOCK_FREQ / CLOCK_DIVD)
+#define PERF_COUNTERS 6
 
 // Clock Frequencey 19.2 MHz
 // ~ a time slice of 1 S = 19.2e6
 // ~ a time slice of 1 MS = 19.2e6/1e3
+#define CLOCK_FREQ 19200000
+#define CLOCK_DIVD 1000
+#define TICK_REARM (CLOCK_FREQ / CLOCK_DIVD)
 
 // Hash Function from: http://www.tldp.org/LDP/lki/lki-2.html
 #define PIDHASH_SZ (4096 >> 6)
@@ -111,11 +112,8 @@ typedef struct {
     uint64_t    blocked_signal;
     // void        (*sig[32])(void *);
 
-    // Timers
-    uint64_t core_counter;
-    uint64_t sys_count[NUM_CORES];
-    uint64_t usr_count[NUM_CORES];
-
+    // Timers + Perf Counters
+    uint64_t perf_count[2][NUM_CORES][PERF_COUNTERS];
     uint64_t tick_count;
     uint64_t tick_delta;
 

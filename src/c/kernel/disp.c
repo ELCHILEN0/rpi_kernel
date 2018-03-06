@@ -94,8 +94,10 @@ void common_interrupt( int interrupt_type ) {
 
     switch_from(curr);
 
-    curr->usr_count[get_core_id()] += pmu_read_ccnt(); // TODO: Request specific metrics    
-    pmu_reset_ccnt();
+    for (int i = 0; i < PERF_COUNTERS; i++) {
+        curr->perf_count[0][get_core_id()][i] += pmu_read_pmn(i);
+    }   
+    // pmu_reset_ccnt();
     pmu_reset_pmn();
 
     // TODO: Signal Frame
@@ -206,8 +208,10 @@ void common_interrupt( int interrupt_type ) {
             break;
     }
 
-    curr->sys_count[get_core_id()] += pmu_read_ccnt(); // TODO: Request specific metrics
-    pmu_reset_ccnt();
+    for (int i = 0; i < PERF_COUNTERS; i++) {
+        curr->perf_count[1][get_core_id()][i] += pmu_read_pmn(i);
+    }
+    // pmu_reset_ccnt();
     pmu_reset_pmn();
 
     switch_to(sched);

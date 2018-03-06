@@ -1,0 +1,124 @@
+// Singlecore Single Matrix
+4   [core 0] exiting
+MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill
+USR   338785117  425954512  130335034     366259     844677        942
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS      579768    1012280     318305      11000      24457         11
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+6   [core 0] exiting
+MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill
+USR   338812923  425849934  130345588     351836     819044       1111
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS      579768     987502     318304      10176      23085         12
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+5   [core 0] exiting
+MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill
+USR   338736841  425801390  130316221     355523     806241       1105
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS      580176     975753     318528       8513      17776          2
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+7   [core 0] exiting
+MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill
+USR   341472968  429309417  131368887     364973     842848       1149
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS      585072     987778     321216       9088      20942          2
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+
+// Singlecore Multiple Matrix
+MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill
+USR    84854884  105738665   32726091      20238      79549        423
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS      143616     239658      82016       1366       2737          1
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+6   [core 0] exiting
+MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill
+USR    84828265  105634630   32715772      13211      47019        162
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS      143616     234711      82016        956       1942          1
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+3   [core 0] exiting
+MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill
+USR    84819787  105778679   32712422      23866      68804        362
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS      144024     247083      82249       1725       3455          8
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+5   [core 0] exiting
+MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill
+USR    84909421  105875766   32747243      22717      55876        246
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS      144840     240109      82716       1083       2204          8
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+
+// Multicore...
+7   [core 0] exiting
+MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill
+USR     5950747    7417397    2295024       1139       3159         58
+USR    72395781   90183525   27920144      10084      22845         72
+USR     6244880    7805098    2408547       1233       3600        293
+USR      240278     299664      92669         54        166          1
+SYS        9792      18457       5664        194        219          0
+SYS      122846     225798      71051       2003       2112          0
+SYS       10680      21666       6162        239        279         16
+SYS         513       1362        273         18         21          0
+9   [core 2] exiting
+MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill
+USR     5988838    7491809    2309656       3063       7390        175
+USR      238610     299350      92020        203        396          0
+USR     6378702    7972857    2460075       3236       7637         84
+USR    72231370   90185958   27856910      29923      68960         80
+SYS       10239      20526       5913        266        325         10
+SYS         408        798        236         11         13          0
+SYS       10620      20760       6143        262        340          0
+SYS      122838     236761      71047       2745       4662          4
+13  [core 1] exiting
+MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill
+USR    36293502   45243367   13996808       7458      22676         41
+USR    12217763   15231872    4711927       1981       4747        197
+USR    36055463   44941881   13905361       7151      21908         48
+USR      240453     299629      92735         39        113          6
+SYS       61608     116232      35636       1183       1363          0
+SYS       20457      38343      11820        367        407          6
+SYS       61200     115260      35400       1215       1448          0
+SYS         447       1017        250         12         16          0
+14  [core 3] exiting
+MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill
+USR    36217880   45249677   13967798      17296      44103         56
+USR      239228     299639      92263        173        321          0
+USR    35980364   44950389   13876371      16811      43866         47
+USR    12391914   15490658    4779129       5941      13047        191
+SYS       62286     122932      35924       1592       1901          0
+SYS         408        771        236         11         13          0
+SYS       61218     116358      35406       1267       1586          0
+SYS       20901      39859      12068        433        755         13

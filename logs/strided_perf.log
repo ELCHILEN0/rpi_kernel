@@ -1,115 +1,136 @@
-Test Setup:
-a = (60x20); b = (20x40)
-a = (60x200); b = (200x40)
-
-STRIDE = 60*40/4 = 600 => Equal Operations on 4 cores
-Only Operations are idle_proc + mult_proc
-
-// Single Core Execution N=20
-0 (0, 0) -> (30, 20)
-1 (30, 0) -> (60, 20)
-2 (0, 20) -> (30, 40)
-3 (30, 20) -> (60, 40)
-done 0
-3   [core 0] exiting
-usr_count: 3448130, sys_count: 80
-usr_count: 0, sys_count: 0
-usr_count: 0, sys_count: 0
-usr_count: 0, sys_count: 0
-done 2
-5   [core 0] exiting
-usr_count: 3422392, sys_count: 46
-usr_count: 0, sys_count: 0
-usr_count: 0, sys_count: 0
-usr_count: 0, sys_count: 0
-done 1
-4   [core 0] exiting
-usr_count: 3422356, sys_count: 46
-usr_count: 0, sys_count: 0
-usr_count: 0, sys_count: 0
-usr_count: 0, sys_count: 0
-done 3
-6   [core 0] exiting
-usr_count: 3425664, sys_count: 42
-usr_count: 0, sys_count: 0
-usr_count: 0, sys_count: 0
-usr_count: 0, sys_count: 0
+// Test Description
+a = 60x200
+b = 200x40
+low process contention with only the FOUR strided multiply processes running
 
 // Single Core Execution N=200
 0 (0, 0) -> (30, 20)
 1 (30, 0) -> (60, 20)
 2 (0, 20) -> (30, 40)
 3 (30, 20) -> (60, 40)
-done 0
 3   [core 0] exiting
-usr_count: 33462158, sys_count: 44
-usr_count: 0, sys_count: 0
-usr_count: 0, sys_count: 0
-usr_count: 0, sys_count: 0
-done 2
+MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill (USR)
+USR   409732626  533992943  156766857    2149770    4405390       1552
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS        6953      12782       3808        147        304          9
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
 5   [core 0] exiting
-usr_count: 33440020, sys_count: 44
-usr_count: 0, sys_count: 0
-usr_count: 0, sys_count: 0
-usr_count: 0, sys_count: 0
-done 1
+MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill (USR)
+USR   409689745  522676537  156760204    1151905    2430216        254
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS        6953      12292       3808        174        352          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
 4   [core 0] exiting
-usr_count: 33431026, sys_count: 50
-usr_count: 0, sys_count: 0
-usr_count: 0, sys_count: 0
-usr_count: 0, sys_count: 0
-done 3
+MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill (USR)
+USR   409695381  533613440  156762510    2150109    4405318        891
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS        7362      13248       4032        199        411          3
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
 6   [core 0] exiting
-usr_count: 33436658, sys_count: 52
-usr_count: 0, sys_count: 0
-usr_count: 0, sys_count: 0
-usr_count: 0, sys_count: 0
+MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill (USR)
+USR   409698522  522672065  156762375    1143490    2414114        128
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS        7771      13862       4256        204        412          2
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
 
 // Multi Core Execution...
 0 (0, 0) -> (30, 20)
 1 (30, 0) -> (60, 20)
 3 (30, 20) -> (60, 40)
 2 (0, 20) -> (30, 40)
-done 0
-9   [core 1] exiting
-usr_count: 0, sys_count: 0
-usr_count: 33527688, sys_count: 46
-usr_count: 0, sys_count: 0
-usr_count: 0, sys_count: 0
-done 3
-done 1
-done 2
 12  [core 2] exiting
-usr_count: 17280048, sys_count: 48
-usr_count: 0, sys_count: 0
-usr_count: 16749182, sys_count: 52
-usr_count: 0, sys_count: 0
+MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill (USR)
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR   410053727  526908944  156892278    1181164    2103222        298
+USR           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS        6953      14273       3843        237        443          6
+SYS           0          0          0          0          0          0
 10  [core 3] exiting
-usr_count: 0, sys_count: 0
-usr_count: 0, sys_count: 0
-usr_count: 0, sys_count: 0
-usr_count: 34056988, sys_count: 48
-11  [core 0] exiting
-usr_count: 16803218, sys_count: 50
-usr_count: 0, sys_count: 0
-usr_count: 17279998, sys_count: 50
-usr_count: 0, sys_count: 0
+MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill (USR)
+USR    45946312   59998993   17582638     240574     437413         11
+USR    45934232   59998938   17578004     241639     439219          5
+USR           0          0          0          0          0          0
+USR   317956645  417361167  121651041    1681849    3057903        879
+SYS         839       1748        460         32         55          0
+SYS         878       1985        474         35         67          0
+SYS           0          0          0          0          0          0
+SYS        5338      10744       2947        154        370          9
+11  [core 1] exiting
+MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill (USR)
+USR    44200203   59999405   16861540     143457     243112        123
+USR   319448393  408069338  122245805     906179    1629831         14
+USR           0          0          0          0          0          0
+USR    46971387   59999403   17974910     133204     240379          6
+SYS         818       2339        453         33         57          6
+SYS        5317      10364       2938        155        278          0
+SYS           0          0          0          0          0          0
+SYS         977       2611        510         45         63          0
+9   [core 0] exiting
+MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill (USR)
+USR   318657287  416195692  121943133    1675465    3047049         18
+USR    45111241   59999348   17237130     237416     434404       1492
+USR           0          0          0          0          0          0
+USR    45949420   59998918   17583846     240716     438572          6
+SYS        5320      10621       2940        182        286          0
+SYS         818       2349        453         25         52          7
+SYS           0          0          0          0          0          0
+SYS         861       2101        468         29         55          1
 
-// Comparisons for N=200...
-[ // singlecore
-33462158,
-33440020,
-33431026,
-33436658,
+// Observations...
+[
+533992943
+522676537
+533613440
+522672065
 ]
 
-[ // multicore
-33527688,
-34029230,
-34056988,
-34083216,
+[
+526908944
+537359098
+528068146
+536193958
 ]
 
-// TODO: Revisit counting, systick appears to be counted but the number is very low.
-// Note, that the contention between syscalls seems to be fairly low here, eg. good distribution of sys_count across the cores.
-// Worst case performance is giving a 2% LOSS on multicore, note that the first test on multicore gave nearly the same rate as single core, as expected (~.2%)
+528238746.25    // singlecore
+532132536.5     // multicore
+
+Context switching leads to a .7317% LOSS for the same problem size.
+
+Lets compare this to a single core naieve matrix multiply:
+(0, 0) -> (40, 60)
+3   [core 0] exiting
+MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill (USR)
+USR  1638193245 2110205702  626697358    6594134   13529638       2718
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS       28630      51439      15680        700       1406          7
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+
+Gives an optimal cycle count of 
+527551425.5
+
+Leads to a .8609% LOSS for the same problem size under optimal conditions.  This needs more data to be a comparable result.
+
+For l1 refill rates, the results seem to have the same number of l1 refills; however, multicore is consistently larger.

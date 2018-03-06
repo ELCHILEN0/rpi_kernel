@@ -86,11 +86,7 @@ enum syscall_return_state proc_create(process_t *proc, void (*func)(), uint64_t 
     process->tick_count = 0; // TODO: Remove (Deprecated)
     process->tick_delta = 0;
 
-    process->core_counter = 0;
-    for (int i = 0; i < NUM_CORES; i++) {
-        process->usr_count[i] = 0;
-        process->sys_count[i] = 0;
-    }
+    memset(process->perf_count, 0, sizeof(process->perf_count));
 
     // TODO: Sigs (Handlers)
     process->pending_signal = 0;
@@ -138,13 +134,6 @@ enum syscall_return_state proc_wait(process_t* proc, pid_t pid) {
 enum syscall_return_state proc_exit(process_t *proc) {
     proc->state = ZOMBIE;
 
-    __spin_lock(&newlib_lock);
-    printf("%-3d [core %d] exiting\r\n", proc->pid, get_core_id());
-    for (int i = 0; i < NUM_CORES; i++) {
-        printf("%d: usr_count: %lu, sys_count: %lu\r\n", i, proc->usr_count[i], proc->sys_count[i]);
-    }
-    __spin_unlock(&newlib_lock);
-
     process_t *p, *pnext;
     list_for_each_entry_safe(p, pnext, &proc->waiting, sched_list) {
         ready(p);
@@ -152,6 +141,31 @@ enum syscall_return_state proc_exit(process_t *proc) {
     }
 
     // TODO: Cleanup sleepers...
+    __spin_lock(&newlib_lock);
+    printf("%-3d [core %d] exiting\r\n", proc->pid, get_core_id());
+    printf("MODE %10s %10s %10s %10s %10s %10s\r\n",    "instrs", 
+                                                        "cycles", 
+                                                        "l1 access", 
+                                                        "l1 refill", 
+                                                        "l2 access", 
+                                                        "l2 refill");
+    for (int i = 0; i < NUM_CORES; i++) {
+        printf("USR  %10lu %10lu %10lu %10lu %10lu %10lu\r\n",  proc->perf_count[0][i][0],
+                                                                proc->perf_count[0][i][1],
+                                                                proc->perf_count[0][i][2],
+                                                                proc->perf_count[0][i][3],
+                                                                proc->perf_count[0][i][4],
+                                                                proc->perf_count[0][i][5]);
+    }
+    for (int i = 0; i < NUM_CORES; i++) {
+        printf("SYS  %10lu %10lu %10lu %10lu %10lu %10lu\r\n",  proc->perf_count[1][i][0],
+                                                                proc->perf_count[1][i][1],
+                                                                proc->perf_count[1][i][2],
+                                                                proc->perf_count[1][i][3],
+                                                                proc->perf_count[1][i][4],
+                                                                proc->perf_count[1][i][5]);
+    }
+    __spin_unlock(&newlib_lock);
 
     list_del(&proc->process_list);
     list_del(&proc->process_hash_list);

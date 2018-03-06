@@ -5,9 +5,13 @@ void idle_proc( uint32_t r0, uint32_t r1, uint32_t r2 ) {
     while(true) asm("wfi");
 }
 
+void yield_proc() {
+    while(true) sysyield();
+}
+
 #define SMALL_MATRIX_M 60
-#define SMALL_MATRIX_N 20//0
-#define SMALL_MATRIX_P 40
+#define SMALL_MATRIX_N 20
+#define SMALL_MATRIX_P 80
 
 // RPI 3 Specs: 16KB L1P (Instruction) and 16KB L1D(Data) and 512KB L2
 // 16 KB = 2K * uint64_t (8B)
@@ -48,13 +52,13 @@ void inner_multiply(uint64_t **a, uint64_t **b, uint64_t **o,   int m_start, int
 int perf_id = 0;
 void perf_proc() {
     int sample_id = __atomic_fetch_add(&perf_id, 1, __ATOMIC_RELAXED) % PERF_SAMPLES;
-    __spin_lock(&newlib_lock);
-    printf("(%d, %d) -> (%d, %d)\r\n", 0, 0, SMALL_MATRIX_P, SMALL_MATRIX_M);
-    __spin_unlock(&newlib_lock);
+    // __spin_lock(&newlib_lock);
+    // printf("(%d, %d) -> (%d, %d)\r\n", 0, 0, SMALL_MATRIX_P, SMALL_MATRIX_M);
+    // __spin_unlock(&newlib_lock);
 
     for (int rep = 0; rep < 100; rep++) {
         // Why is this failing?
-        // inner_multiply(samples_a[sample_id], samples_b[sample_id], samples_o[sample_id], 
+        // inner_multiply(&samples_a[sample_id], &samples_b[sample_id], &samples_o[sample_id], 
         //             0, SMALL_MATRIX_M,
         //             0, SMALL_MATRIX_P,
         //             SMALL_MATRIX_N);
@@ -72,13 +76,10 @@ void perf_proc() {
         }
                     
     }
-
-    __spin_lock(&newlib_lock);
-    printf("done %d\r\n", sample_id);
-    __spin_unlock(&newlib_lock);
 }
 
-#define STRIDE ((SMALL_MATRIX_M * SMALL_MATRIX_P) / 4) // Should evenly divide
+#define STRIDE 2
+#define SECTIONS STRIDE * STRIDE
 
 int stride_id = 0;
 void perf_strided() {
@@ -86,23 +87,21 @@ void perf_strided() {
 
     int corner_id = __atomic_fetch_add(&stride_id, 1, __ATOMIC_RELAXED);    
 
-    int x = corner_id % 2;
-    int y = corner_id / 2;
-    int x_div = 2; // TODO: Compute
-    int y_div = 2; // TODO: Compute
+    int x = corner_id % STRIDE;
+    int y = corner_id / STRIDE;
 
-    int m_start = SMALL_MATRIX_M * x/x_div;
-    int p_start = SMALL_MATRIX_P * y/y_div;
+    int m_start = SMALL_MATRIX_M * x/STRIDE;
+    int p_start = SMALL_MATRIX_P * y/STRIDE;
 
-    int m_end = SMALL_MATRIX_M * (x + 1)/x_div;
-    int p_end = SMALL_MATRIX_P * (y + 1)/y_div;
+    int m_end = SMALL_MATRIX_M * (x + 1)/STRIDE;
+    int p_end = SMALL_MATRIX_P * (y + 1)/STRIDE;
 
-    __spin_lock(&newlib_lock);
-    printf("%d (%d, %d) -> (%d, %d)\r\n", corner_id, m_start, p_start, m_end, p_end);
-    __spin_unlock(&newlib_lock);
+    // __spin_lock(&newlib_lock);
+    // printf("%d (%d, %d) -> (%d, %d)\r\n", corner_id, m_start, p_start, m_end, p_end);
+    // __spin_unlock(&newlib_lock);
 
     for (int rep = 0; rep < 100; rep++) {
-        // inner_multiply(samples_a[sample_id], samples_b[sample_id], samples_o[sample_id],
+        // inner_multiply(&samples_a[sample_id], &samples_b[sample_id], &samples_o[sample_id],
         //     m_start, m_end,
         //     p_start, p_end,
         //     SMALL_MATRIX_N); 
@@ -119,31 +118,26 @@ void perf_strided() {
             }
         }
     }
-
-    __spin_lock(&newlib_lock);
-    printf("done %d\r\n", corner_id);
-    __spin_unlock(&newlib_lock);
 }
 
 void perf_root() {
     pid_t core_id = get_core_id();
 
-    syscreate(perf_strided, 1024);
+    // int p = SECTIONS/NUM_CORES;
+    int p = 4; // Single Core
+    // for (int i = 0; i < p; i++) {
+    //     syscreate(perf_strided, 1024);
+    // }
+
+    syscreate(yield_proc, 1024);
+    for (int i = 0; i < p; i++) {    
+        syscreate(perf_proc, 1024);
+    }
     // Single Core:
-    syscreate(perf_strided, 1024);
-    // syscreate(perf_strided, 1024);
-    // syscreate(perf_strided, 1024);
-
-    // syscreate(perf_proc, 1024);
-    // Single Core:
     // syscreate(perf_proc, 1024);
     // syscreate(perf_proc, 1024);
     // syscreate(perf_proc, 1024);
 
-    while(true) sysyield();
-}
-
-void yield_proc() {
     while(true) sysyield();
 }
 
@@ -248,6 +242,28 @@ void kernel_start() {
     register_interrupt_handler(core_id, false, 6, (interrupt_vector_t) { .handle = NULL }); 
     register_interrupt_handler(core_id, false, 7, (interrupt_vector_t) { .handle = NULL }); 
 
+    // Setup Performance Monitor Unit
+    pmu_enable();
+    pmu_config_pmn(0, 0x8);
+    pmu_config_pmn(1, 0x11);
+    pmu_config_pmn(2, 0x4);
+    pmu_config_pmn(3, 0x3);
+    pmu_config_pmn(4, 0x16);
+    pmu_config_pmn(5, 0x17);
+
+    pmu_enable_pmn(0);
+    pmu_enable_pmn(1);
+    pmu_enable_pmn(2);
+    pmu_enable_pmn(3);
+    pmu_enable_pmn(4);
+    pmu_enable_pmn(5);
+
+    pmu_enable_ccnt();
+
+    pmu_reset_ccnt();
+    pmu_reset_pmn();
+
+    // Create initial processes
     process_t idle_proc_stub = { };
     process_t root_proc_stub = { };
     proc_create(&idle_proc_stub, idle_proc, 4096, PRIORITY_IDLE);
@@ -257,6 +273,7 @@ void kernel_start() {
   
     switch_to(next());
 
+    // Setup Timer
     __disable_interrupts();
     core_timer_rearm(TICK_REARM);
 
@@ -268,23 +285,6 @@ void kernel_init( void )
 {
     uint8_t core_id = get_core_id();
 
-    // Setup Performance Monitor Unit
-    pmu_enable();
-    pmu_config_pmn(0, 0x8);
-    pmu_config_pmn(1, 0x11);
-    pmu_config_pmn(2, 0x13);
-    pmu_config_pmn(3, 0x19);
-
-    pmu_enable_pmn(0);
-    pmu_enable_pmn(1);
-    pmu_enable_pmn(2);
-    pmu_enable_pmn(3);
-
-    pmu_enable_ccnt();
-
-    pmu_reset_ccnt();
-    pmu_reset_pmn();
-
     // Setup Dispatch Handlers
     register_interrupt_handler(core_id, false, 1, (interrupt_vector_t) { .handle = timer_handler });
     register_interrupt_handler(core_id, true, ESR_ELx_EC_SVC64, (interrupt_vector_t) { .handle = svc_handler }); 
@@ -293,18 +293,6 @@ void kernel_init( void )
     register_interrupt_handler(core_id, false, 4, (interrupt_vector_t) { .handle = kernel_release_handler });
     core_mailbox_interrupt_routing(core_id, MB0_IRQ | MB1_IRQ | MB2_IRQ | MB3_IRQ);
 
-    // The following test confirms that pmu_reset_ccnt() is on a per-core basis.
-    // while(true) {
-    //     __spin_lock(&newlib_lock);
-    //     printf("%d: %lu, %lu\r\n", get_core_id(), pmu_read_pmn(1), pmu_read_ccnt());
-    //     if (get_core_id() % 2 == 0) {
-    //         pmu_reset_pmn();
-    //         pmu_reset_ccnt();
-    //     }
-    //     __spin_unlock(&newlib_lock);
-    //     for (int i = 0; i < 0x10000000; i++);
-    // }
-
     if (core_id == 0) {
         proc_init();
         disp_init();
@@ -312,7 +300,7 @@ void kernel_init( void )
         // Release Kernel Cores! (value doesnt matter)
         // core_mailbox->set[3][0] = true;
         // core_mailbox->set[2][0] = true;
-        core_mailbox->set[1][0] = true;
+        // core_mailbox->set[1][0] = true;
         core_mailbox->set[0][0] = true;
     }
 
