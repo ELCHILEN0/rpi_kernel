@@ -10,14 +10,14 @@ void yield_proc() {
 }
 
 // Small Matrix
-#define MATRIX_M 10
-#define MATRIX_N 100
-#define MATRIX_P 9
+// #define MATRIX_M 10
+// #define MATRIX_N 100
+// #define MATRIX_P 9
 
 // Large Matrix
-// #define MATRIX_M 40
-// #define MATRIX_N 100
-// #define MATRIX_P 28
+#define MATRIX_M 40
+#define MATRIX_N 100
+#define MATRIX_P 28
 
 // ab+bc+ac = 2000
 // a > 0
@@ -150,20 +150,15 @@ void perf_strided() {
 void perf_root() {
     pid_t core_id = get_core_id();
 
-    // int p = SECTIONS/NUM_CORES;
-    int p = 4; // Single Core
-    // for (int i = 0; i < p; i++) {
-    //     syscreate(perf_strided, 1024);
+    for (int i = 0; i < SECTIONS/NUM_CORES; i++) {
+        syscreate(perf_strided, 1024);
+    }
+
+    // for (int i = 0; i < SECTIONS/NUM_CORES; i++) {    
+    //     syscreate(perf_proc, 1024);
     // }
 
-    syscreate(yield_proc, 1024);
-    for (int i = 0; i < p; i++) {    
-        syscreate(perf_proc, 1024);
-    }
-    // Single Core:
-    // syscreate(perf_proc, 1024);
-    // syscreate(perf_proc, 1024);
-    // syscreate(perf_proc, 1024);
+    // syscreate(yield_proc, 1024);
 
     while(true) sysyield();
 }
@@ -325,9 +320,9 @@ void kernel_init( void )
         disp_init();
 
         // Release Kernel Cores! (value doesnt matter)
-        // core_mailbox->set[3][0] = true;
-        // core_mailbox->set[2][0] = true;
-        // core_mailbox->set[1][0] = true;
+        core_mailbox->set[3][0] = true;
+        core_mailbox->set[2][0] = true;
+        core_mailbox->set[1][0] = true;
         core_mailbox->set[0][0] = true;
     }
 
