@@ -46,18 +46,20 @@ void disp_init() {
  */
 process_t *next( void ) {
     for (int i = PRIORITY_HIGH; i >= PRIORITY_IDLE; i--) {
-        __spin_lock(&scheduler_lock);
-
         #ifdef SCHED_AFFINITY        
         struct list_head *head = &ready_queue[get_core_id()][i];
         #else
+        __spin_lock(&scheduler_lock);        
         struct list_head *head = &ready_queue[i];
         #endif     
 
         process_t *process, *next;
         list_for_each_entry_safe(process, next, head, sched_list) {
             list_del_init(&process->sched_list);
+            
+            #ifndef SCHED_AFFINITY            
             __spin_unlock(&scheduler_lock);
+            #endif
 
             // Reset its priority when it runs 
             // process->current_priority = process->initial_priority;
@@ -66,7 +68,9 @@ process_t *next( void ) {
             return process;
         }
 
-        __spin_unlock(&scheduler_lock);         
+        #ifndef SCHED_AFFINITY
+        __spin_unlock(&scheduler_lock);   
+        #endif      
     }
 
     return NULL; // TODO: while(true); ... never run out of processes
@@ -80,16 +84,16 @@ void ready( process_t *process ) {
     process->state = RUNNABLE;
     // process->block_state = NONE;
 
-    __spin_lock(&scheduler_lock);
-    list_del_init(&process->sched_list);
-
-    #ifdef SCHED_AFFINITY     
+    #ifdef SCHED_AFFINITY
+    list_del_init(&process->sched_list);    
+    // TODO: Opportunity for rebalancing     
     list_add_tail(&process->sched_list, &ready_queue[get_core_id()][process->current_priority]);           
     #else
+    __spin_lock(&scheduler_lock);    
+    list_del_init(&process->sched_list);    
     list_add_tail(&process->sched_list, &ready_queue[process->current_priority]);
+    __spin_unlock(&scheduler_lock);        
     #endif
-    
-    __spin_unlock(&scheduler_lock);    
 }
 
 /*

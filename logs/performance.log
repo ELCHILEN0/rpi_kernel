@@ -123,7 +123,7 @@ SYS       15660      25464       8172         44         50          5
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
 
-// Multi Core - Scalar Multiply (Strided + Affinity) - 80x100 = 8000
+// Multi Core - Scalar Multiply (Strided + Affinity + Scheduler Lock) - 80x100 = 8000
 11  [core 2] exiting
 MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill
 USR           0          0          0          0          0          0
@@ -167,3 +167,47 @@ SYS           0          0          0          0          0          0
 
 // Observations: kernel refill directly proportional to user mode l1 cache refills
 // performance as expected!
+
+// Multi Core - Scalar Multiply (Strided + Affinity + No Scheduler Lock) - 80x100 = 8000
+11  [core 1] exiting
+MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill
+USR           0          0          0          0          0          0
+USR    28222306   41914823   15960160        742       1796        291
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS       48789      77712      28634        184        194          7
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+10  [core 3] exiting
+MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR    37423216   55535005   21162467       1453       3400         94
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS       64935     104722      38110        544       1026          8
+6   [core 2] exiting
+MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR    37428075   55530944   21165218        571       1713        247
+USR           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS       64935     102014      38110        196        201          1
+SYS           0          0          0          0          0          0
+12  [core 0] exiting
+MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill
+USR    28223191   41915177   15960704        631       2039        448
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS       48789      78012      28634        263        278          6
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+
+// Observations: Time Slice performance increases by ~40% in BEST case, another note is that we see the EXACT same measurements for time spent in syscall!
