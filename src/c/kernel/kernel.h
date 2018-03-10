@@ -19,7 +19,8 @@
 #include "../multicore.h"
 #include "../interrupts.h"
 
-#define SCHED_AFFINITY
+#define SCHED_SEMAPHORE
+// #define SCHED_AFFINITY
 
 #define NUM_CORES 4
 #define PERF_COUNTERS 6
@@ -94,6 +95,12 @@ typedef struct {
 } aarch64_frame_t;
 
 typedef struct {
+    lock_t  lock;
+    int     count;
+    struct list_head queue;
+} semaphore_t;
+
+typedef struct {
     pid_t pid;
     uint64_t ret;
     uint64_t args;
@@ -137,12 +144,25 @@ typedef struct {
 extern spinlock_t newlib_lock;
 extern spinlock_t scheduler_lock;
 
+#ifdef SCHED_SEMAPHORE
+typedef struct {
+    spinlock_t lock;
+    struct list_head queue;
+} ready_queue_t;
+extern ready_queue_t ready_queue[NUM_CORES][PRIORITY_HIGH + 1];
+
+extern semaphore_t ready_sem[NUM_CORES][PRIORITY_HIGH + 1];
+extern semaphore_t sleep_sem[NUM_CORES];
+extern struct list_head sleep_queue[];
+#else
 #ifdef SCHED_AFFINITY
 extern struct list_head ready_queue[NUM_CORES][PRIORITY_HIGH + 1];
-#else
-extern struct list_head ready_queue[];    
-#endif
 extern struct list_head sleep_queue[];
+#else
+extern struct list_head ready_queue[]; 
+extern struct list_head sleep_queue[];   
+#endif
+#endif
 
 // Initialization
 extern void kernel_init();
@@ -151,6 +171,7 @@ extern void kernel_release_handler();
 
 extern void proc_init();
 extern void disp_init();
+extern void sync_init();
 // extern void intr_init();
 
 // Context Switch
@@ -161,7 +182,13 @@ extern void *align(void *ptr);
 
 // Dispatch and Scheduling
 extern process_t *next();
-extern void ready(process_t *process);
+extern void ready   (process_t *proc);
+extern void       acquire   (process_t *proc, semaphore_t *sem, struct list_head *(*find_pos)(process_t *, semaphore_t *));
+extern process_t *release   (process_t *proc, semaphore_t *sem, struct list_head *(*find_pos)(process_t *, semaphore_t *));
+
+struct list_head *head_pos  (process_t *proc, semaphore_t *sem);
+struct list_head *sleep_pos (process_t *proc, semaphore_t *sem);
+
 extern void block(process_t *process, struct list_head *queue, enum blocked_state reason);
 extern void common_interrupt( int interrupt_type );
 

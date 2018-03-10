@@ -340,6 +340,7 @@ void kernel_init( void )
     if (core_id == 0) {
         proc_init();
         disp_init();
+        sync_init();
 
         // Release Kernel Cores! (value doesnt matter)
         core_mailbox->set[3][0] = true;

@@ -6,11 +6,9 @@
 extern uint32_t get_core_id( void );
 extern void core_enable(uint32_t core, uint64_t addr);
 
-typedef uint8_t lock_t;
-
 typedef volatile struct {
     uint8_t flag;
-} spinlock_t;
+} spinlock_t, lock_t;
 
 // typedef volatile struct {
 //     lock_t lock;

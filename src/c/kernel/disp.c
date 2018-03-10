@@ -10,12 +10,19 @@ struct list_head process_list;
 //     process_t *curr[NUM_CORES];
 // } runqueue_t;
 
+#ifdef SCHED_SEMAPHORE
+extern semaphore_t ready_sem[NUM_CORES][PRIORITY_HIGH + 1];
+extern semaphore_t sleep_sem[NUM_CORES];
+extern struct list_head sleep_queue[];
+#else
 #ifdef SCHED_AFFINITY
 struct list_head ready_queue[NUM_CORES][PRIORITY_HIGH + 1];
+struct list_head sleep_queue[NUM_CORES];
 #else
-extern struct list_head ready_queue[PRIORITY_HIGH + 1];    
+struct list_head ready_queue[PRIORITY_HIGH + 1]; 
+struct list_head sleep_queue[NUM_CORES];   
 #endif
-struct list_head sleep_queue[NUM_CORES]; // Each core has its own sleep queue, avoids conflicting ticks.
+#endif
 
 process_t *running_list[NUM_CORES];
 
@@ -25,6 +32,7 @@ spinlock_t scheduler_lock;
  * Initialize the process table and schedule lists.
  */
 void disp_init() {
+    #ifndef SCHED_SEMAPHORE
     for (int i = PRIORITY_IDLE; i <= PRIORITY_HIGH; i++) {
         #ifdef SCHED_AFFINITY
         for (int j = 0; j < NUM_CORES; j++) {
@@ -34,6 +42,7 @@ void disp_init() {
         INIT_LIST_HEAD(&ready_queue[i]);
         #endif        
     }
+    #endif
 
     for (int i = 0; i < NUM_CORES; i++) {
         INIT_LIST_HEAD(&sleep_queue[i]);
@@ -46,31 +55,47 @@ void disp_init() {
  */
 process_t *next( void ) {
     for (int i = PRIORITY_HIGH; i >= PRIORITY_IDLE; i--) {
-        #ifdef SCHED_AFFINITY        
-        struct list_head *head = &ready_queue[get_core_id()][i];
-        #else
-        __spin_lock(&scheduler_lock);        
-        struct list_head *head = &ready_queue[i];
-        #endif     
+        process_t *curr, *prev;        
+        prev = running_list[get_core_id()];
+        
+        #ifdef SCHED_SEMAPHORE
+        {
+            semaphore_t *sem = &ready_sem[get_core_id()][i];
 
-        process_t *process, *next;
-        list_for_each_entry_safe(process, next, head, sched_list) {
-            list_del_init(&process->sched_list);
-            
-            #ifndef SCHED_AFFINITY            
-            __spin_unlock(&scheduler_lock);
-            #endif
-
-            // Reset its priority when it runs 
-            // process->current_priority = process->initial_priority;
-            running_list[get_core_id()] = process;
-
-            return process;
+            curr = release(prev, sem, head_pos);
+            if (curr) {
+                running_list[get_core_id()] = curr;
+                return curr;
+            }
         }
+        #else
+        {
+            process_t *curr, *prev, *next;
+            
+            #ifdef SCHED_AFFINITY        
+            struct list_head *head = &ready_queue[get_core_id()][i];
+            #else
+            __spin_lock(&scheduler_lock);        
+            struct list_head *head = &ready_queue[i];
+            #endif   
 
-        #ifndef SCHED_AFFINITY
-        __spin_unlock(&scheduler_lock);   
-        #endif      
+            list_for_each_entry_safe(curr, next, head, sched_list) {            
+                #ifndef SCHED_AFFINITY            
+                __spin_unlock(&scheduler_lock);
+                #endif
+
+                // Reset its priority when it runs 
+                // process->current_priority = process->initial_priority;
+                running_list[get_core_id()] = curr;
+
+                return curr;
+            }
+
+            #ifndef SCHED_AFFINITY
+            __spin_unlock(&scheduler_lock);   
+            #endif   
+        }   
+        #endif  
     }
 
     return NULL; // TODO: while(true); ... never run out of processes
@@ -84,6 +109,10 @@ void ready( process_t *process ) {
     process->state = RUNNABLE;
     // process->block_state = NONE;
 
+    #ifdef SCHED_SEMAPHORE
+    semaphore_t *sem = &ready_sem[get_core_id()][process->current_priority];
+    acquire(process, sem, head_pos);
+    #else
     #ifdef SCHED_AFFINITY
     list_del_init(&process->sched_list);    
     // TODO: Opportunity for rebalancing     
@@ -93,6 +122,7 @@ void ready( process_t *process ) {
     list_del_init(&process->sched_list);    
     list_add_tail(&process->sched_list, &ready_queue[process->current_priority]);
     __spin_unlock(&scheduler_lock);        
+    #endif
     #endif
 }
 
