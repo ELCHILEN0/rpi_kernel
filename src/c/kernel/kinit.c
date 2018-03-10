@@ -26,12 +26,12 @@ void yield_proc() {
 // #define MATRIX_P 1
 
 // Average Matrix
-#define MATRIX_M 40
-#define MATRIX_N 50
+// #define MATRIX_M 40
+// #define MATRIX_N 50
 
 // Large Matrix
-// #define MATRIX_M 80
-// #define MATRIX_N 100
+#define MATRIX_M 80
+#define MATRIX_N 100
 
 /*
     Matrix Multiplication:

@@ -122,3 +122,48 @@ SYS           0          0          0          0          0          0
 SYS       15660      25464       8172         44         50          5
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
+
+// Multi Core - Scalar Multiply (Strided + Affinity) - 80x100 = 8000
+11  [core 2] exiting
+MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR    28220549   41909376   15959152        759       2125        270
+USR           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS       60534      99499      31608        264        269          7
+SYS           0          0          0          0          0          0
+12  [core 0] exiting
+MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill
+USR    28223625   41913316   15960821        642       2019        276
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS       60468      98634      31556        222        232          7
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+10  [core 3] exiting
+MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR    37420208   55527280   21160635       1478       3583        266
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS       80475     129926      41995        464        925          9
+7   [core 1] exiting
+MODE     instrs     cycles  l1 access  l1 refill  l2 access  l2 refill
+USR           0          0          0          0          0          0
+USR    37425453   55524683   21163729        608       2350        272
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS       80475     127720      41995        154        160          5
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+
+// Observations: kernel refill directly proportional to user mode l1 cache refills
+// performance as expected!
