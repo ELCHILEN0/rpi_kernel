@@ -10,7 +10,11 @@ struct list_head process_list;
 //     process_t *curr[NUM_CORES];
 // } runqueue_t;
 
-struct list_head ready_queue[PRIORITY_HIGH + 1];
+#ifdef SCHED_AFFINITY
+struct list_head ready_queue[NUM_CORES][PRIORITY_HIGH + 1];
+#else
+extern struct list_head ready_queue[PRIORITY_HIGH + 1];    
+#endif
 struct list_head sleep_queue[NUM_CORES]; // Each core has its own sleep queue, avoids conflicting ticks.
 
 process_t *running_list[NUM_CORES];
@@ -22,7 +26,14 @@ spinlock_t scheduler_lock;
  */
 void disp_init() {
     for (int i = PRIORITY_IDLE; i <= PRIORITY_HIGH; i++) {
+        #ifdef SCHED_AFFINITY
+        INIT_LIST_HEAD(&ready_queue[0][i]);
+        INIT_LIST_HEAD(&ready_queue[1][i]);
+        INIT_LIST_HEAD(&ready_queue[2][i]);
+        INIT_LIST_HEAD(&ready_queue[3][i]);
+        #else
         INIT_LIST_HEAD(&ready_queue[i]);
+        #endif        
     }
 
     for (int i = 0; i < NUM_CORES; i++) {
@@ -37,7 +48,11 @@ void disp_init() {
 process_t *next( void ) {
     for (int i = PRIORITY_HIGH; i >= PRIORITY_IDLE; i--) {
         __spin_lock(&scheduler_lock);
-        struct list_head *head = &ready_queue[i];     
+        #ifdef SCHED_AFFINITY        
+        struct list_head *head = &ready_queue[get_core_id()][i];
+        #else
+        struct list_head *head = &ready_queue[i];
+        #endif     
 
         process_t *process, *next;
         list_for_each_entry_safe(process, next, head, sched_list) {
@@ -67,7 +82,12 @@ void ready( process_t *process ) {
 
     __spin_lock(&scheduler_lock);
     list_del_init(&process->sched_list);    
+    #ifdef SCHED_AFFINITY     
+    list_add_tail(&process->sched_list, &ready_queue[get_core_id()][process->current_priority]);           
+    #else
     list_add_tail(&process->sched_list, &ready_queue[process->current_priority]);
+    #endif
+    
     __spin_unlock(&scheduler_lock);    
 }
 

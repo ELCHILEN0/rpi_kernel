@@ -19,6 +19,8 @@
 #include "../multicore.h"
 #include "../interrupts.h"
 
+#define SCHED_AFFINITY
+
 #define NUM_CORES 4
 #define PERF_COUNTERS 6
 
@@ -135,7 +137,11 @@ typedef struct {
 extern spinlock_t newlib_lock;
 extern spinlock_t scheduler_lock;
 
-extern struct list_head ready_queue[];
+#ifdef SCHED_AFFINITY
+extern struct list_head ready_queue[NUM_CORES][PRIORITY_HIGH + 1];
+#else
+extern struct list_head ready_queue[];    
+#endif
 extern struct list_head sleep_queue[];
 
 // Initialization

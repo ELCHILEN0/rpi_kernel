@@ -18,9 +18,20 @@ void yield_proc() {
 // #define MATRIX_M 40
 // #define MATRIX_N 100
 // #define MATRIX_P 28
+#define MATRIX_P 1
 
+// Small Matrix
+// #define MATRIX_M 20
+// #define MATRIX_N 25
+// #define MATRIX_P 1
+
+// Average Matrix
 #define MATRIX_M 40
 #define MATRIX_N 50
+
+// Large Matrix
+// #define MATRIX_M 80
+// #define MATRIX_N 100
 
 /*
     Matrix Multiplication:
@@ -68,7 +79,7 @@ void yield_proc() {
 // Areas of interest:
 // Cache utilization with per/core processes, process migration -> how to improve scheduling
 // Splitting up the task between processors, easily parallelizable independent vs problems with communication via shared memory
-#define PERF_SAMPLES 5
+#define PERF_SAMPLES 2
 // uint64_t samples_a[PERF_SAMPLES][MATRIX_M][MATRIX_N] = {
 //     [0 ... PERF_SAMPLES - 1][0 ... MATRIX_M - 1][0 ... MATRIX_N - 1] = 0xa
 // };
@@ -83,8 +94,14 @@ uint64_t samples_s[PERF_SAMPLES][MATRIX_M][MATRIX_N] = {
     [0 ... PERF_SAMPLES - 1][0 ... MATRIX_M - 1][0 ... MATRIX_N - 1] = 0xc
 };
 
-void scalar_multiply(uint64_t **a, int factor,  int m_start, int m_end,
-                                                int n_start, int n_end) {
+void scalar_multiply(uint64_t a[MATRIX_M][MATRIX_N],
+                        const int factor,  
+                        const int m_start, const int m_end,
+                        const int n_start, const int n_end)
+{
+    // assert(m_start > 0 && n_start > 0);
+    // assert(m_end <= MATRIX_M && n_end <= MATRIX_N);
+
     for (int m = m_start; m < m_end; m++) {
         for (int n = n_start; n < n_end; n++) {
             a[m][n] *= factor;
@@ -92,15 +109,21 @@ void scalar_multiply(uint64_t **a, int factor,  int m_start, int m_end,
     }
 }
 
-void inner_multiply(uint64_t **a, uint64_t **b, uint64_t **o,   int m_start, int m_end,
-                                                                int p_start, int p_end,
-                                                                int n_len) {
+void inner_multiply(const uint64_t a[MATRIX_M][MATRIX_N],
+                    const uint64_t b[MATRIX_N][MATRIX_P],
+                    uint64_t o[MATRIX_M][MATRIX_P],
+                    const int m_start, const int m_end,
+                    const int p_start, const int p_end)                    
+{
+    // assert(m_start > 0 && p_start > 0);
+    // assert(m_end <= MATRIX_M && p_end <= MATRIX_P);
+
     for (int m = m_start; m < m_end; m++) {
         for (int p = p_start; p < p_end; p++) {
 
             uint64_t sum = 0;
 
-            for (int n = 0; n < n_len; n++) {
+            for (int n = 0; n < MATRIX_N; n++) {
                 // uint64_t tmp = a[m][n] * b[n][p];
                 // __atomic_fetch_add(&o[m][p], tmp, __ATOMIC_RELAXED);
                 sum += a[m][n] * b[n][p];
@@ -112,53 +135,25 @@ void inner_multiply(uint64_t **a, uint64_t **b, uint64_t **o,   int m_start, int
     }
 }
 
-int perf_id = 0;
-void perf_proc() {
-    // int sample_id = __atomic_fetch_add(&perf_id, 1, __ATOMIC_RELAXED) % PERF_SAMPLES;
-    // // __spin_lock(&newlib_lock);
-    // // printf("(%d, %d) -> (%d, %d)\r\n", 0, 0, MATRIX_P, MATRIX_M);
-    // // __spin_unlock(&newlib_lock);
-
-    // for (int rep = 0; rep < 100; rep++) {
-    //     // Why is this failing?
-    //     // inner_multiply(&samples_a[sample_id], &samples_b[sample_id], &samples_o[sample_id], 
-    //     //             0, MATRIX_M,
-    //     //             0, MATRIX_P,
-    //     //             MATRIX_N);
-
-    //     for (int m = 0; m < MATRIX_M; m++) {
-    //         for (int p = 0; p < MATRIX_P; p++) {
-
-    //             uint64_t sum = 0;
-    //             for (int n = 0; n < MATRIX_N; n++) {
-    //                 sum += samples_a[sample_id][m][n] * samples_o[sample_id][n][p];
-    //             }
-    //             samples_o[sample_id][m][p] = sum;
-
-    //         }
-    //     }
-                    
-    // }
-}
-
 #define STRIDE 2
 #define SECTIONS STRIDE * STRIDE
 
 void perf_scalar_multiply() {
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < 1000; i++) {
         scalar_multiply(samples_s[0], 2,
                         0, MATRIX_M,
                         0, MATRIX_N);
     }
 }
 
+static spinlock_t my_lock;
 
+static int scalar_multiply_id = 0;
 void perf_strided_scalar_multiply() {
-    static int corner_id = 0;
-    corner_id = __atomic_fetch_add(&corner_id, 1, __ATOMIC_RELAXED);
+    int my_id = __atomic_fetch_add(&scalar_multiply_id, 1, __ATOMIC_RELAXED);
 
-    const int x = corner_id % STRIDE;
-    const int y = corner_id / STRIDE;
+    const int x = my_id % STRIDE;
+    const int y = my_id / STRIDE;
 
     const int m_start = MATRIX_M * x/STRIDE;
     const int n_start = MATRIX_N * y/STRIDE;
@@ -166,57 +161,19 @@ void perf_strided_scalar_multiply() {
     const int m_end = MATRIX_M * (x + 1)/STRIDE;
     const int n_end = MATRIX_M * (y + 1)/STRIDE;
 
-    for (int rep = 0; rep < 100; ++rep) {
+    for (int rep = 0; rep < 1000; ++rep) {
         scalar_multiply(samples_s[0], 2,
                         m_start, m_end,
                         n_start, n_end);
     }
 }
 
-int stride_id = 0;
-void perf_strided() {
-    // int sample_id = 4;
-
-    // int corner_id = __atomic_fetch_add(&stride_id, 1, __ATOMIC_RELAXED);    
-
-    // int x = corner_id % STRIDE;
-    // int y = corner_id / STRIDE;
-
-    // int m_start = MATRIX_M * x/STRIDE;
-    // int p_start = MATRIX_P * y/STRIDE;
-
-    // int m_end = MATRIX_M * (x + 1)/STRIDE;
-    // int p_end = MATRIX_P * (y + 1)/STRIDE;
-
-    // // __spin_lock(&newlib_lock);
-    // // printf("%d (%d, %d) -> (%d, %d)\r\n", corner_id, m_start, p_start, m_end, p_end);
-    // // __spin_unlock(&newlib_lock);
-
-    // for (int rep = 0; rep < 100; rep++) {
-    //     // inner_multiply(&samples_a[sample_id], &samples_b[sample_id], &samples_o[sample_id],
-    //     //     m_start, m_end,
-    //     //     p_start, p_end,
-    //     //     MATRIX_N); 
-
-    //     for (int m = m_start; m < m_end; m++) {
-    //         for (int p = p_start; p < p_end; p++) {
-
-    //             uint64_t sum = 0;
-    //             for (int n = 0; n < MATRIX_N; n++) {
-    //                 sum += samples_a[sample_id][m][n] * samples_o[sample_id][n][p];
-    //             }
-    //             samples_o[sample_id][m][p] = sum;
-
-    //         }
-    //     }
-    // }
-}
-
 void perf_root() {
     pid_t core_id = get_core_id();
 
     for (int i = 0; i < SECTIONS/NUM_CORES; i++) {
-        syscreate(perf_scalar_multiply, 1024);
+        // syscreate(perf_scalar_multiply, 1024);
+        syscreate(perf_strided_scalar_multiply, 1024);
     }
 
     // for (int i = 0; i < SECTIONS/NUM_CORES; i++) {    
@@ -385,9 +342,9 @@ void kernel_init( void )
         disp_init();
 
         // Release Kernel Cores! (value doesnt matter)
-        // core_mailbox->set[3][0] = true;
-        // core_mailbox->set[2][0] = true;
-        // core_mailbox->set[1][0] = true;
+        core_mailbox->set[3][0] = true;
+        core_mailbox->set[2][0] = true;
+        core_mailbox->set[1][0] = true;
         core_mailbox->set[0][0] = true;
     }
 
