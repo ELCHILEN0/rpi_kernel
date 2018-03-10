@@ -27,10 +27,9 @@ spinlock_t scheduler_lock;
 void disp_init() {
     for (int i = PRIORITY_IDLE; i <= PRIORITY_HIGH; i++) {
         #ifdef SCHED_AFFINITY
-        INIT_LIST_HEAD(&ready_queue[0][i]);
-        INIT_LIST_HEAD(&ready_queue[1][i]);
-        INIT_LIST_HEAD(&ready_queue[2][i]);
-        INIT_LIST_HEAD(&ready_queue[3][i]);
+        for (int j = 0; j < NUM_CORES; j++) {
+            INIT_LIST_HEAD(&ready_queue[j][i]);
+        }
         #else
         INIT_LIST_HEAD(&ready_queue[i]);
         #endif        
@@ -48,6 +47,7 @@ void disp_init() {
 process_t *next( void ) {
     for (int i = PRIORITY_HIGH; i >= PRIORITY_IDLE; i--) {
         __spin_lock(&scheduler_lock);
+
         #ifdef SCHED_AFFINITY        
         struct list_head *head = &ready_queue[get_core_id()][i];
         #else
@@ -81,7 +81,8 @@ void ready( process_t *process ) {
     // process->block_state = NONE;
 
     __spin_lock(&scheduler_lock);
-    list_del_init(&process->sched_list);    
+    list_del_init(&process->sched_list);
+
     #ifdef SCHED_AFFINITY     
     list_add_tail(&process->sched_list, &ready_queue[get_core_id()][process->current_priority]);           
     #else
