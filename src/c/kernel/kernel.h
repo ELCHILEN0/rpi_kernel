@@ -154,6 +154,7 @@ extern ready_queue_t ready_queue[NUM_CORES][PRIORITY_HIGH + 1];
 extern semaphore_t ready_sem[NUM_CORES][PRIORITY_HIGH + 1];
 extern semaphore_t sleep_sem[NUM_CORES];
 extern struct list_head sleep_queue[];
+extern process_t *running_list[NUM_CORES];
 #else
 #ifdef SCHED_AFFINITY
 extern struct list_head ready_queue[NUM_CORES][PRIORITY_HIGH + 1];

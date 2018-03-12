@@ -67,10 +67,33 @@ enum syscall_return_state proc_create(process_t *proc, void (*func)(), uint64_t 
         .spsr = 0b00100,    // EL1t
         .elr  = (uint64_t) func,
         .reg  = {
-            [0 ... 31] = 0,
+            // [0 ... 31] = 0,
             [30] = (uint64_t) sysexit
         }
     };
+
+    *process = (process_t) {
+        .ret = frame.reg[0],
+        .pid = pid,
+        
+        .stack_base = stack_base,
+        .stack_size = stack_size,
+        .frame = memcpy(align(stack_base + stack_size - sizeof(aarch64_frame_t)), &frame, sizeof(frame)),
+
+        .state = NEW,
+        .initial_priority = priority,
+        .current_priority = priority,
+
+        .process_list = LIST_HEAD_INIT(process->process_list),
+        .process_hash_list = LIST_HEAD_INIT(process->process_hash_list),
+
+        .sched_list = LIST_HEAD_INIT(process->sched_list),
+
+        .waiting = LIST_HEAD_INIT(process->waiting),
+        .sending = LIST_HEAD_INIT(process->sending),
+        .recving = LIST_HEAD_INIT(process->recving),     
+    };
+    /*
     process->ret = frame.reg[0];
 
     process->pid = pid;
@@ -112,6 +135,7 @@ enum syscall_return_state proc_create(process_t *proc, void (*func)(), uint64_t 
     __spin_unlock(&process_list_lock);
 
     process->block_lock.flag = 0;
+    */
 
     ready(process);
     return OK;    
