@@ -184,8 +184,8 @@ extern void *align(void *ptr);
 // Dispatch and Scheduling
 extern process_t *next();
 extern void ready   (process_t *proc);
-extern void       acquire   (process_t *proc, semaphore_t *sem, struct list_head *(*find_pos)(process_t *, semaphore_t *));
-extern process_t *release   (process_t *proc, semaphore_t *sem, struct list_head *(*find_pos)(process_t *, semaphore_t *));
+// extern void       acquire   (process_t *proc, semaphore_t *sem, struct list_head *(*find_pos)(process_t *, semaphore_t *));
+// extern process_t *release   (process_t *proc, semaphore_t *sem, struct list_head *(*find_pos)(process_t *, semaphore_t *));
 
 struct list_head *head_pos  (process_t *proc, semaphore_t *sem);
 struct list_head *sleep_pos (process_t *proc, semaphore_t *sem);
