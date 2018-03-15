@@ -156,16 +156,22 @@ void ready( process_t *process ) {
     #endif
 }
 
-void sleep_on(process_t *task, wait_queue_t *queue) {
+// place a task on the wait queue, until it is woken with alert_on
+void sleep_on(wait_queue_t *queue, process_t *task) {
     task->state = BLOCKED;
 
     __spin_lock(&queue->lock);
+
+    task->curr_wait_queue = queue;
     list_del_init(&task->sched_list);
     list_add_tail(&task->sched_list, &queue->tasks);
+
     __spin_unlock(&queue->lock);
 }
 
-void wake_up(wait_queue_t *queue, bool (*condition)(process_t *curr)) {
+// wake up all tasks blocked on the wait queue that satisfy the condition
+// TODO: wakeup a single process, regardless of the queue... (SIGNALS)
+void alert_on(wait_queue_t *queue, bool (*condition)(process_t *curr)) {
     __spin_lock(&queue->lock);
     
     process_t *curr, *next;

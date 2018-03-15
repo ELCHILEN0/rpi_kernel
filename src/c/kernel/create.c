@@ -124,7 +124,7 @@ enum syscall_return_state proc_wait(process_t* proc, pid_t pid) {
     if (pid == 0 || !process || proc->pid == process->pid)
         return OK;
 
-    sleep_on(proc, &process->waiting);
+    sleep_on(&process->waiting, proc);
     return BLOCK; 
 }
 
@@ -139,7 +139,7 @@ enum syscall_return_state proc_exit(process_t *proc) {
         curr->ret = 0;
         return true;
     }
-    wake_up(&proc->waiting, wake_waiting);
+    alert_on(&proc->waiting, wake_waiting);
 
     // TODO: Cleanup sleepers...
     __spin_lock(&newlib_lock);

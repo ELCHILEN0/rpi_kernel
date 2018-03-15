@@ -143,6 +143,7 @@ typedef struct {
     struct list_head process_hash_list;
     struct list_head sched_list;
 
+    wait_queue_t *curr_wait_queue;
     wait_queue_t waiting;
 
     // Scheduling Dependencies, processes blocked on an action by this process
@@ -181,7 +182,8 @@ extern void *align(void *ptr);
 // Dispatch and Scheduling
 extern process_t *next();
 extern void ready(process_t *process);
-extern void block(process_t *process, struct list_head *queue, enum blocked_state reason);
+extern void sleep_on(wait_queue_t *queue, process_t *task);
+extern void alert_on(wait_queue_t *queue, bool (*condition)(process_t *curr));
 extern void common_interrupt( int interrupt_type );
 
 // Helper Functions
