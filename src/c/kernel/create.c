@@ -1,6 +1,7 @@
 #include "kernel.h"
 
 static pid_t next_pid = 1;
+uint64_t live_procs = 0;
 
 spinlock_t process_list_lock;
 spinlock_t process_hash_lock;
@@ -54,13 +55,15 @@ enum syscall_return_state proc_create(process_t *proc, void (*func)(), uint64_t 
         return OK;
     }
 
-    pid_t pid = __atomic_fetch_add(&next_pid, 1, __ATOMIC_SEQ_CST); // TODO: __ATOMIC_RELAXED
+    pid_t pid = __atomic_fetch_add(&next_pid, 1, __ATOMIC_RELAXED); // TODO: __ATOMIC_RELAXED
     if (next_pid == 0) {
         proc->ret = -1;
         return OK;
     } else {
         proc->ret = pid;
     }
+
+    __atomic_fetch_add(&live_procs, 1, __ATOMIC_RELAXED);
 
     aarch64_frame_t frame = {
         // .spsr = 0b00000, // EL0
@@ -133,6 +136,8 @@ enum syscall_return_state proc_wait(process_t* proc, pid_t pid) {
 // process will be scheduled and have their return code set appropriately.
 enum syscall_return_state proc_exit(process_t *proc) {
     proc->state = ZOMBIE;
+
+    __atomic_fetch_sub(&live_procs, 1, __ATOMIC_RELAXED);
 
     process_t *p, *pnext;
     list_for_each_entry_safe(p, pnext, &proc->waiting, sched_list) {

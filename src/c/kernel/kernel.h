@@ -37,6 +37,8 @@
 
 #define PROC_STACK (4096 * 4)
 
+extern uint64_t live_procs;
+
 enum syscall_return_state {
     OK,
     SCHED,
@@ -99,6 +101,10 @@ typedef struct {
     uint64_t args;
 
     // Scheduling
+    // TODO: Idle Balancing, busiest -> idleest
+    // TODO: load balance without locking? per core input channel/buffer, lazy synchronization? lockless queue or spinlock queue or try-acquire/continue?
+    //
+    uint8_t affinity; // disallow for some procs...
     enum process_state state;
     enum blocked_state block_state;  
     enum process_priority initial_priority;
@@ -133,12 +139,21 @@ typedef struct {
     // };
 } process_t, pcb_t;
 
+typedef struct {
+    spinlock_t lock;
+    int length;
+    // uint64_t avg_throughput;
+    // uint64_t avg_l1_refill;
+    // uint64_t avg_l2_refill;
+    struct list_head tasks[PRIORITY_HIGH + 1];
+} ready_queue_t;
 
 extern spinlock_t newlib_lock;
 extern spinlock_t scheduler_lock;
 
 #ifdef SCHED_AFFINITY
-extern struct list_head ready_queue[NUM_CORES][PRIORITY_HIGH + 1];
+// extern struct list_head ready_queue[NUM_CORES][PRIORITY_HIGH + 1];
+extern ready_queue_t ready_queue[NUM_CORES];
 #else
 extern struct list_head ready_queue[];    
 #endif

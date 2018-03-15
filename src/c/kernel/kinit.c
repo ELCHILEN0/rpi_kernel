@@ -150,7 +150,7 @@ static spinlock_t my_lock;
 
 static int scalar_multiply_id = 0;
 void perf_strided_scalar_multiply() {
-    int my_id = __atomic_fetch_add(&scalar_multiply_id, 1, __ATOMIC_RELAXED);
+    int my_id = __atomic_fetch_add(&scalar_multiply_id, 1, __ATOMIC_RELAXED) % SECTIONS;
 
     const int x = my_id % STRIDE;
     const int y = my_id / STRIDE;
@@ -171,16 +171,26 @@ void perf_strided_scalar_multiply() {
 void perf_root() {
     pid_t core_id = get_core_id();
 
-    for (int i = 0; i < SECTIONS/NUM_CORES; i++) {
-        // syscreate(perf_scalar_multiply, 1024);
-        syscreate(perf_strided_scalar_multiply, 1024);
+    // for (int i = 0; i < SECTIONS/NUM_CORES; i++) {
+    //     // syscreate(perf_scalar_multiply, 1024);
+    //     syscreate(perf_strided_scalar_multiply, 1024);
+    // }
+
+    if (core_id == 0) {
+        for (int i = 0; i < SECTIONS; i++) {
+            // syscreate(perf_scalar_multiply, 1024);
+            syscreate(perf_strided_scalar_multiply, 1024);
+        }
     }
 
     // for (int i = 0; i < SECTIONS/NUM_CORES; i++) {    
     //     syscreate(perf_proc, 1024);
     // }
 
-    // syscreate(yield_proc, 1024);
+    // for (int i = 0; i < SECTIONS/NUM_CORES; i++) {
+    //     // syscreate(perf_scalar_multiply, 1024);
+    //     syscreate(perf_strided_scalar_multiply, 1024);
+    // }
 
     while(true) sysyield();
 }

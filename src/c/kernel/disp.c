@@ -11,7 +11,11 @@ struct list_head process_list;
 // } runqueue_t;
 
 #ifdef SCHED_AFFINITY
-struct list_head ready_queue[NUM_CORES][PRIORITY_HIGH + 1];
+// struct list_head ready_queue[NUM_CORES][PRIORITY_HIGH + 1];
+
+ready_queue_t ready_queue[NUM_CORES] = {0};
+extern uint64_t live_procs;
+
 #else
 extern struct list_head ready_queue[PRIORITY_HIGH + 1];    
 #endif
@@ -28,7 +32,9 @@ void disp_init() {
     for (int i = PRIORITY_IDLE; i <= PRIORITY_HIGH; i++) {
         #ifdef SCHED_AFFINITY
         for (int j = 0; j < NUM_CORES; j++) {
-            INIT_LIST_HEAD(&ready_queue[j][i]);
+            // INIT_LIST_HEAD(&ready_queue[j][i]);
+
+            INIT_LIST_HEAD(&ready_queue[j].tasks[i]);
         }
         #else
         INIT_LIST_HEAD(&ready_queue[i]);
@@ -47,7 +53,12 @@ void disp_init() {
 process_t *next( void ) {
     for (int i = PRIORITY_HIGH; i >= PRIORITY_IDLE; i--) {
         #ifdef SCHED_AFFINITY        
-        struct list_head *head = &ready_queue[get_core_id()][i];
+        // struct list_head *head = &ready_queue[get_core_id()][i];
+        ready_queue_t *target_queue = &ready_queue[get_core_id()];
+
+        __spin_lock(&target_queue->lock);
+        // struct list_head *head = &ready_queue[get_core_id()].tasks[i];
+        struct list_head *head = &target_queue->tasks[i];
         #else
         __spin_lock(&scheduler_lock);        
         struct list_head *head = &ready_queue[i];
@@ -57,7 +68,10 @@ process_t *next( void ) {
         list_for_each_entry_safe(process, next, head, sched_list) {
             list_del_init(&process->sched_list);
             
-            #ifndef SCHED_AFFINITY            
+            #ifdef SCHED_AFFINITY
+            target_queue->length -= 1;
+            __spin_unlock(&target_queue->lock);    
+            #else        
             __spin_unlock(&scheduler_lock);
             #endif
 
@@ -68,12 +82,46 @@ process_t *next( void ) {
             return process;
         }
 
-        #ifndef SCHED_AFFINITY
+        #ifdef SCHED_AFFINITY
+        __spin_unlock(&target_queue->lock);
+        #else
         __spin_unlock(&scheduler_lock);   
         #endif      
     }
 
     return NULL; // TODO: while(true); ... never run out of processes
+}
+
+int find_busiest_core() {
+    int busiest_core = 0;
+    int busiest_count = 0;
+
+    // TODO: Opportunity for other forms of "busy"
+    for (int i = 0; i < NUM_CORES; i++) {
+        ready_queue_t *rq = &ready_queue[i];
+        if (rq->length > busiest_count) {
+            busiest_core = i;
+            busiest_count = rq->length;
+        }
+    }
+
+    return busiest_core;
+}
+
+int find_inactive_core() {
+    int inactive_core = 0;
+    uint64_t inactive_count = INT_FAST64_MAX;
+
+    // TODO: Opportunity for other forms of "busy"
+    for (int i = 0; i < NUM_CORES; i++) {
+        ready_queue_t *rq = &ready_queue[i];
+        if (rq->length < inactive_count) {
+            inactive_core = i;
+            inactive_count = rq->length;
+        }
+    }
+
+    return inactive_core;
 }
 
 /*
@@ -85,9 +133,26 @@ void ready( process_t *process ) {
     // process->block_state = NONE;
 
     #ifdef SCHED_AFFINITY
-    list_del_init(&process->sched_list);    
-    // TODO: Opportunity for rebalancing     
-    list_add_tail(&process->sched_list, &ready_queue[get_core_id()][process->current_priority]);           
+    int inactive_core = find_inactive_core();
+    ready_queue_t *target_queue = &ready_queue[get_core_id()];
+
+    __spin_lock(&target_queue->lock);
+
+    // Is it optimal to migrate this process
+    if (target_queue->length * 100 / live_procs > 25) {
+        __spin_unlock(&target_queue->lock);
+        target_queue = &ready_queue[inactive_core];
+        __spin_lock(&target_queue->lock);        
+    }
+    // TODO: migrating more than one processes to this queue can also be done? eg 100% with inactive core recalc
+
+    // TODO: Possibly pull more than one process.
+    
+    target_queue->length += 1;
+    list_del_init(&process->sched_list);
+    list_add_tail(&process->sched_list, &target_queue->tasks[process->current_priority]);
+    __spin_unlock(&target_queue->lock);
+        
     #else
     __spin_lock(&scheduler_lock);    
     list_del_init(&process->sched_list);    
@@ -121,7 +186,7 @@ void common_interrupt( int interrupt_type ) {
 
     for (int i = 0; i < PERF_COUNTERS; i++) {
         curr->perf_count[0][get_core_id()][i] += pmu_read_pmn(i);
-    }   
+    }
     // pmu_reset_ccnt();
     pmu_reset_pmn();
 
