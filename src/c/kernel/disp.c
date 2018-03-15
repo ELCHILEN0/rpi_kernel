@@ -225,7 +225,7 @@ void common_interrupt( int interrupt_type ) {
     switch (request) {
         case SYS_CREATE:
         {
-            void *start_routine = va_arg(args, void *);
+            void *(*start_routine)(void *) = va_arg(args, void *);
 
             pthread_t discard;
             code = proc_create(curr, &discard, start_routine, NULL, PRIORITY_MED);
@@ -258,7 +258,7 @@ void common_interrupt( int interrupt_type ) {
             {
                 pthread_t *thread = va_arg(args, pthread_t *);
                 va_arg(args, pthread_attr_t *);
-                void (*start_routine)(void *) = va_arg(args, void *);
+                void *(*start_routine)(void *) = va_arg(args, void *);
                 void *arg = va_arg(args, void *);
 
                 code = proc_create(curr, thread, start_routine, arg, PRIORITY_MED);

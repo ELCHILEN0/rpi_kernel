@@ -37,7 +37,7 @@ process_t *get_process(pid_t pid) {
     return NULL;
 }
 
-enum syscall_return_state proc_create(process_t *proc, pthread_t *thread, void (*start_routine)(void *), void *arg, enum process_priority priority) {
+enum syscall_return_state proc_create(process_t *proc, pthread_t *thread, void *(*start_routine)(void *), void *arg, enum process_priority priority) {
     int stack_size = PROC_STACK;
     
     __spin_lock(&newlib_lock);
@@ -71,7 +71,7 @@ enum syscall_return_state proc_create(process_t *proc, pthread_t *thread, void (
         .reg  = {
             [0 ... 31] = 0,
             [0] = (uint64_t) arg,
-            [30] = (uint64_t) sysexit
+            [30] = (uint64_t) pthread_exit
         }
     };
     process->ret = frame.reg[0];
@@ -103,6 +103,7 @@ enum syscall_return_state proc_create(process_t *proc, pthread_t *thread, void (
     INIT_LIST_HEAD(&process->sched_list);
     
     // Scheduling List
+    process->waiting.lock.flag = 0;
     INIT_LIST_HEAD(&process->waiting.tasks);
     INIT_LIST_HEAD(&process->sending);
     INIT_LIST_HEAD(&process->recving);
@@ -162,7 +163,7 @@ enum syscall_return_state proc_exit(process_t *proc, void *status) {
             "l2 access", 
             "l2 refill");
     for (int i = 0; i < NUM_CORES; i++) {
-        printf("USR  %10llu %10llu %10llu %10llu %10llu %10llu\r\n",  
+        printf("USR  %10lu %10lu %10lu %10lu %10lu %10lu\r\n",  
                 proc->perf_count[0][i][0],
                 proc->perf_count[0][i][1],
                 proc->perf_count[0][i][2],
@@ -171,7 +172,7 @@ enum syscall_return_state proc_exit(process_t *proc, void *status) {
                 proc->perf_count[0][i][5]);
     }
     for (int i = 0; i < NUM_CORES; i++) {
-        printf("SYS  %10llu %10llu %10llu %10llu %10llu %10llu\r\n",  
+        printf("SYS  %10lu %10lu %10lu %10lu %10lu %10lu\r\n",  
                 proc->perf_count[0][i][0],
                 proc->perf_count[1][i][1],
                 proc->perf_count[1][i][2],
