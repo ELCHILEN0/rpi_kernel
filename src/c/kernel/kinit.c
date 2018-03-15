@@ -181,6 +181,10 @@ void perf_root() {
             // syscreate(perf_scalar_multiply, 1024);
             syscreate(perf_strided_scalar_multiply, 1024);
         }
+
+        for (int i = 0; i < SECTIONS; i++) {
+            syscreate(perf_scalar_multiply, 1024);
+        }
     }
 
     // for (int i = 0; i < SECTIONS/NUM_CORES; i++) {    
