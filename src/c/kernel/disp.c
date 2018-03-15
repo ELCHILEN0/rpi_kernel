@@ -19,7 +19,6 @@ extern uint64_t live_procs;
 #else
 extern struct list_head ready_queue[PRIORITY_HIGH + 1];    
 #endif
-struct list_head sleep_queue[NUM_CORES]; // Each core has its own sleep queue, avoids conflicting ticks.
 
 process_t *running_list[NUM_CORES];
 
@@ -40,10 +39,6 @@ void disp_init() {
         INIT_LIST_HEAD(&ready_queue[i]);
         #endif        
     }
-
-    for (int i = 0; i < NUM_CORES; i++) {
-        INIT_LIST_HEAD(&sleep_queue[i]);
-    }    
 }
 
 /**
@@ -161,19 +156,27 @@ void ready( process_t *process ) {
     #endif
 }
 
-/*
- * The block function shall add a process to the blocked queue.  Additionally 
- * the functions block_state will be set as specified.  The process shall be 
- * removed from any existing scheduler queues.
- */
-void block( process_t *process, struct list_head *queue, enum blocked_state reason ) {
-    process->state = BLOCKED;
-    process->block_state = reason;
+void sleep_on(process_t *task, wait_queue_t *queue) {
+    task->state = BLOCKED;
 
-    __spin_lock(&scheduler_lock);
-    list_del_init(&process->sched_list);
-    list_add_tail(&process->sched_list, queue);
-    __spin_unlock(&scheduler_lock);        
+    __spin_lock(&queue->lock);
+    list_del_init(&task->sched_list);
+    list_add_tail(&task->sched_list, &queue->tasks);
+    __spin_unlock(&queue->lock);
+}
+
+void wake_up(wait_queue_t *queue, bool (*condition)(process_t *curr)) {
+    __spin_lock(&queue->lock);
+    
+    process_t *curr, *next;
+    list_for_each_entry_safe(curr, next, &queue->tasks, sched_list) {
+        if (condition(curr)) {
+            list_del_init(&curr->sched_list);
+            ready(curr);
+        }
+    }
+
+    __spin_unlock(&queue->lock);    
 }
 
 // TODO: Separate into context + disp...
@@ -189,28 +192,6 @@ void common_interrupt( int interrupt_type ) {
     }
     // pmu_reset_ccnt();
     pmu_reset_pmn();
-
-    // TODO: Signal Frame
-    // int next_sig = msb(process->pending_signal);
-    // int curr_sig = msb(process->blocked_signal);    
-
-    // if (next_sig != -1 && next_sig > curr_sig) {
-        // aarch64_frame_t sig_frame = {
-        //     .spsr = process->frame->spsr,
-        //     .elr  = 0, // TODO: sigtramp
-        //     .reg  = {
-        //         [0 ... 31] = 0,
-        //         [0] = process->frame,
-        //         [1] = next_sig,
-        //         [30] = 0, // TODO: sigreturn
-        //     }
-        // };
-    //     // process->frame -= sizeof(aarch64_frame_t);
-    //     // memcpy(process->frame, sig_frame, sizeof(sig_frame));
-
-    //     process->pending_signal &= ~(1 << next_sig);
-    //     process->blocked_signal |= (1 << next_sig);
-    // }
 
     uint64_t request, args_ptr;
     switch (interrupt_type) {
@@ -261,16 +242,6 @@ void common_interrupt( int interrupt_type ) {
         case SYS_KILL:
             // Later
             break;
-        case SYS_SLEEP:
-        {
-            unsigned int ms = va_arg(args, unsigned int);
-            code = proc_sleep(curr, ms);
-            if (code != BLOCK) {
-                // Immediate wakeup
-                curr->ret = 0;
-            }
-            break;        
-        }
         case SYS_TIME_SLICE:
             code = proc_tick(curr);
             break;

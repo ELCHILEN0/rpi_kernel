@@ -64,7 +64,7 @@ void global_tick() {
 enum syscall_return_state proc_tick(process_t *proc) {
     proc->tick_count++;
 
-    global_tick();
+    // global_tick();
 
     return SCHED;
 }

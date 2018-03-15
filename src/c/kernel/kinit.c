@@ -227,7 +227,8 @@ void sleep_proc() {
     printf("%-3d [core %d] sleep_proc\r\n", pid, core_id);
     __spin_unlock(&newlib_lock);
 
-    syssleep(1 * 1000);
+    // syssleep(1 * 1000);
+    for (int i = 0; i < 0x100000; i++);
 
     __spin_lock(&newlib_lock);
     printf("%-3d [core %d] sleep_proc - woke\r\n", pid, core_id);
@@ -237,10 +238,6 @@ void sleep_proc() {
 void root_proc() {
     uint8_t core_id = get_core_id();
     pid_t pid = sysgetpid();
-
-    __spin_lock(&newlib_lock);
-    printf("%-3d [core %d] root_proc\r\n", pid, core_id);
-    __spin_unlock(&newlib_lock);
 
     pid_t child_pid;
     if (core_id == 0) {
@@ -325,7 +322,7 @@ void kernel_start() {
     process_t idle_proc_stub = { };
     process_t root_proc_stub = { };
     proc_create(&idle_proc_stub, idle_proc, 4096, PRIORITY_IDLE);
-    proc_create(&root_proc_stub, perf_root, 4096, PRIORITY_MED);
+    proc_create(&root_proc_stub, root_proc, 4096, PRIORITY_MED);
     if (!idle_proc_stub.ret || !root_proc_stub.ret)
         return;
   

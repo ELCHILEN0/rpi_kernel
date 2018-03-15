@@ -103,7 +103,7 @@ enum syscall_return_state proc_create(process_t *proc, void (*func)(), uint64_t 
     INIT_LIST_HEAD(&process->sched_list);
     
     // Scheduling List
-    INIT_LIST_HEAD(&process->waiting);
+    INIT_LIST_HEAD(&process->waiting.tasks);
     INIT_LIST_HEAD(&process->sending);
     INIT_LIST_HEAD(&process->recving);
 
@@ -113,8 +113,6 @@ enum syscall_return_state proc_create(process_t *proc, void (*func)(), uint64_t 
     list_add(&process->process_hash_list, get_process_bucket(process->pid));
     __spin_unlock(&process_hash_lock);
     __spin_unlock(&process_list_lock);
-
-    process->block_lock.flag = 0;
 
     ready(process);
     return OK;    
@@ -126,9 +124,7 @@ enum syscall_return_state proc_wait(process_t* proc, pid_t pid) {
     if (pid == 0 || !process || proc->pid == process->pid)
         return OK;
 
-    __spin_lock(&process->block_lock);
-    list_add(&process->waiting, &proc->sched_list);
-    __spin_unlock(&process->block_lock);
+    sleep_on(proc, &process->waiting);
     return BLOCK; 
 }
 
@@ -139,11 +135,11 @@ enum syscall_return_state proc_exit(process_t *proc) {
 
     __atomic_fetch_sub(&live_procs, 1, __ATOMIC_RELAXED);
 
-    process_t *p, *pnext;
-    list_for_each_entry_safe(p, pnext, &proc->waiting, sched_list) {
-        ready(p);
-        p->ret = 0;
+    bool wake_waiting(process_t *curr) { 
+        curr->ret = 0;
+        return true;
     }
+    wake_up(&proc->waiting, wake_waiting);
 
     // TODO: Cleanup sleepers...
     __spin_lock(&newlib_lock);

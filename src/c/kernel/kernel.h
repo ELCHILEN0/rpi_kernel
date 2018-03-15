@@ -28,7 +28,7 @@
 // ~ a time slice of 1 S = 19.2e6
 // ~ a time slice of 1 MS = 19.2e6/1e3
 #define CLOCK_FREQ 19200000
-#define CLOCK_DIVD 1000
+#define CLOCK_DIVD 10
 #define TICK_REARM (CLOCK_FREQ / CLOCK_DIVD)
 
 // Hash Function from: http://www.tldp.org/LDP/lki/lki-2.html
@@ -88,6 +88,20 @@ enum interrupt_source {
     INT_TIMER,
 };
 
+typedef struct {
+    spinlock_t lock;
+    int length;
+    // uint64_t avg_throughput;
+    // uint64_t avg_l1_refill;
+    // uint64_t avg_l2_refill;
+    struct list_head tasks[PRIORITY_HIGH + 1];
+} ready_queue_t;
+
+typedef struct {
+    spinlock_t lock;
+    struct list_head tasks;
+} wait_queue_t;
+
 // For implementation details see the __load_context routine.
 typedef struct {
     uint64_t spsr;    
@@ -129,24 +143,15 @@ typedef struct {
     struct list_head process_hash_list;
     struct list_head sched_list;
 
-    spinlock_t block_lock;
+    wait_queue_t waiting;
+
     // Scheduling Dependencies, processes blocked on an action by this process
     // struct {
-        struct list_head waiting;
         struct list_head sending;
         struct list_head recving;
         // TODO: Can we add ready list here too, if we want to implement some sort of tree of sucessors
     // };
 } process_t, pcb_t;
-
-typedef struct {
-    spinlock_t lock;
-    int length;
-    // uint64_t avg_throughput;
-    // uint64_t avg_l1_refill;
-    // uint64_t avg_l2_refill;
-    struct list_head tasks[PRIORITY_HIGH + 1];
-} ready_queue_t;
 
 extern spinlock_t newlib_lock;
 extern spinlock_t scheduler_lock;
@@ -157,7 +162,6 @@ extern ready_queue_t ready_queue[NUM_CORES];
 #else
 extern struct list_head ready_queue[];    
 #endif
-extern struct list_head sleep_queue[];
 
 // Initialization
 extern void kernel_init();
