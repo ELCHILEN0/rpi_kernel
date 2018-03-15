@@ -17,8 +17,8 @@ int syscall( int req_id, ... ) {
     return ret_code;
 }
 
-pid_t syscreate( void (*func)(void), uint64_t stack ) {
-    return syscall(SYS_CREATE, func, stack);
+pid_t syscreate( void (*func)(void *), void *arg ) {
+    return syscall(SYS_CREATE, func, arg);
 }
 
 void sysyield( void ) {
@@ -45,9 +45,9 @@ uint64_t syssleep(unsigned int ms) {
     return syscall(SYS_SLEEP, ms);
 }
 
-int sched_setaffinity(pid_t pid, size_t cpusetsize, cpu_set_t *mask) {
-    return syscall(SCHED_SET_AFFINITY, pid, cpusetsize, mask);
-}
+// int sched_setaffinity(pid_t pid, size_t cpusetsize, cpu_set_t *mask) {
+//     return syscall(SCHED_SET_AFFINITY, pid, cpusetsize, mask);
+// }
 
 // POSIX Thread API ...
 int pthread_create(pthread_t *thread, const pthread_attr_t *attr, void *(*start_routine)(void *), void *arg)

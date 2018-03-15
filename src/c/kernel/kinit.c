@@ -1,11 +1,11 @@
 #include "kernel.h"
 
 // Low priority user-space process, possibly not required...
-void idle_proc( uint32_t r0, uint32_t r1, uint32_t r2 ) {
+void idle_proc(void *arg) {
     while(true) asm("wfi");
 }
 
-void yield_proc() {
+void yield_proc(void *arg) {
     while(true) sysyield();
 }
 
@@ -138,7 +138,7 @@ void inner_multiply(const uint64_t a[MATRIX_M][MATRIX_N],
 #define STRIDE 2
 #define SECTIONS STRIDE * STRIDE
 
-void perf_scalar_multiply() {
+void perf_scalar_multiply(void *arg) {
     for (int i = 0; i < 1000; i++) {
         scalar_multiply(samples_s[0], 2,
                         0, MATRIX_M,
@@ -149,7 +149,7 @@ void perf_scalar_multiply() {
 static spinlock_t my_lock;
 
 static int scalar_multiply_id = 0;
-void perf_strided_scalar_multiply() {
+void perf_strided_scalar_multiply(void *arg) {
     int my_id = __atomic_fetch_add(&scalar_multiply_id, 1, __ATOMIC_RELAXED) % SECTIONS;
 
     const int x = my_id % STRIDE;
@@ -168,38 +168,38 @@ void perf_strided_scalar_multiply() {
     }
 }
 
-void perf_root() {
+void perf_root(void *arg) {
     pid_t core_id = get_core_id();
 
     // for (int i = 0; i < SECTIONS/NUM_CORES; i++) {
-    //     // syscreate(perf_scalar_multiply, 1024);
-    //     syscreate(perf_strided_scalar_multiply, 1024);
+    //     // syscreate(perf_scalar_multiply, NULL);
+    //     syscreate(perf_strided_scalar_multiply, NULL);
     // }
 
     if (core_id == 0) {
         for (int i = 0; i < SECTIONS; i++) {
-            // syscreate(perf_scalar_multiply, 1024);
-            syscreate(perf_strided_scalar_multiply, 1024);
+            // syscreate(perf_scalar_multiply, NULL);
+            syscreate(perf_strided_scalar_multiply, NULL);
         }
 
         for (int i = 0; i < SECTIONS; i++) {
-            syscreate(perf_scalar_multiply, 1024);
+            syscreate(perf_scalar_multiply, NULL);
         }
     }
 
     // for (int i = 0; i < SECTIONS/NUM_CORES; i++) {    
-    //     syscreate(perf_proc, 1024);
+    //     syscreate(perf_proc, NULL);
     // }
 
     // for (int i = 0; i < SECTIONS/NUM_CORES; i++) {
-    //     // syscreate(perf_scalar_multiply, 1024);
-    //     syscreate(perf_strided_scalar_multiply, 1024);
+    //     // syscreate(perf_scalar_multiply, NULL);
+    //     syscreate(perf_strided_scalar_multiply, NULL);
     // }
 
     while(true) sysyield();
 }
 
-void blink_proc() {
+void blink_proc(void *arg) {
     int core_id = get_core_id();
     int core_gpio[4] = { 5, 6, 13, 19 };
 
@@ -219,7 +219,7 @@ void blink_proc() {
     }
 }
 
-void sleep_proc() {
+void sleep_proc(void *arg) {
     int core_id = get_core_id();
     pid_t pid = sysgetpid();    
     
@@ -235,19 +235,19 @@ void sleep_proc() {
     __spin_unlock(&newlib_lock);
 }
 
-void root_proc() {
+void root_proc(void *arg) {
     uint8_t core_id = get_core_id();
     pid_t pid = sysgetpid();
 
     pid_t child_pid;
     if (core_id == 0) {
-        child_pid = syscreate(blink_proc, 1024);
+        child_pid = syscreate(blink_proc, NULL);
 
         __spin_lock(&newlib_lock);
         printf("%-3d [core %d] created process with pid %d\r\n", pid, core_id, child_pid);
         __spin_unlock(&newlib_lock);
 
-        child_pid = syscreate(sleep_proc, 1024);
+        child_pid = syscreate(sleep_proc, NULL);
 
         __spin_lock(&newlib_lock);
         printf("%-3d [core %d] waiting for %d\r\n", pid, core_id, child_pid);
@@ -259,8 +259,8 @@ void root_proc() {
         printf("%-3d [core %d] %d has terminated!\r\n", pid, core_id, child_pid);
         __spin_unlock(&newlib_lock);
     } else {
-        syscreate(yield_proc, 1024);
-        syscreate(yield_proc, 1024);
+        syscreate(yield_proc, NULL);
+        syscreate(yield_proc, NULL);
     }
 }
 
@@ -321,9 +321,11 @@ void kernel_start() {
     // Create initial processes
     process_t idle_proc_stub = { };
     process_t root_proc_stub = { };
-    proc_create(&idle_proc_stub, idle_proc, 4096, PRIORITY_IDLE);
-    proc_create(&root_proc_stub, root_proc, 4096, PRIORITY_MED);
-    if (!idle_proc_stub.ret || !root_proc_stub.ret)
+    pthread_t idle_thread = 0;
+    pthread_t root_thread = 0;
+    proc_create(&idle_proc_stub, &idle_thread, idle_proc, NULL, PRIORITY_IDLE);
+    proc_create(&root_proc_stub, &root_thread, root_proc, NULL, PRIORITY_MED);
+    if (!idle_thread || !root_thread)
         return;
   
     switch_to(next());

@@ -225,13 +225,14 @@ void common_interrupt( int interrupt_type ) {
     switch (request) {
         case SYS_CREATE:
         {
-            void *func = va_arg(args, void *);
-            int stack_size = va_arg(args, int);
-            code = proc_create(curr, func, stack_size, PRIORITY_MED);
+            void *start_routine = va_arg(args, void *);
+
+            pthread_t discard;
+            code = proc_create(curr, &discard, start_routine, NULL, PRIORITY_MED);
             break;
         }
         case SYS_EXIT:
-            code = proc_exit(curr);
+            code = proc_exit(curr, NULL);
             break;
         case SYS_YIELD:
             code = SCHED;
@@ -239,7 +240,7 @@ void common_interrupt( int interrupt_type ) {
         case SYS_WAIT_PID:
         {
             pid_t pid = va_arg(args, pid_t);
-            code = proc_wait(curr, pid);
+            code = proc_join(curr, pid, NULL);
             break;
         }
         case SYS_GET_PID:
@@ -256,34 +257,39 @@ void common_interrupt( int interrupt_type ) {
         case PTHREAD_CREATE:
             {
                 pthread_t *thread = va_arg(args, pthread_t *);
-                pthread_attr_t *attr = va_arg(args, pthread_attr_t *);
-                void *(*start_routine)(void *) = va_arg(args, void *);
+                va_arg(args, pthread_attr_t *);
+                void (*start_routine)(void *) = va_arg(args, void *);
                 void *arg = va_arg(args, void *);
 
-                code = proc_create(curr, start_routine, PROC_STACK, PRIORITY_MED);
+                code = proc_create(curr, thread, start_routine, arg, PRIORITY_MED);
             }
             break;
 
         case PTHREAD_EXIT:
-            // TODO: void *status...
-            code = proc_exit(curr);
+            {
+                void *status = va_arg(args, void *);
+                code = proc_exit(curr, status);
+            }
             break;
 
         case PTHREAD_JOIN:
+            {
+                pthread_t thread = va_arg(args, pthread_t);
+                void **status = va_arg(args, void **);
+
+                code = proc_join(curr, thread, status);
+            }
+            break;
+
         case PTHREAD_SELF:
+            code = proc_self(curr);
+            break;
+
         case PTHREAD_MUTEX_INIT:
         case PTHREAD_MUTEX_DESTROY:
         case PTHREAD_MUTEX_LOCK:
         case PTHREAD_MUTEX_TRYLOCK:
         case PTHREAD_MUTEX_UNLOCK:
-            {
-                pthread_t thread = va_arg(args, pthread_t);
-                void **status = va_arg(args, void **);
-
-                code = proc_wait(curr, thread);
-            }
-            break;
-
         default:
             __spin_lock(&newlib_lock);        
             printf("%-3d [core %d] dispatcher: unhandled request %ld\r\n", curr->pid, get_core_id(), request);

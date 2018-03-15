@@ -6,7 +6,7 @@
 TOOLCHAIN = /root/x-tools/gcc-linaro-5.5.0-2017.10-x86_64_aarch64-elf/bin/aarch64-elf
 
 AARCH = 
-CCFLAGS = -Wall -nostartfiles -ffreestanding -mcpu=cortex-a53 -ggdb 
+CCFLAGS = -Wall -nostartfiles -ffreestanding -mcpu=cortex-a53 -ggdb -D _POSIX_THREADS
 LIBS = -L /root/x-tools/sysroot-newlib-linaro-2017.10-aarch64-elf/usr/lib/include -L /root/x-tools/sysroot-newlib-linaro-2017.10-aarch64-elf/usr/lib
 
 TARGET = kernel8
