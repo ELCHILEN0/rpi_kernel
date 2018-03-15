@@ -45,29 +45,39 @@ uint64_t syssleep(unsigned int ms) {
     return syscall(SYS_SLEEP, ms);
 }
 
+int sched_setaffinity(pid_t pid, size_t cpusetsize, cpu_set_t *mask) {
+    return syscall(SCHED_SET_AFFINITY, pid, cpusetsize, mask);
+}
+
 // POSIX Thread API ...
-// TODO: Mutex, Semaphore, Cond
-// TODO: All processes can be represented as PThreads
-
-/*
-int pthread_create(pthread_t * thread, const pthread_attr_t * attr, void * (*start_routine)(void *), void * arg)
+int pthread_create(pthread_t *thread, const pthread_attr_t *attr, void *(*start_routine)(void *), void *arg)
 {
-    return syscall(SYS_CREATE, thread, start_routine, arg);
-}
-
-pthread_t pthread_self(void) {
-    return syscall(SYS_GET_PID);
-}
-
-void pthread_exit(void * status) {
-    syscall(SYS_EXIT, status);
-}
-
-int pthread_join(pthread_t thread, void ** status) {
-    return syscall(SYS_WAIT_PID, thread, status);
+    return syscall(PTHREAD_CREATE, thread, start_routine, arg);
 }
 
 int pthread_equal(pthread_t thread_1, pthread_t thread_2) {
     return thread_1 == thread_2;
 }
-*/
+
+void pthread_exit(void * status) {
+    syscall(PTHREAD_EXIT, status);
+}
+
+int pthread_join(pthread_t thread, void ** status) {
+    return syscall(PTHREAD_JOIN, thread, status);
+}
+
+pthread_t pthread_self(void) {
+    return syscall(PTHREAD_SELF);
+}
+
+// int pthread_mutex_init(pthread_mutex_t * mutex,
+//         const pthread_mutex_attr *attr);
+
+// int pthread_mutex_destroy(pthread_mutex_t * mutex);
+
+// int pthread_mutex_lock(pthread_mutex_t * mutex);
+
+// int pthread_mutex_trylock(pthread_mutex_t * mutex);
+
+// int pthread_mutex_unlock(pthread_mutex_t * mutex);

@@ -7,6 +7,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+#include <errno.h>
 #include <sys/types.h>
 #include <string.h>
 
@@ -81,6 +82,21 @@ enum interrupt_request {
     SYS_SLEEP,
 
     SYS_TIME_SLICE,
+
+    SYS_SET_PERF,
+
+    SCHED_SET_AFFINITY,
+    SCHED_GET_AFFINITY,
+    PTHREAD_CREATE,
+    PTHREAD_EQUAL,
+    PTHREAD_EXIT,
+    PTHREAD_JOIN,
+    PTHREAD_SELF,
+    PTHREAD_MUTEX_INIT,
+    PTHREAD_MUTEX_DESTROY,
+    PTHREAD_MUTEX_LOCK,
+    PTHREAD_MUTEX_TRYLOCK,
+    PTHREAD_MUTEX_UNLOCK,
 };
 
 enum interrupt_source {
@@ -95,6 +111,11 @@ typedef struct {
     // uint64_t avg_l1_refill;
     // uint64_t avg_l2_refill;
     struct list_head tasks[PRIORITY_HIGH + 1];
+    // TODO:
+    // struct {
+    //     spinlock_t lock;
+    //     struct list_head tasks;
+    // } plist[PRIORITY_HIGH + 1];
 } ready_queue_t;
 
 typedef struct {

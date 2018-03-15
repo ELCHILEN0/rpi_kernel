@@ -252,6 +252,38 @@ void common_interrupt( int interrupt_type ) {
             code = proc_tick(curr);
             break;
 
+        
+        case PTHREAD_CREATE:
+            {
+                pthread_t *thread = va_arg(args, pthread_t *);
+                pthread_attr_t *attr = va_arg(args, pthread_attr_t *);
+                void *(*start_routine)(void *) = va_arg(args, void *);
+                void *arg = va_arg(args, void *);
+
+                code = proc_create(curr, start_routine, PROC_STACK, PRIORITY_MED);
+            }
+            break;
+
+        case PTHREAD_EXIT:
+            // TODO: void *status...
+            code = proc_exit(curr);
+            break;
+
+        case PTHREAD_JOIN:
+        case PTHREAD_SELF:
+        case PTHREAD_MUTEX_INIT:
+        case PTHREAD_MUTEX_DESTROY:
+        case PTHREAD_MUTEX_LOCK:
+        case PTHREAD_MUTEX_TRYLOCK:
+        case PTHREAD_MUTEX_UNLOCK:
+            {
+                pthread_t thread = va_arg(args, pthread_t);
+                void **status = va_arg(args, void **);
+
+                code = proc_wait(curr, thread);
+            }
+            break;
+
         default:
             __spin_lock(&newlib_lock);        
             printf("%-3d [core %d] dispatcher: unhandled request %ld\r\n", curr->pid, get_core_id(), request);

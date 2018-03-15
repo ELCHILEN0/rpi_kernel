@@ -37,30 +37,29 @@ process_t *get_process(pid_t pid) {
     return NULL;
 }
 
-enum syscall_return_state proc_create(process_t *proc, void (*func)(), uint64_t stack_size, enum process_priority priority) {
-    if (stack_size < PROC_STACK)
-        stack_size = PROC_STACK;   
-
+enum syscall_return_state proc_create(process_t *proc, pthread_t *thread, void (*start_routine)(void *), void *arg, enum process_priority priority) {
+    int stack_size = PROC_STACK;
+    
     __spin_lock(&newlib_lock);
     process_t *process = malloc(sizeof(process_t));
     void *stack_base = malloc(stack_size);
-    // printf("process: %d, stack: %d\r\n", process, stack_base);
     __spin_unlock(&newlib_lock);
     if (!process || !stack_base) {
         // TODO: is this free of races...
         free(process);
         free(stack_base);
 
-        proc->ret = -1;
+        proc->ret = EAGAIN;
         return OK;
     }
 
     pid_t pid = __atomic_fetch_add(&next_pid, 1, __ATOMIC_RELAXED); // TODO: __ATOMIC_RELAXED
     if (next_pid == 0) {
-        proc->ret = -1;
+        proc->ret = EAGAIN;
         return OK;
     } else {
-        proc->ret = pid;
+        proc->ret = 0;
+        *thread = pid;
     }
 
     __atomic_fetch_add(&live_procs, 1, __ATOMIC_RELAXED);
@@ -68,9 +67,10 @@ enum syscall_return_state proc_create(process_t *proc, void (*func)(), uint64_t 
     aarch64_frame_t frame = {
         // .spsr = 0b00000, // EL0
         .spsr = 0b00100,    // EL1t
-        .elr  = (uint64_t) func,
+        .elr  = (uint64_t) start_routine,
         .reg  = {
             [0 ... 31] = 0,
+            [0] = (uint64_t) arg,
             [30] = (uint64_t) sysexit
         }
     };
@@ -118,11 +118,13 @@ enum syscall_return_state proc_create(process_t *proc, void (*func)(), uint64_t 
     return OK;    
 }
 
-enum syscall_return_state proc_wait(process_t* proc, pid_t pid) {
+enum syscall_return_state proc_wait(process_t* proc, pid_t pid, void **status) {
     process_t* process = get_process(pid);
 
-    if (pid == 0 || !process || proc->pid == process->pid)
+    if (pid == 0 || !process || proc->pid == process->pid) {
+        proc->ret = EINVAL;
         return OK;
+    }
 
     sleep_on(&process->waiting, proc);
     return BLOCK; 
@@ -144,27 +146,30 @@ enum syscall_return_state proc_exit(process_t *proc) {
     // TODO: Cleanup sleepers...
     __spin_lock(&newlib_lock);
     printf("%-3d [core %d] exiting\r\n", proc->pid, get_core_id());
-    printf("MODE %10s %10s %10s %10s %10s %10s\r\n",    "instrs", 
-                                                        "cycles", 
-                                                        "l1 access", 
-                                                        "l1 refill", 
-                                                        "l2 access", 
-                                                        "l2 refill");
+    printf("MODE %10s %10s %10s %10s %10s %10s\r\n",   
+            "instrs", 
+            "cycles", 
+            "l1 access", 
+            "l1 refill", 
+            "l2 access", 
+            "l2 refill");
     for (int i = 0; i < NUM_CORES; i++) {
-        printf("USR  %10lu %10lu %10lu %10lu %10lu %10lu\r\n",  proc->perf_count[0][i][0],
-                                                                proc->perf_count[0][i][1],
-                                                                proc->perf_count[0][i][2],
-                                                                proc->perf_count[0][i][3],
-                                                                proc->perf_count[0][i][4],
-                                                                proc->perf_count[0][i][5]);
+        printf("USR  %10llu %10llu %10llu %10llu %10llu %10llu\r\n",  
+                proc->perf_count[0][i][0],
+                proc->perf_count[0][i][1],
+                proc->perf_count[0][i][2],
+                proc->perf_count[0][i][3],
+                proc->perf_count[0][i][4],
+                proc->perf_count[0][i][5]);
     }
     for (int i = 0; i < NUM_CORES; i++) {
-        printf("SYS  %10lu %10lu %10lu %10lu %10lu %10lu\r\n",  proc->perf_count[1][i][0],
-                                                                proc->perf_count[1][i][1],
-                                                                proc->perf_count[1][i][2],
-                                                                proc->perf_count[1][i][3],
-                                                                proc->perf_count[1][i][4],
-                                                                proc->perf_count[1][i][5]);
+        printf("SYS  %10llu %10llu %10llu %10llu %10llu %10llu\r\n",  
+                proc->perf_count[0][i][0],
+                proc->perf_count[1][i][1],
+                proc->perf_count[1][i][2],
+                proc->perf_count[1][i][3],
+                proc->perf_count[1][i][4],
+                proc->perf_count[1][i][5]);
     }
     __spin_unlock(&newlib_lock);
 
