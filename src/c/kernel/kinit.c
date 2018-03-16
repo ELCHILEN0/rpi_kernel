@@ -1,6 +1,5 @@
 #include "include/kinit.h"
 
-spinlock_t my_lock;
 spinlock_t newlib_lock;
 
 // Low priority user-space process, possibly not required...

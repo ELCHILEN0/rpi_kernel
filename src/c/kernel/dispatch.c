@@ -95,7 +95,7 @@ int find_busiest_core() {
 
 int find_inactive_core() {
     int inactive_core = 0;
-    uint64_t inactive_count = INT_FAST64_MAX;
+    int inactive_count = INT32_MAX;
 
     // TODO: Opportunity for other forms of "busy"
     for (int i = 0; i < NUM_CORES; i++) {
@@ -249,9 +249,6 @@ void common_interrupt( int interrupt_type ) {
         case SCHED_YIELD:
             code = SCHED;
             break;
-        case SYS_KILL:
-            // Later
-            break;
         case SYS_TIME_SLICE:
             code = proc_tick();
             break;
@@ -288,12 +285,66 @@ void common_interrupt( int interrupt_type ) {
             current->ret = current->pid;
             break;
 
+        // Semaphore: Synchronization Routines
+        case SEM_INIT:
+            {
+                sem_t *sem = va_arg(args, sem_t *);
+                int pshared = va_arg(args, int);
+                unsigned int value = va_arg(args, unsigned int);
+
+                code = __sem_init(sem, pshared, value);
+            }
+            break;
+
+        case SEM_DESTROY:
+            {
+                sem_t *sem = va_arg(args, sem_t *);
+
+                code = __sem_destroy(sem);
+            }
+            break;
+
+        case SEM_WAIT:
+            {
+                sem_t *sem = va_arg(args, sem_t *);
+
+                code = __sem_wait(sem);
+            }
+            break;
+
+        case SEM_TRY_WAIT:
+            {
+                sem_t *sem = va_arg(args, sem_t *);
+
+                code = __sem_trywait(sem);
+            }
+            break;
+
+        case SEM_POST:
+            {
+                sem_t *sem = va_arg(args, sem_t *);
+
+                code = __sem_post(sem);
+            }
+            break;
+
+        case SEM_GET_VALUE:
+            {
+                sem_t *sem = va_arg(args, sem_t *);
+                int *sval = va_arg(args, int *);
+
+                code = __sem_getvalue(sem, sval);
+            }
+            break;
+
+
         // PThread: Synchronization Routines
         case PTHREAD_MUTEX_INIT:
         case PTHREAD_MUTEX_DESTROY:
         case PTHREAD_MUTEX_LOCK:
         case PTHREAD_MUTEX_TRYLOCK:
         case PTHREAD_MUTEX_UNLOCK:
+        case SYS_KILL:
         default:
             __spin_lock(&newlib_lock);        
             printf("%-3d [core %d] dispatcher: unhandled request %ld\r\n", current->pid, get_core_id(), request);
