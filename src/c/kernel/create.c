@@ -37,7 +37,7 @@ process_t *get_process(pid_t pid) {
     return NULL;
 }
 
-enum syscall_return_state proc_create(process_t *proc, pthread_t *thread, void *(*start_routine)(void *), void *arg, enum process_priority priority) {
+enum return_state proc_create(process_t *proc, pthread_t *thread, void *(*start_routine)(void *), void *arg, enum process_priority priority) {
     int stack_size = PROC_STACK;
     
     __spin_lock(&newlib_lock);
@@ -119,12 +119,12 @@ enum syscall_return_state proc_create(process_t *proc, pthread_t *thread, void *
     return OK;    
 }
 
-enum syscall_return_state proc_self(process_t *proc) {
+enum return_state proc_self(process_t *proc) {
     proc->ret = proc->pid;
     return OK;
 }
 
-enum syscall_return_state proc_join(process_t* proc, pid_t pid, void **status) {
+enum return_state proc_join(process_t* proc, pid_t pid, void **status) {
     process_t* process = get_process(pid);
 
     if (pid == 0 || !process || proc->pid == process->pid) {
@@ -132,7 +132,7 @@ enum syscall_return_state proc_join(process_t* proc, pid_t pid, void **status) {
         return OK;
     }
 
-    // TODO: status...
+    proc->status = status;
 
     sleep_on(&process->waiting, proc);
     return BLOCK; 
@@ -140,14 +140,16 @@ enum syscall_return_state proc_join(process_t* proc, pid_t pid, void **status) {
 
 // Unschedule and return a processes resources to the kernel, any processes blocked on the
 // process will be scheduled and have their return code set appropriately.
-enum syscall_return_state proc_exit(process_t *proc, void *status) {
+enum return_state proc_exit(process_t *proc, void *status) {
     proc->state = ZOMBIE;
 
     __atomic_fetch_sub(&live_procs, 1, __ATOMIC_RELAXED);
 
     bool wake_waiting(process_t *curr) {
         curr->ret = 0;
-        // TODO: status...
+
+        if (curr->status)
+            *curr->status = status;
         return true;
     }
     alert_on(&proc->waiting, wake_waiting);

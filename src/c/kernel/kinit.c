@@ -180,28 +180,33 @@ void *perf_root(void *arg) {
     pid_t core_id = get_core_id();
 
     // for (int i = 0; i < SECTIONS/NUM_CORES; i++) {
-    //     // syscreate(perf_scalar_multiply, NULL);
-    //     syscreate(perf_strided_scalar_multiply, NULL);
+    //     pthread_t thread_id;
+    //     // pthread_create(&thread_id, NULL, perf_scalar_multiply, NULL);
+    //     pthread_create(&thread_id, NULL, perf_strided_scalar_multiply, NULL);
     // }
 
     if (core_id == 0) {
         for (int i = 0; i < SECTIONS; i++) {
-            // syscreate(perf_scalar_multiply, NULL);
-            syscreate(&perf_strided_scalar_multiply, NULL);
+            pthread_t thread_id;
+            // pthread_create(&thread_id, NULL, perf_scalar_multiply, NULL);
+            pthread_create(&thread_id, NULL, &perf_strided_scalar_multiply, NULL);
         }
 
         for (int i = 0; i < SECTIONS; i++) {
-            syscreate(&perf_scalar_multiply, NULL);
+            pthread_t thread_id;            
+            pthread_create(&thread_id, NULL, &perf_scalar_multiply, NULL);
         }
     }
 
     // for (int i = 0; i < SECTIONS/NUM_CORES; i++) {    
-    //     syscreate(perf_proc, NULL);
+    //     pthread_t thread_id;
+    //     pthread_create(&thread_id, NULL, &perf_proc, NULL);
     // }
 
     // for (int i = 0; i < SECTIONS/NUM_CORES; i++) {
-    //     // syscreate(perf_scalar_multiply, NULL);
-    //     syscreate(perf_strided_scalar_multiply, NULL);
+    //     pthread_t thread_id;        
+    //     // pthread_create(&thread_id, NULL, perf_scalar_multiply, NULL);
+    //     pthread_create(&thread_id, NULL, perf_strided_scalar_multiply, NULL);
     // }
 
     while(true) sysyield();
@@ -265,8 +270,9 @@ void *root_proc(void *arg) {
         printf("%-3d [core %d] %d has terminated!\r\n", pid, core_id, thread_id);
         __spin_unlock(&newlib_lock);
     } else {
-        syscreate(&yield_proc, NULL);
-        syscreate(&yield_proc, NULL);
+        pthread_t thread_id;
+        pthread_create(&thread_id, NULL, &yield_proc, NULL);
+        pthread_create(&thread_id, NULL, &yield_proc, NULL);
     }
 
     return NULL;

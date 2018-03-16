@@ -6,7 +6,7 @@ uint64_t ms_to_ticks(uint64_t ms) {
     return ms / (1000 / CLOCK_DIVD);
 }
 
-enum syscall_return_state proc_sleep(process_t *proc, unsigned int ms) {
+enum return_state proc_sleep(process_t *proc, unsigned int ms) {
     // Ticks to sleep
     proc->tick_delta = ms_to_ticks(ms);
     if (proc->tick_delta <= 0)
@@ -61,7 +61,7 @@ void global_tick() {
     }
 }
 
-enum syscall_return_state proc_tick(process_t *proc) {
+enum return_state proc_tick(process_t *proc) {
     proc->tick_count++;
 
     // global_tick();

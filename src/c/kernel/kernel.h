@@ -41,7 +41,7 @@
 
 extern uint64_t live_procs;
 
-enum syscall_return_state {
+enum return_state {
     OK,
     SCHED,
     BLOCK,
@@ -136,6 +136,8 @@ typedef struct {
     uint64_t ret;
     uint64_t args;
 
+    void **status;
+
     // Scheduling
     // TODO: Idle Balancing, busiest -> idleest
     // TODO: load balance without locking? per core input channel/buffer, lazy synchronization? lockless queue or spinlock queue or try-acquire/continue?
@@ -209,20 +211,17 @@ extern void alert_on(wait_queue_t *queue, bool (*condition)(process_t *curr));
 extern void common_interrupt( int interrupt_type );
 
 // Helper Functions
-extern enum syscall_return_state proc_create(process_t *proc, pthread_t *thread, void *(*start_routine)(void *), void *arg, enum process_priority priority);
-extern enum syscall_return_state proc_self  (process_t *proc);
-extern enum syscall_return_state proc_exit  (process_t *proc, void *status);
-extern enum syscall_return_state proc_join  (process_t* proc, pid_t pid, void **status);
+extern enum return_state proc_create(process_t *proc, pthread_t *thread, void *(*start_routine)(void *), void *arg, enum process_priority priority);
+extern enum return_state proc_self  (process_t *proc);
+extern enum return_state proc_exit  (process_t *proc, void *status);
+extern enum return_state proc_join  (process_t* proc, pid_t pid, void **status);
 
-extern enum syscall_return_state proc_tick  (process_t *proc);
-extern enum syscall_return_state proc_sleep (process_t *proc, unsigned int ms);
+extern enum return_state proc_tick  (process_t *proc);
+extern enum return_state proc_sleep (process_t *proc, unsigned int ms);
 
 // Syscalls
-extern pid_t syscreate( void *(*start_routine)(void *), void *arg);
 extern pid_t sysgetpid( void );
 extern void sysyield( void );
-extern void sysexit( void );
-extern uint64_t syswaitpid( pid_t pid );
 // extern void syskill( pid_t pid, int sig );
 extern uint64_t syssleep(unsigned int ms);
 extern void sys_printk(char *str);

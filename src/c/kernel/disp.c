@@ -219,30 +219,13 @@ void common_interrupt( int interrupt_type ) {
             while(true); // Unhandled Interrupt 
     }
 
-    enum syscall_return_state code = OK;
+    enum return_state code = OK;
 
     va_list args = *(va_list *) args_ptr;
     switch (request) {
-        case SYS_CREATE:
-        {
-            void *(*start_routine)(void *) = va_arg(args, void *);
-
-            pthread_t discard;
-            code = proc_create(curr, &discard, start_routine, NULL, PRIORITY_MED);
-            break;
-        }
-        case SYS_EXIT:
-            code = proc_exit(curr, NULL);
-            break;
         case SYS_YIELD:
             code = SCHED;
             break;
-        case SYS_WAIT_PID:
-        {
-            pid_t pid = va_arg(args, pid_t);
-            code = proc_join(curr, pid, NULL);
-            break;
-        }
         case SYS_GET_PID:
             curr->ret = curr->pid;
             break;
@@ -253,7 +236,7 @@ void common_interrupt( int interrupt_type ) {
             code = proc_tick(curr);
             break;
 
-        
+        // PThread: Basic Routines
         case PTHREAD_CREATE:
             {
                 pthread_t *thread = va_arg(args, pthread_t *);
@@ -285,6 +268,7 @@ void common_interrupt( int interrupt_type ) {
             code = proc_self(curr);
             break;
 
+        // PThread: Synchronization Routines
         case PTHREAD_MUTEX_INIT:
         case PTHREAD_MUTEX_DESTROY:
         case PTHREAD_MUTEX_LOCK:

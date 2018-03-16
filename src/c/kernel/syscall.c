@@ -1,6 +1,5 @@
 #include "kernel.h"
 
-/* Your code goes here */
 int syscall( int req_id, ... ) {
     int ret_code;
  
@@ -17,20 +16,8 @@ int syscall( int req_id, ... ) {
     return ret_code;
 }
 
-pid_t syscreate( void *(*start_routine)(void *), void *arg ) {
-    return syscall(SYS_CREATE, start_routine, arg);
-}
-
 void sysyield( void ) {
     syscall(SYS_YIELD);
-}
-
-void sysexit( void ) {
-    syscall(SYS_EXIT);
-}
-
-uint64_t syswaitpid( pid_t pid ) {
-    return syscall(SYS_WAIT_PID, pid);
 }
 
 pid_t sysgetpid( void ) {
