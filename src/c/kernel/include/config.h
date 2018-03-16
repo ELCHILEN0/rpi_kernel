@@ -21,7 +21,7 @@ extern "C" {
 
 #define SCHED_AFFINITY
 
-#define NUM_CORES       1
+#define NUM_CORES       4
 #define PERF_COUNTERS   6
 
 // Clock Frequencey 19.2 MHz

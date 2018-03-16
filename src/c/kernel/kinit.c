@@ -3,7 +3,6 @@
 spinlock_t my_lock;
 spinlock_t newlib_lock;
 
-
 // Low priority user-space process, possibly not required...
 void *idle_proc(void *arg) {
     while(true) asm("wfi");
@@ -370,9 +369,9 @@ void kernel_init( void )
         disp_init();
 
         // Release Kernel Cores! (value doesnt matter)
-        // core_mailbox->set[3][0] = true;
-        // core_mailbox->set[2][0] = true;
-        // core_mailbox->set[1][0] = true;
+        core_mailbox->set[3][0] = true;
+        core_mailbox->set[2][0] = true;
+        core_mailbox->set[1][0] = true;
         core_mailbox->set[0][0] = true;
     }
 
