@@ -1,4 +1,4 @@
-#include "kinit.h"
+#include "include/kinit.h"
 
 struct list_head sleep_queue[NUM_CORES]; // Each core has its own sleep queue, avoids conflicting ticks.
 

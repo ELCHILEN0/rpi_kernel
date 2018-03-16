@@ -18,10 +18,7 @@ COPY = /Volumes/boot
 SOBJ = bootcode64.o vectors64.o
 UOBJ = cstartup.o cstubs.o init.o peripheral.o gpio.o multicore.o uart.o mailbox.o interrupts.o timer.o perf.o
 # UOBJ = cstartup.o cstubs.o init.o peripheral.o gpio.o mailbox.o interrupts.o timer.o uart.o multicore.o cache.o
-HOBJ =  peripheral.h gpio.h multicore.h uart.h mailbox.h interrupts.h timer.h
 KOBJ = kinit.o context.o syscall.o dispatch.o create.o signal.o sleep.o semaphore.o
-
-HOBJ += kernel/kinit.h kernel/list.h kernel/context.h kernel/config.h kernel/dispatch.h kernel/semaphore.h
 
 all: $(BUILD)/$(TARGET).img $(BUILD)/$(TARGET).list
 
@@ -37,13 +34,13 @@ $(BUILD)/$(TARGET).list: $(BUILD)/$(TARGET).elf
 $(BUILD)/$(TARGET).img: $(BUILD)/$(TARGET).elf
 	$(TOOLCHAIN)-objcopy -O binary $(BUILD)/$(TARGET).elf $(BUILD)/$(TARGET).img
 
-$(addprefix $(BUILD)/, $(SOBJ)): $(BUILD)/%.o: $(SOURCE)/asm/%.s $(addprefix $(SOURCE)/c/, $(HOBJ))
+$(addprefix $(BUILD)/, $(SOBJ)): $(BUILD)/%.o: $(SOURCE)/asm/%.s $(SOURCE)/c/include
 	$(TOOLCHAIN)-as $(SOURCE)/asm/$(basename $(@F)).s -o $@
 
-$(addprefix $(BUILD)/, $(UOBJ)): $(BUILD)/%.o: $(SOURCE)/c/%.c $(addprefix $(SOURCE)/c/, $(HOBJ))
+$(addprefix $(BUILD)/, $(UOBJ)): $(BUILD)/%.o: $(SOURCE)/c/%.c $(SOURCE)/c/include
 	$(TOOLCHAIN)-gcc $(CCFLAGS) -c $(SOURCE)/c/$(basename $(@F)).c -o $@
 
-$(addprefix $(BUILD)/, $(KOBJ)): $(BUILD)/%.o: $(SOURCE)/c/kernel/%.c $(addprefix $(SOURCE)/c/, $(HOBJ))
+$(addprefix $(BUILD)/, $(KOBJ)): $(BUILD)/%.o: $(SOURCE)/c/kernel/%.c $(SOURCE)/c/include $(SOURCE)/c/kernel/include
 	$(TOOLCHAIN)-gcc $(CCFLAGS) -c $(SOURCE)/c/kernel/$(basename $(@F)).c -o $@
 
 copy: all

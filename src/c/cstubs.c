@@ -3,7 +3,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 
-#include "uart.h"
+#include "include/uart.h"
 
 // TODO: Important!
 // TODO: linker wrap option, wrap some of the syscalls (eg. malloc/printf to kernel/nonkernel specific)

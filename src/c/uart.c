@@ -1,7 +1,7 @@
-#include "uart.h"
-#include "peripheral.h"
+#include "include/uart.h"
+#include "include/peripheral.h"
 
-#include "gpio.h"
+#include "include/gpio.h"
 
 aux_t *aux = (aux_t *) AUX_BASE;
 // uart_t *uart0 = (uart_t *) UART0_BASE;

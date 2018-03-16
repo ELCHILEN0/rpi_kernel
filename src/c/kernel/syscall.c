@@ -1,4 +1,4 @@
-#include "config.h"
+#include "include/config.h"
 
 int syscall( int req_id, ... ) {
     int ret_code;

@@ -1,4 +1,4 @@
-#include "peripheral.h"
+#include "include/peripheral.h"
 
 // Memory-Mapped I/O output
 inline void mmio_write(uint32_t reg, uint32_t data)

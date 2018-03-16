@@ -1,4 +1,4 @@
-#include "interrupts.h"
+#include "include/interrupts.h"
 
 interrupt_vector_t vector_table_esr[4][ESR_ELx_EC_MAX + 1] = {
     [0 ... 3][0 ... ESR_ELx_EC_MAX]  = { .identify = NULL, .handle = undefined_handler }

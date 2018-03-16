@@ -1,5 +1,5 @@
-#include "gpio.h"
-#include "peripheral.h"
+#include "include/gpio.h"
+#include "include/peripheral.h"
 
 gpio_t *gpio = (gpio_t *) GPIO_BASE;
 

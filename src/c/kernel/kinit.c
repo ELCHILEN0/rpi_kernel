@@ -1,4 +1,4 @@
-#include "kinit.h"
+#include "include/kinit.h"
 
 spinlock_t my_lock;
 spinlock_t newlib_lock;
