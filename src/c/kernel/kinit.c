@@ -8,7 +8,7 @@ void *idle_proc(void *arg) {
 }
 
 void *yield_proc(void *arg) {
-    while(true) sysyield();
+    while(true) sched_yield();
 
     return NULL;    
 }
@@ -209,14 +209,14 @@ void *perf_root(void *arg) {
     //     pthread_create(&thread_id, NULL, perf_strided_scalar_multiply, NULL);
     // }
 
-    while(true) sysyield();
+    while(true) sched_yield();
 }
 
 void *blink_proc(void *arg) {
     int core_id = get_core_id();
     int core_gpio[4] = { 5, 6, 13, 19 };
 
-    pid_t pid = sysgetpid();    
+    pid_t pid = pthread_self();    
 
     __spin_lock(&newlib_lock);
     printf("%-3d [core %d] blink_proc\r\n", pid, core_id);
@@ -234,7 +234,7 @@ void *blink_proc(void *arg) {
 
 void *sleep_proc(void *arg) {
     int core_id = get_core_id();
-    pid_t pid = sysgetpid();    
+    pid_t pid = pthread_self();    
     
     __spin_lock(&newlib_lock);
     printf("%-3d [core %d] sleep_proc\r\n", pid, core_id);
@@ -252,7 +252,7 @@ void *sleep_proc(void *arg) {
 
 void *root_proc(void *arg) {
     uint8_t core_id = get_core_id();
-    pid_t pid = sysgetpid();
+    pid_t pid = pthread_self();
 
     if (core_id == 0) {
         pthread_t thread_id;

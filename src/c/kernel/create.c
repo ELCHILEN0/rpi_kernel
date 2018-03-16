@@ -119,11 +119,6 @@ enum return_state proc_create(process_t *proc, pthread_t *thread, void *(*start_
     return OK;    
 }
 
-enum return_state proc_self(process_t *proc) {
-    proc->ret = proc->pid;
-    return OK;
-}
-
 enum return_state proc_join(process_t* proc, pid_t pid, void **status) {
     process_t* process = get_process(pid);
 

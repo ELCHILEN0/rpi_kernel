@@ -223,11 +223,8 @@ void common_interrupt( int interrupt_type ) {
 
     va_list args = *(va_list *) args_ptr;
     switch (request) {
-        case SYS_YIELD:
+        case SCHED_YIELD:
             code = SCHED;
-            break;
-        case SYS_GET_PID:
-            curr->ret = curr->pid;
             break;
         case SYS_KILL:
             // Later
@@ -265,7 +262,7 @@ void common_interrupt( int interrupt_type ) {
             break;
 
         case PTHREAD_SELF:
-            code = proc_self(curr);
+            curr->ret = curr->pid;
             break;
 
         // PThread: Synchronization Routines

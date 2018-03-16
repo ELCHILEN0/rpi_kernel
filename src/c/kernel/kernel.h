@@ -8,6 +8,8 @@
 #include <stdio.h>
 
 #include <pthread.h>
+#include <sched.h>
+
 #include <errno.h>
 #include <sys/types.h>
 #include <string.h>
@@ -73,21 +75,16 @@ enum process_state {
 };
 
 enum interrupt_request {
-    SYS_CREATE,
-    SYS_YIELD,
-    SYS_EXIT,
-    SYS_WAIT_PID,
-    SYS_GET_PID,
-    SYS_KILL,
-
-    SYS_SLEEP,
-
     SYS_TIME_SLICE,
 
-    SYS_SET_PERF,
+    SYS_KILL,
+    SYS_SLEEP,
+    SYS_SET_PERF,    
 
+    SCHED_YIELD,
     SCHED_SET_AFFINITY,
     SCHED_GET_AFFINITY,
+
     PTHREAD_CREATE,
     PTHREAD_EQUAL,
     PTHREAD_EXIT,
@@ -212,7 +209,6 @@ extern void common_interrupt( int interrupt_type );
 
 // Helper Functions
 extern enum return_state proc_create(process_t *proc, pthread_t *thread, void *(*start_routine)(void *), void *arg, enum process_priority priority);
-extern enum return_state proc_self  (process_t *proc);
 extern enum return_state proc_exit  (process_t *proc, void *status);
 extern enum return_state proc_join  (process_t* proc, pid_t pid, void **status);
 
@@ -220,7 +216,6 @@ extern enum return_state proc_tick  (process_t *proc);
 extern enum return_state proc_sleep (process_t *proc, unsigned int ms);
 
 // Syscalls
-extern pid_t sysgetpid( void );
 extern void sysyield( void );
 // extern void syskill( pid_t pid, int sig );
 extern uint64_t syssleep(unsigned int ms);

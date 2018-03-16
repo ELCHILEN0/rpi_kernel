@@ -16,14 +16,6 @@ int syscall( int req_id, ... ) {
     return ret_code;
 }
 
-void sysyield( void ) {
-    syscall(SYS_YIELD);
-}
-
-pid_t sysgetpid( void ) {
-    return syscall(SYS_GET_PID);
-}
-
 int syskill( pid_t pid, int sig ) {
     return syscall(SYS_KILL, pid, sig);
 }
@@ -35,7 +27,7 @@ uint64_t syssleep(unsigned int ms) {
 // Scheduler API ...
 int sched_yield(void)
 {
-    return syscall(SYS_YIELD);
+    return syscall(SCHED_YIELD);
 }
 
 // int sched_setaffinity(pid_t pid, size_t cpusetsize, cpu_set_t *mask) {
