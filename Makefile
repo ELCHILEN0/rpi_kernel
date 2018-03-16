@@ -18,7 +18,7 @@ COPY = /Volumes/boot
 SOBJ = bootcode64.o vectors64.o
 UOBJ = cstartup.o cstubs.o init.o peripheral.o gpio.o multicore.o uart.o mailbox.o interrupts.o timer.o perf.o
 # UOBJ = cstartup.o cstubs.o init.o peripheral.o gpio.o mailbox.o interrupts.o timer.o uart.o multicore.o cache.o
-KOBJ = kinit.o context.o syscall.o dispatch.o create.o signal.o sleep.o semaphore.o
+KOBJ = kinit.o context.o syscall.o dispatch.o thread.o signal.o sleep.o semaphore.o
 
 all: $(BUILD)/$(TARGET).img $(BUILD)/$(TARGET).list
 
