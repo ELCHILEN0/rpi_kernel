@@ -1,6 +1,10 @@
 #ifndef UART_H
 #define UART_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 
 /*
@@ -85,5 +89,9 @@ extern aux_t *aux;
 extern void uart_init( unsigned int baudrate  );
 extern void uart_putc(unsigned char c);
 extern unsigned char uart_getc();
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif

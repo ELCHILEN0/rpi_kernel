@@ -1,4 +1,4 @@
-#include "kernel.h"
+#include "kinit.h"
 
 struct list_head sleep_queue[NUM_CORES]; // Each core has its own sleep queue, avoids conflicting ticks.
 
@@ -6,10 +6,10 @@ uint64_t ms_to_ticks(uint64_t ms) {
     return ms / (1000 / CLOCK_DIVD);
 }
 
-enum return_state proc_sleep(process_t *proc, unsigned int ms) {
+enum return_state proc_sleep(unsigned int ms) {
     // Ticks to sleep
-    proc->tick_delta = ms_to_ticks(ms);
-    if (proc->tick_delta <= 0)
+    current->tick_delta = ms_to_ticks(ms);
+    if (current->tick_delta <= 0)
         return OK;
     
     struct list_head *head = &sleep_queue[get_core_id()];
@@ -17,21 +17,21 @@ enum return_state proc_sleep(process_t *proc, unsigned int ms) {
     process_t *entry;
     // Find insert position + delta offset
     list_for_each_entry(entry, head, sched_list) {
-        if (proc->tick_delta <= entry->tick_delta)      
+        if (current->tick_delta <= entry->tick_delta)      
             break;
 
-        proc->tick_delta -= entry->tick_delta;
+        current->tick_delta -= entry->tick_delta;
     }
 
     // Add to dlist
     if (list_empty(head)) {
-        list_add(&proc->sched_list, head);
+        list_add(&current->sched_list, head);
     } else {
-        list_add(&proc->sched_list, &entry->sched_list);
+        list_add(&current->sched_list, &entry->sched_list);
 
         // Decrement the next entry
-        list_for_each_entry_continue(proc, head, sched_list) {
-            entry->tick_delta -= proc->tick_delta;
+        list_for_each_entry_continue(current, head, sched_list) {
+            entry->tick_delta -= current->tick_delta;
             break;     
         }
     }
@@ -61,8 +61,8 @@ void global_tick() {
     }
 }
 
-enum return_state proc_tick(process_t *proc) {
-    proc->tick_count++;
+enum return_state proc_tick() {
+    current->tick_count++;
 
     // global_tick();
 

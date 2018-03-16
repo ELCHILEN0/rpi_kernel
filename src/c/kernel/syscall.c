@@ -1,4 +1,4 @@
-#include "kernel.h"
+#include "config.h"
 
 int syscall( int req_id, ... ) {
     int ret_code;
@@ -22,6 +22,11 @@ int syskill( pid_t pid, int sig ) {
 
 uint64_t syssleep(unsigned int ms) {
     return syscall(SYS_SLEEP, ms);
+}
+
+// Unistd API ...
+pid_t getpid(void) {
+    return syscall(PTHREAD_SELF);
 }
 
 // Scheduler API ...
@@ -66,3 +71,4 @@ pthread_t pthread_self(void) {
 // int pthread_mutex_trylock(pthread_mutex_t * mutex);
 
 // int pthread_mutex_unlock(pthread_mutex_t * mutex);
+

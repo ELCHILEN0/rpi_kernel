@@ -1,6 +1,10 @@
 #ifndef INTERRUPTS_H
 #define INTERRUPTS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stddef.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -76,5 +80,9 @@ typedef struct {
 
 void undefined_handler();
 extern void register_interrupt_handler(uint8_t core_id, bool sync, unsigned int entry, interrupt_vector_t vec);
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif

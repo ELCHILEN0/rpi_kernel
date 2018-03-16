@@ -1,4 +1,8 @@
-#include "kernel.h"
+#include "kinit.h"
+
+spinlock_t my_lock;
+spinlock_t newlib_lock;
+
 
 // Low priority user-space process, possibly not required...
 void *idle_proc(void *arg) {
@@ -151,8 +155,6 @@ void *perf_scalar_multiply(void *arg) {
 
     return NULL;    
 }
-
-static spinlock_t my_lock;
 
 static int scalar_multiply_id = 0;
 void *perf_strided_scalar_multiply(void *arg) {
@@ -333,12 +335,11 @@ void kernel_start() {
     pmu_reset_pmn();
 
     // Create initial processes
-    process_t idle_proc_stub = { };
-    process_t root_proc_stub = { };
+    running_list[get_core_id()] = &(process_t) { };
     pthread_t idle_thread = 0;
     pthread_t root_thread = 0;
-    proc_create(&idle_proc_stub, &idle_thread, &idle_proc, NULL, PRIORITY_IDLE);
-    proc_create(&root_proc_stub, &root_thread, &root_proc, NULL, PRIORITY_MED);
+    proc_create(&idle_thread, &idle_proc, NULL, PRIORITY_IDLE);
+    proc_create(&root_thread, &root_proc, NULL, PRIORITY_MED);
     if (!idle_thread || !root_thread)
         return;
   

@@ -1,6 +1,10 @@
 #ifndef TIMER_H
 #define TIMER_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -76,5 +80,9 @@ extern uint64_t core_timer_count();
 
 local_timer_t *local_timer;
 core64_timer_t *core64_timer;
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif

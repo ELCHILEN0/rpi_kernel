@@ -1,6 +1,10 @@
 #ifndef MAILBOX_H
 #define MAILBOX_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -85,5 +89,9 @@ extern void mailbox_write(mailbox_t *mailbox, mailbox0_channel_t channel, uint32
 extern uint32_t mailbox_read_beta(mailbox_t *mailbox, mailbox0_channel_t channel);
 
 extern void core_mailbox_interrupt_routing( uint8_t core_id, core_mailbox_interrupt_t type );
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif
