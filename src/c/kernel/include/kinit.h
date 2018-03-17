@@ -20,8 +20,12 @@ extern "C" {
 
 extern spinlock_t newlib_lock;
 extern spinlock_t scheduler_lock;
+extern spinlock_t process_list_lock;
+extern spinlock_t process_hash_lock;
 
+extern pid_t    next_pid;
 extern uint64_t live_procs;
+
 
 #ifdef SCHED_AFFINITY
 // extern struct list_head ready_queue[NUM_CORES][PRIORITY_HIGH + 1];

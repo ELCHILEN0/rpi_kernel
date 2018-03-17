@@ -1,7 +1,7 @@
 #include "include/kinit.h"
 
-static pid_t next_pid = 1;
-uint64_t live_procs = 0;
+pid_t       next_pid = 1;
+uint64_t    live_procs = 0;
 
 spinlock_t process_list_lock;
 spinlock_t process_hash_lock;
