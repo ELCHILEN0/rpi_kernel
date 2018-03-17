@@ -30,6 +30,6 @@ void switch_to(process_t *process) {
     " :: "r" (process->frame));
 }
 
-void *align(void *ptr) {
-    return (void *) ((uint64_t) ptr & -16);
+void *align(void *ptr, unsigned int alignment) {
+    return (void *) ((uint64_t) ptr & -alignment);
 }

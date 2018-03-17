@@ -28,7 +28,6 @@ int __sem_trywait (sem_t *sem);
 int __sem_post    (sem_t *sem);	
 int __sem_getvalue (sem_t *sem, int *sval);
 
-
 #ifdef __cplusplus
 };
 #endif

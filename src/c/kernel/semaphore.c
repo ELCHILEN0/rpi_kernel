@@ -30,15 +30,19 @@ int __sem_destroy (sem_t *sem) {
 int __sem_wait (sem_t *sem) {
     __spin_lock(&sem->lock);
 
-    if (likely(sem->count > 0))
+    if (likely(sem->count > 0)) {
         sem->count--;
-    else
+        __spin_unlock(&sem->lock); 
+
+        current->ret = 0;
+        return OK;
+    } else {
         sleep_on_locked(&sem->tasks, current);
+        __spin_unlock(&sem->lock);
 
-    __spin_unlock(&sem->lock); 
-
-    current->ret = 0;
-    return BLOCK;
+        current->ret = 0;
+        return BLOCK;
+    }
 }
 
 int __sem_trywait (sem_t *sem) {

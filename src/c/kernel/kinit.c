@@ -1,6 +1,7 @@
 #include "include/kinit.h"
 
 spinlock_t newlib_lock;
+sem_t psem;
 
 // Low priority user-space process, possibly not required...
 void *idle_proc(void *arg) {
@@ -236,9 +237,11 @@ void *sleep_proc(void *arg) {
     int core_id = get_core_id();
     pid_t pid = pthread_self();    
     
-    __spin_lock(&newlib_lock);
+    // __spin_lock(&newlib_lock);
+    sem_wait(&psem);
     printf("%-3d [core %d] sleep_proc\r\n", pid, core_id);
-    __spin_unlock(&newlib_lock);
+    sem_post(&psem);
+    // __spin_unlock(&newlib_lock);
 
     // syssleep(1 * 1000);
     for (int i = 0; i < 0x100000; i++);
@@ -255,6 +258,8 @@ void *root_proc(void *arg) {
     pid_t pid = pthread_self();
 
     if (core_id == 0) {
+        sem_init(&psem, 0, 1);
+
         pthread_t thread_id;
         pthread_create(&thread_id, NULL, &sleep_proc, NULL);
 
@@ -272,7 +277,9 @@ void *root_proc(void *arg) {
     } else {
         pthread_t thread_id;
         pthread_create(&thread_id, NULL, &yield_proc, NULL);
-        pthread_create(&thread_id, NULL, &yield_proc, NULL);
+
+        void *join_status;
+        pthread_join(thread_id, &join_status);
     }
 
     return NULL;

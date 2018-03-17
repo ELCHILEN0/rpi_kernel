@@ -68,10 +68,9 @@ typedef struct process {
     // };
 } process_t, pcb_t;
 
-extern void switch_from(process_t *process);
-extern void switch_to  (process_t *process);
-extern void *align(void *ptr);
-// extern void __load_context(void);
+extern void switch_from (process_t *process);
+extern void switch_to   (process_t *process);
+extern void *align      (void *ptr, unsigned int alignment);
 
 #ifdef __cplusplus
 };

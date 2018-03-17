@@ -80,7 +80,7 @@ enum return_state proc_create(pthread_t *thread, void *(*start_routine)(void *),
 
     process->stack_base = stack_base;
     process->stack_size = stack_size;
-    process->frame = memcpy(align(stack_base + stack_size - sizeof(aarch64_frame_t)), &frame, sizeof(frame));
+    process->frame = memcpy(align(stack_base + stack_size - sizeof(aarch64_frame_t), 16), &frame, sizeof(frame));
 
     process->state = NEW;    
     process->initial_priority = priority;
