@@ -2,28 +2,32 @@
 
 #include "include/kinit.h"
 
-int sem_init (sem_t *sem, int pshared, unsigned int value) {
-    if (pshared != 0)
-        return ENOSYS;
+int __sem_init (sem_t *sem, int pshared, unsigned int value) {
+    if (pshared != 0) {
+        current->ret = ENOSYS;
+        return OK;
+    }
 
     sem->lock.flag = 0;
     sem->count = value;
     INIT_LIST_HEAD(&sem->tasks);
 
-    return 0;
+    current->ret = 0;
+    return OK;
 }
 
-int sem_destroy (sem_t * sem) {
+int __sem_destroy (sem_t *sem) {
     __spin_lock(&sem->lock);
     bool condition(process_t *curr) {
         return true;
     }
     alert_on_locked(&sem->tasks, condition);
 
-    return 0;
+    current->ret = 0;
+    return OK;
 }
 
-int sem_wait (sem_t * sem) {
+int __sem_wait (sem_t *sem) {
     __spin_lock(&sem->lock);
 
     if (likely(sem->count > 0))
@@ -33,10 +37,11 @@ int sem_wait (sem_t * sem) {
 
     __spin_unlock(&sem->lock); 
 
-    return 0;   
+    current->ret = 0;
+    return BLOCK;
 }
 
-int sem_trywait (sem_t * sem) {
+int __sem_trywait (sem_t *sem) {
     __spin_lock(&sem->lock);
 
     int count = sem->count - 1;
@@ -45,10 +50,11 @@ int sem_trywait (sem_t * sem) {
 
     __spin_unlock(&sem->lock); 
 
-    return count < 0;
+    current->ret = count < 0 ? EAGAIN : 0;
+    return OK;
 }	
 
-int sem_post (sem_t * sem) {
+int __sem_post (sem_t *sem) {
     __spin_lock(&sem->lock);
 
     bool woke = false;
@@ -63,15 +69,17 @@ int sem_post (sem_t * sem) {
 
     __spin_unlock(&sem->lock); 
 
-    return 0;
+    current->ret = 0;
+    return OK;
 }
 
-int sem_getvalue (sem_t * sem, int * sval) {
+int __sem_getvalue (sem_t *sem, int *sval) {
     __spin_lock(&sem->lock);
 
     *sval = sem->count;
 
     __spin_unlock(&sem->lock);
 
-    return 0;
+    current->ret = 0;
+    return OK;
 }

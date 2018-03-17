@@ -28,9 +28,9 @@ extern uint64_t live_procs;
 
 
 #ifdef SCHED_AFFINITY
-// extern struct list_head ready_queue[NUM_CORES][PRIORITY_HIGH + 1];
 extern ready_queue_t ready_queue[NUM_CORES];
 #else
+extern spinlock_t scheduler_lock;
 extern struct list_head ready_queue[];    
 #endif
 
@@ -51,10 +51,6 @@ extern enum return_state proc_join  (pid_t pid, void **status);
 
 extern enum return_state proc_tick  ();
 extern enum return_state proc_sleep (unsigned int ms);
-
-// Syscalls
-// extern void syskill( pid_t pid, int sig );
-// extern uint64_t syssleep(unsigned int ms);
 
 int msb(uint64_t x);
 int lsb(uint64_t x);

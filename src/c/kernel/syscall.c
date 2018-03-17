@@ -1,4 +1,5 @@
 #include "include/config.h"
+#include "include/semaphore.h"
 
 int syscall( int req_id, ... ) {
     int ret_code;
@@ -72,3 +73,26 @@ pthread_t pthread_self(void) {
 
 // int pthread_mutex_unlock(pthread_mutex_t * mutex);
 
+int sem_init (sem_t *sem, int pshared, unsigned int value) {
+    return syscall(SEM_INIT, sem, pshared, value);
+}
+
+int sem_destroy (sem_t *sem) {
+    return syscall(SEM_DESTROY, sem);
+}
+
+int sem_wait (sem_t *sem) {
+    return syscall(SEM_WAIT, sem);
+}
+
+int sem_trywait (sem_t *sem) {
+    return syscall(SEM_TRY_WAIT, sem);
+}
+
+int sem_post (sem_t *sem) {
+    return syscall(SEM_POST, sem);
+}
+
+int sem_getvalue (sem_t *sem, int *sval) {
+    return syscall(SEM_GET_VALUE, sem, sval);
+}

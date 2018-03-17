@@ -15,7 +15,7 @@
 #include "include/multicore.h"
 #include "include/perf.h"
 
-#include "kernel/kinit.h"
+#include "kernel/include/kinit.h"
 
 uint32_t act_message[] = {32, 0, 0x00038041, 8, 0, 130, 0, 0};
 
