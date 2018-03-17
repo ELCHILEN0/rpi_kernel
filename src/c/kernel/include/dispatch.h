@@ -24,12 +24,6 @@ typedef struct wait_queue {
     struct list_head    tasks;
 } wait_queue_t;
 
-typedef struct semaphore {
-	spinlock_t		    lock;
-	unsigned int		count;
-	struct list_head    tasks;
-} sem_t;
-
 // Blocking
 void sleep_on(struct list_head *head, process_t *task, spinlock_t *lock);
 void sleep_on_locked(struct list_head *head, process_t *task);

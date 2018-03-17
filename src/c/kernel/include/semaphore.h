@@ -9,10 +9,23 @@ extern "C" {
 #include <errno.h>
 
 #include "config.h"
+#include "../../include/multicore.h"
 
-#include "list.h"
-#include "sched.h"
-#include "context.h"
+typedef struct semaphore {
+	spinlock_t		    lock;
+	unsigned int		count;
+	struct list_head    tasks;
+} sem_t;
+
+// TODO: Split this into a user vs kernel semaphore...
+// count and tasks should never be exposed to the user
+// typedef struct semaphore {
+//     unsigned int id;
+// } usem_t;
+
+// typedef struct semaphore {
+
+// } ksem_t;
 
 int sem_init    (sem_t *sem, int pshared, unsigned int value);
 int sem_destroy (sem_t *sem);
