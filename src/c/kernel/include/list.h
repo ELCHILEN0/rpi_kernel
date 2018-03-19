@@ -17,6 +17,10 @@
 #ifndef _LINUX_LIST_H
 #define _LINUX_LIST_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stddef.h>
 
 /**
@@ -529,5 +533,8 @@ static inline void hlist_add_after(struct hlist_node *n,
                 ({ tpos = hlist_entry(pos, typeof(*tpos), member); 1;}); \
              pos = n)
 
+#ifdef __cplusplus
+};
+#endif
 
 #endif

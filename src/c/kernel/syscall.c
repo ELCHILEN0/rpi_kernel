@@ -1,6 +1,7 @@
-#include "kernel.h"
+#include "include/config.h"
+#include "include/semaphore.h"
+#include "include/context.h"
 
-/* Your code goes here */
 int syscall( int req_id, ... ) {
     int ret_code;
  
@@ -17,26 +18,6 @@ int syscall( int req_id, ... ) {
     return ret_code;
 }
 
-pid_t syscreate( void (*func)(void), uint64_t stack ) {
-    return syscall(SYS_CREATE, func, stack);
-}
-
-void sysyield( void ) {
-    syscall(SYS_YIELD);
-}
-
-void sysexit( void ) {
-    syscall(SYS_EXIT);
-}
-
-uint64_t syswaitpid( pid_t pid ) {
-    return syscall(SYS_WAIT_PID, pid);
-}
-
-pid_t sysgetpid( void ) {
-    return syscall(SYS_GET_PID);
-}
-
 int syskill( pid_t pid, int sig ) {
     return syscall(SYS_KILL, pid, sig);
 }
@@ -45,29 +26,74 @@ uint64_t syssleep(unsigned int ms) {
     return syscall(SYS_SLEEP, ms);
 }
 
-// POSIX Thread API ...
-// TODO: Mutex, Semaphore, Cond
-// TODO: All processes can be represented as PThreads
+// Unistd API ...
+pid_t getpid(void) {
+    return syscall(PTHREAD_SELF);
+}
 
-/*
-int pthread_create(pthread_t * thread, const pthread_attr_t * attr, void * (*start_routine)(void *), void * arg)
+// Scheduler API ...
+int sched_yield(void)
 {
-    return syscall(SYS_CREATE, thread, start_routine, arg);
+    return syscall(SCHED_YIELD);
 }
 
-pthread_t pthread_self(void) {
-    return syscall(SYS_GET_PID);
+int sched_setaffinity(pid_t pid, size_t cpusetsize, cpu_set_t *mask) {
+    return syscall(SCHED_SET_AFFINITY, pid, cpusetsize, mask);
 }
 
-void pthread_exit(void * status) {
-    syscall(SYS_EXIT, status);
-}
-
-int pthread_join(pthread_t thread, void ** status) {
-    return syscall(SYS_WAIT_PID, thread, status);
+// POSIX Thread API ...
+int pthread_create(pthread_t *thread, const pthread_attr_t *attr, void *(*start_routine)(void *), void *arg)
+{
+    return syscall(PTHREAD_CREATE, thread, attr, start_routine, arg);
 }
 
 int pthread_equal(pthread_t thread_1, pthread_t thread_2) {
     return thread_1 == thread_2;
 }
-*/
+
+void pthread_exit(void * status) {
+    syscall(PTHREAD_EXIT, status);
+}
+
+int pthread_join(pthread_t thread, void ** status) {
+    return syscall(PTHREAD_JOIN, thread, status);
+}
+
+pthread_t pthread_self(void) {
+    return syscall(PTHREAD_SELF);
+}
+
+// int pthread_mutex_init(pthread_mutex_t * mutex,
+//         const pthread_mutex_attr *attr);
+
+// int pthread_mutex_destroy(pthread_mutex_t * mutex);
+
+// int pthread_mutex_lock(pthread_mutex_t * mutex);
+
+// int pthread_mutex_trylock(pthread_mutex_t * mutex);
+
+// int pthread_mutex_unlock(pthread_mutex_t * mutex);
+
+int sem_init (sem_t *sem, int pshared, unsigned int value) {
+    return syscall(SEM_INIT, sem, pshared, value);
+}
+
+int sem_destroy (sem_t *sem) {
+    return syscall(SEM_DESTROY, sem);
+}
+
+int sem_wait (sem_t *sem) {
+    return syscall(SEM_WAIT, sem);
+}
+
+int sem_trywait (sem_t *sem) {
+    return syscall(SEM_TRY_WAIT, sem);
+}
+
+int sem_post (sem_t *sem) {
+    return syscall(SEM_POST, sem);
+}
+
+int sem_getvalue (sem_t *sem, int *sval) {
+    return syscall(SEM_GET_VALUE, sem, sval);
+}

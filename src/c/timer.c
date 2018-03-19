@@ -1,5 +1,5 @@
-#include "timer.h"
-#include "peripheral.h"
+#include "include/timer.h"
+#include "include/peripheral.h"
 
 local_timer_t *local_timer = (local_timer_t *) 0x40000024;
 core64_timer_t *core64_timer = (core64_timer_t *) 0x40000000;

@@ -6,7 +6,7 @@ ARG LINARO_GCC_VERSION=gcc-linaro-5.5.0-2017.10-x86_64_aarch64-elf
 ARG LINARO_LIB_VERSION=sysroot-newlib-linaro-2017.10-aarch64-elf
 
 # Fetch dependencies
-RUN yum install -y wget which make file autoconf
+RUN yum install -y wget which make file autoconf git
 
 # Fetch toolchain
 WORKDIR /root/x-tools

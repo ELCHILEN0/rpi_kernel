@@ -5,17 +5,17 @@
 #include <unistd.h>
 #include <stdbool.h>
 
-#include "peripheral.h"
-#include "gpio.h"
-#include "timer.h"
-#include "uart.h"
-#include "interrupts.h"
+#include "include/peripheral.h"
+#include "include/gpio.h"
+#include "include/timer.h"
+#include "include/uart.h"
+#include "include/interrupts.h"
 
-#include "mailbox.h"
-#include "multicore.h"
-#include "perf.h"
+#include "include/mailbox.h"
+#include "include/multicore.h"
+#include "include/perf.h"
 
-#include "kernel/kernel.h"
+#include "kernel/include/kinit.h"
 
 uint32_t act_message[] = {32, 0, 0x00038041, 8, 0, 130, 0, 0};
 

@@ -1,5 +1,5 @@
-#include "mailbox.h"
-#include "peripheral.h"
+#include "include/mailbox.h"
+#include "include/peripheral.h"
 
 mailbox_t *mailbox0 = (mailbox_t *) MAILBOX_BASE;
 core_mailbox_t *core_mailbox = (core_mailbox_t *) 0x40000050;

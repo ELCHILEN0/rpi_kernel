@@ -1,4 +1,4 @@
-#include "kernel.h"
+#include "include/context.h"
 
 /*
  * The switch_from funciton shall save a process stack.
@@ -30,6 +30,27 @@ void switch_to(process_t *process) {
     " :: "r" (process->frame));
 }
 
-void *align(void *ptr) {
-    return (void *) ((uint64_t) ptr & -16);
+void *align(void *ptr, unsigned int alignment) {
+    return (void *) ((uint64_t) ptr & -alignment);
+}
+
+void CPU_ZERO(cpu_set_t *set) {
+    set->count = 0;
+}
+void CPU_SET(int cpu, cpu_set_t *set) {
+    set->count |= (1 << cpu);
+}
+void CPU_CLR(int cpu, cpu_set_t *set) {
+    set->count &= ~(1 << cpu);
+}
+int  CPU_ISSET(int cpu, cpu_set_t *set) {
+    return set->count & (1 << cpu);
+}
+int  CPU_COUNT(cpu_set_t *set) {
+    int count;
+    for (int cpu = 0; cpu < NUM_CORES; cpu++) {
+        if (CPU_ISSET(cpu, set))
+            count++;
+    }
+    return count;
 }

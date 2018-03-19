@@ -1,4 +1,4 @@
-#include "kernel.h"
+#include "include/kinit.h"
 
 int msb(uint64_t x) {
     if (!x) return -1;

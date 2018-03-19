@@ -1,7 +1,7 @@
-#include "kernel.h"
+#include "include/kinit.h"
 
-static pid_t next_pid = 1;
-uint64_t live_procs = 0;
+pid_t       next_pid = 1;
+uint64_t    live_procs = 0;
 
 spinlock_t process_list_lock;
 spinlock_t process_hash_lock;
@@ -37,30 +37,29 @@ process_t *get_process(pid_t pid) {
     return NULL;
 }
 
-enum syscall_return_state proc_create(process_t *proc, void (*func)(), uint64_t stack_size, enum process_priority priority) {
-    if (stack_size < PROC_STACK)
-        stack_size = PROC_STACK;   
-
+enum return_state proc_create(pthread_t *thread, void *(*start_routine)(void *), void *arg, enum process_priority priority) {
+    int stack_size = PROC_STACK;
+    
     __spin_lock(&newlib_lock);
     process_t *process = malloc(sizeof(process_t));
     void *stack_base = malloc(stack_size);
-    // printf("process: %d, stack: %d\r\n", process, stack_base);
     __spin_unlock(&newlib_lock);
     if (!process || !stack_base) {
         // TODO: is this free of races...
         free(process);
         free(stack_base);
 
-        proc->ret = -1;
+        current->ret = EAGAIN;
         return OK;
     }
 
     pid_t pid = __atomic_fetch_add(&next_pid, 1, __ATOMIC_RELAXED); // TODO: __ATOMIC_RELAXED
     if (next_pid == 0) {
-        proc->ret = -1;
+        current->ret = EAGAIN;
         return OK;
     } else {
-        proc->ret = pid;
+        current->ret = 0;
+        *thread = pid;
     }
 
     __atomic_fetch_add(&live_procs, 1, __ATOMIC_RELAXED);
@@ -68,10 +67,11 @@ enum syscall_return_state proc_create(process_t *proc, void (*func)(), uint64_t 
     aarch64_frame_t frame = {
         // .spsr = 0b00000, // EL0
         .spsr = 0b00100,    // EL1t
-        .elr  = (uint64_t) func,
+        .elr  = (uint64_t) start_routine,
         .reg  = {
             [0 ... 31] = 0,
-            [30] = (uint64_t) sysexit
+            [0] = (uint64_t) arg,
+            [30] = (uint64_t) pthread_exit
         }
     };
     process->ret = frame.reg[0];
@@ -80,8 +80,11 @@ enum syscall_return_state proc_create(process_t *proc, void (*func)(), uint64_t 
 
     process->stack_base = stack_base;
     process->stack_size = stack_size;
-    process->frame = memcpy(align(stack_base + stack_size - sizeof(aarch64_frame_t)), &frame, sizeof(frame));
+    process->frame = memcpy(align(stack_base + stack_size - sizeof(aarch64_frame_t), 16), &frame, sizeof(frame));
 
+    for (int cpu = 0; cpu < NUM_CORES; cpu++) {
+        CPU_SET(cpu, &process->affinity);
+    }
     process->state = NEW;    
     process->initial_priority = priority;
     process->current_priority = priority;
@@ -103,7 +106,8 @@ enum syscall_return_state proc_create(process_t *proc, void (*func)(), uint64_t 
     INIT_LIST_HEAD(&process->sched_list);
     
     // Scheduling List
-    INIT_LIST_HEAD(&process->waiting);
+    process->waiting.lock.flag = 0;
+    INIT_LIST_HEAD(&process->waiting.tasks);
     INIT_LIST_HEAD(&process->sending);
     INIT_LIST_HEAD(&process->recving);
 
@@ -114,70 +118,76 @@ enum syscall_return_state proc_create(process_t *proc, void (*func)(), uint64_t 
     __spin_unlock(&process_hash_lock);
     __spin_unlock(&process_list_lock);
 
-    process->block_lock.flag = 0;
-
     ready(process);
     return OK;    
 }
 
-enum syscall_return_state proc_wait(process_t* proc, pid_t pid) {
+enum return_state proc_join(pid_t pid, void **status) {
     process_t* process = get_process(pid);
 
-    if (pid == 0 || !process || proc->pid == process->pid)
+    if (pid == 0 || !process || current->pid == process->pid) {
+        current->ret = EINVAL;
         return OK;
+    }
 
-    __spin_lock(&process->block_lock);
-    list_add(&process->waiting, &proc->sched_list);
-    __spin_unlock(&process->block_lock);
+    current->status = status;
+
+    sleep_on(&process->waiting.tasks, current, &process->waiting.lock);
     return BLOCK; 
 }
 
 // Unschedule and return a processes resources to the kernel, any processes blocked on the
 // process will be scheduled and have their return code set appropriately.
-enum syscall_return_state proc_exit(process_t *proc) {
-    proc->state = ZOMBIE;
+enum return_state proc_exit(void *status) {
+    current->state = ZOMBIE;
 
     __atomic_fetch_sub(&live_procs, 1, __ATOMIC_RELAXED);
 
-    process_t *p, *pnext;
-    list_for_each_entry_safe(p, pnext, &proc->waiting, sched_list) {
-        ready(p);
-        p->ret = 0;
+    bool wake_waiting(process_t *curr) {
+        curr->ret = 0;
+
+        if (curr->status)
+            *curr->status = status;
+        return true;
     }
+    alert_on(&current->waiting.tasks, wake_waiting, &current->waiting.lock);
 
     // TODO: Cleanup sleepers...
     __spin_lock(&newlib_lock);
-    printf("%-3d [core %d] exiting\r\n", proc->pid, get_core_id());
-    printf("MODE %10s %10s %10s %10s %10s %10s\r\n",    "instrs", 
-                                                        "cycles", 
-                                                        "l1 access", 
-                                                        "l1 refill", 
-                                                        "l2 access", 
-                                                        "l2 refill");
+    printf("%-3d [core %d] exiting\r\n", current->pid, get_core_id());
+    printf("MODE %10s %10s %10s %10s %10s %10s\r\n",   
+            "instrs", 
+            "cycles", 
+            "l1 access", 
+            "l1 refill", 
+            "l2 access", 
+            "l2 refill");
     for (int i = 0; i < NUM_CORES; i++) {
-        printf("USR  %10lu %10lu %10lu %10lu %10lu %10lu\r\n",  proc->perf_count[0][i][0],
-                                                                proc->perf_count[0][i][1],
-                                                                proc->perf_count[0][i][2],
-                                                                proc->perf_count[0][i][3],
-                                                                proc->perf_count[0][i][4],
-                                                                proc->perf_count[0][i][5]);
+        printf("USR  %10lu %10lu %10lu %10lu %10lu %10lu\r\n",  
+                current->perf_count[0][i][0],
+                current->perf_count[0][i][1],
+                current->perf_count[0][i][2],
+                current->perf_count[0][i][3],
+                current->perf_count[0][i][4],
+                current->perf_count[0][i][5]);
     }
     for (int i = 0; i < NUM_CORES; i++) {
-        printf("SYS  %10lu %10lu %10lu %10lu %10lu %10lu\r\n",  proc->perf_count[1][i][0],
-                                                                proc->perf_count[1][i][1],
-                                                                proc->perf_count[1][i][2],
-                                                                proc->perf_count[1][i][3],
-                                                                proc->perf_count[1][i][4],
-                                                                proc->perf_count[1][i][5]);
+        printf("SYS  %10lu %10lu %10lu %10lu %10lu %10lu\r\n",  
+                current->perf_count[0][i][0],
+                current->perf_count[1][i][1],
+                current->perf_count[1][i][2],
+                current->perf_count[1][i][3],
+                current->perf_count[1][i][4],
+                current->perf_count[1][i][5]);
     }
     __spin_unlock(&newlib_lock);
 
-    list_del(&proc->process_list);
-    list_del(&proc->process_hash_list);
-    list_del(&proc->sched_list);
+    list_del(&current->process_list);
+    list_del(&current->process_hash_list);
+    list_del(&current->sched_list);
 
-    free(proc->stack_base);
-    free(proc);
+    free(current->stack_base);
+    free(current);
     return EXIT;
 }
 
