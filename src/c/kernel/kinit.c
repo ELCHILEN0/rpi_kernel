@@ -234,6 +234,11 @@ void *blink_proc(void *arg) {
 }
 
 void *sleep_proc(void *arg) {
+    cpu_set_t affinity_set;
+    CPU_ZERO(&affinity_set);
+    CPU_SET(3, &affinity_set);
+    sched_setaffinity(0, NUM_CORES, &affinity_set);
+
     int core_id = get_core_id();
     pid_t pid = pthread_self();    
     

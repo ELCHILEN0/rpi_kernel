@@ -124,7 +124,7 @@ void ready( process_t *process ) {
     __spin_lock(&target_queue->lock);
 
     // Is it optimal to migrate this process
-    if (target_queue->length * 100 / live_procs > 25) {
+    if (target_queue->length * 100 / live_procs > 25 || !CPU_ISSET(get_core_id(), &process->affinity)) {
         __spin_unlock(&target_queue->lock);
         target_queue = &ready_queue[inactive_core];
         __spin_lock(&target_queue->lock);        
@@ -262,6 +262,8 @@ void common_interrupt( int interrupt_type ) {
                 cpu_set_t *mask = va_arg(args, cpu_set_t *);
 
                 current->affinity = *mask;
+
+                code = SCHED;
             }
             break;
 
