@@ -82,6 +82,9 @@ enum return_state proc_create(pthread_t *thread, void *(*start_routine)(void *),
     process->stack_size = stack_size;
     process->frame = memcpy(align(stack_base + stack_size - sizeof(aarch64_frame_t), 16), &frame, sizeof(frame));
 
+    for (int cpu = 0; cpu < NUM_CORES; cpu++) {
+        CPU_SET(cpu, &process->affinity);
+    }
     process->state = NEW;    
     process->initial_priority = priority;
     process->current_priority = priority;

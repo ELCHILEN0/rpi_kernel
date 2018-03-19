@@ -93,15 +93,15 @@ int find_busiest_core() {
     return busiest_core;
 }
 
-int find_inactive_core() {
+int find_inactive_core(cpu_set_t *mask) {
     int inactive_core = 0;
     int inactive_count = INT32_MAX;
 
     // TODO: Opportunity for other forms of "busy"
-    for (int i = 0; i < NUM_CORES; i++) {
-        ready_queue_t *rq = &ready_queue[i];
-        if (rq->length < inactive_count) {
-            inactive_core = i;
+    for (int cpu = 0; cpu < NUM_CORES; cpu++) {
+        ready_queue_t *rq = &ready_queue[cpu];
+        if (rq->length < inactive_count && CPU_ISSET(cpu, mask)) {
+            inactive_core = cpu;
             inactive_count = rq->length;
         }
     }
@@ -118,7 +118,7 @@ void ready( process_t *process ) {
     // process->block_state = NONE;
 
     #ifdef SCHED_AFFINITY
-    int inactive_core = find_inactive_core();
+    int inactive_core = find_inactive_core(&process->affinity);
     ready_queue_t *target_queue = &ready_queue[get_core_id()];
 
     __spin_lock(&target_queue->lock);
@@ -129,6 +129,7 @@ void ready( process_t *process ) {
         target_queue = &ready_queue[inactive_core];
         __spin_lock(&target_queue->lock);        
     }
+
     // TODO: migrating more than one processes to this queue can also be done? eg 100% with inactive core recalc
 
     // TODO: Possibly pull more than one process.
@@ -246,11 +247,22 @@ void common_interrupt( int interrupt_type ) {
 
     va_list args = *(va_list *) args_ptr;
     switch (request) {
+        case SYS_TIME_SLICE:
+            code = proc_tick();
+            break;
+
+        // Scheduler Routines
         case SCHED_YIELD:
             code = SCHED;
             break;
-        case SYS_TIME_SLICE:
-            code = proc_tick();
+        case SCHED_SET_AFFINITY:
+            {
+                pid_t pid = va_arg(args, pid_t);
+                size_t cpusetsize = va_arg(args, pid_t);
+                cpu_set_t *mask = va_arg(args, cpu_set_t *);
+
+                current->affinity = *mask;
+            }
             break;
 
         // PThread: Basic Routines

@@ -1,5 +1,6 @@
 #include "include/config.h"
 #include "include/semaphore.h"
+#include "include/context.h"
 
 int syscall( int req_id, ... ) {
     int ret_code;
@@ -36,9 +37,9 @@ int sched_yield(void)
     return syscall(SCHED_YIELD);
 }
 
-// int sched_setaffinity(pid_t pid, size_t cpusetsize, cpu_set_t *mask) {
-//     return syscall(SCHED_SET_AFFINITY, pid, cpusetsize, mask);
-// }
+int sched_setaffinity(pid_t pid, size_t cpusetsize, cpu_set_t *mask) {
+    return syscall(SCHED_SET_AFFINITY, pid, cpusetsize, mask);
+}
 
 // POSIX Thread API ...
 int pthread_create(pthread_t *thread, const pthread_attr_t *attr, void *(*start_routine)(void *), void *arg)

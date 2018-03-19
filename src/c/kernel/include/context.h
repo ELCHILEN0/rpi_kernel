@@ -14,6 +14,31 @@ extern "C" {
 #include "list.h"
 #include "dispatch.h"
 
+typedef struct cpu_set {
+    uint32_t count;
+} cpu_set_t;
+
+void CPU_ZERO(cpu_set_t *set) {
+    set->count = 0;
+}
+void CPU_SET(int cpu, cpu_set_t *set) {
+    set->count |= (1 << cpu);
+}
+void CPU_CLR(int cpu, cpu_set_t *set) {
+    set->count &= ~(1 << cpu);
+}
+int  CPU_ISSET(int cpu, cpu_set_t *set) {
+    return set->count & (1 << cpu);
+}
+int  CPU_COUNT(cpu_set_t *set) {
+    int count;
+    for (int cpu = 0; cpu < NUM_CORES; cpu++) {
+        if (CPU_ISSET(cpu, set))
+            count++;
+    }
+    return count;
+}
+
 // For implementation details see the __load_context routine.
 typedef struct frame {
     uint64_t spsr;    
@@ -32,7 +57,7 @@ typedef struct process {
     // TODO: Idle Balancing, busiest -> idleest
     // TODO: load balance without locking? per core input channel/buffer, lazy synchronization? lockless queue or spinlock queue or try-acquire/continue?
     //
-    uint8_t affinity; // disallow for some procs...
+    cpu_set_t affinity;
     enum process_state state;
     enum blocked_state block_state;  
     enum process_priority initial_priority;
