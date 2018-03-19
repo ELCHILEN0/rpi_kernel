@@ -28,6 +28,9 @@ typedef struct wait_queue {
 void sleep_on(struct list_head *head, process_t *task, spinlock_t *lock);
 void sleep_on_locked(struct list_head *head, process_t *task);
 
+void alert_on_nr(struct list_head *head, bool (*condition)(process_t *task), unsigned int nr, spinlock_t *lock);
+void alert_on_locked_nr(struct list_head *head, bool (*condition)(process_t *task), unsigned int nr);
+
 void alert_on(struct list_head *head, bool (*condition)(process_t *task), spinlock_t *lock);
 void alert_on_locked(struct list_head *head, bool (*condition)(process_t *task));
 

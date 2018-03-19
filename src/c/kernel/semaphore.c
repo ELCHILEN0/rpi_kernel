@@ -61,15 +61,14 @@ int __sem_trywait (sem_t *sem) {
 int __sem_post (sem_t *sem) {
     __spin_lock(&sem->lock);
 
-    bool woke = false;
     bool condition(process_t *curr) {
-        return woke == false;
+        return true;
     }
 
     if (likely(list_empty(&sem->tasks)))
         sem->count++;
     else
-        alert_on_locked(&sem->tasks, condition);
+        alert_on_locked_nr(&sem->tasks, condition, 1);
 
     __spin_unlock(&sem->lock); 
 

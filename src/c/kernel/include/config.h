@@ -54,7 +54,10 @@ enum interrupt_request {
 
     SYS_KILL,
     SYS_SLEEP,
-    SYS_SET_PERF,    
+    SYS_SET_PERF,
+    SYS_GET_PERF,
+    SYS_PUTS,
+    SYS_GETS,   
 
     SCHED_YIELD,
     SCHED_SET_AFFINITY,

@@ -1,4 +1,5 @@
 #include "include/kinit.h"
+#include "include/config.h"
 
 spinlock_t newlib_lock;
 sem_t psem;
@@ -178,7 +179,7 @@ void *perf_strided_scalar_multiply(void *arg) {
 }
 
 void *perf_root(void *arg) {
-    pid_t core_id = get_core_id();
+    size_t core_id = get_core_id();
 
     // for (int i = 0; i < SECTIONS/NUM_CORES; i++) {
     //     pthread_t thread_id;
@@ -214,14 +215,15 @@ void *perf_root(void *arg) {
 }
 
 void *blink_proc(void *arg) {
+    char buf[512];
+
     int core_id = get_core_id();
     int core_gpio[4] = { 5, 6, 13, 19 };
 
-    pid_t pid = pthread_self();    
+    pthread_t self_id = pthread_self();    
 
-    __spin_lock(&newlib_lock);
-    printf("%-3d [core %d] blink_proc\r\n", pid, core_id);
-    __spin_unlock(&newlib_lock);
+    snprintf(buf, 512, "%-3d [core %d] blink_proc\r\n", (int) self_id, get_core_id());
+    puts(buf);
 
     while (true) {
         int curr_core = get_core_id();
@@ -234,33 +236,32 @@ void *blink_proc(void *arg) {
 }
 
 void *sleep_proc(void *arg) {
+    char buf[512];
+
     cpu_set_t affinity_set;
     CPU_ZERO(&affinity_set);
     CPU_SET(3, &affinity_set);
     sched_setaffinity(0, NUM_CORES, &affinity_set);
 
-    int core_id = get_core_id();
-    pid_t pid = pthread_self();    
+    pthread_t self_id = pthread_self();    
     
-    // __spin_lock(&newlib_lock);
-    sem_wait(&psem);
-    printf("%-3d [core %d] sleep_proc\r\n", pid, core_id);
-    sem_post(&psem);
-    // __spin_unlock(&newlib_lock);
+    snprintf(buf, 512, "%-3d [core %d] sleep_proc - sleep\r\n", (int) self_id, get_core_id());
+    puts(buf);
 
     // syssleep(1 * 1000);
     for (int i = 0; i < 0x100000; i++);
 
-    __spin_lock(&newlib_lock);
-    printf("%-3d [core %d] sleep_proc - woke\r\n", pid, core_id);
-    __spin_unlock(&newlib_lock);
+    snprintf(buf, 512, "%-3d [core %d] sleep_proc - woke\r\n", (int) self_id, get_core_id());
+    puts(buf);
 
     return NULL;    
 }
 
 void *root_proc(void *arg) {
-    uint8_t core_id = get_core_id();
-    pid_t pid = pthread_self();
+    char buf[512];
+    
+    int core_id = get_core_id();
+    pthread_t self_id = pthread_self();
 
     if (core_id == 0) {
         sem_init(&psem, 0, 1);
@@ -268,17 +269,17 @@ void *root_proc(void *arg) {
         pthread_t thread_id;
         pthread_create(&thread_id, NULL, &sleep_proc, NULL);
 
-        __spin_lock(&newlib_lock);
-        printf("%-3d [core %d] created process with pid %d\r\n", pid, core_id, thread_id);
-        printf("%-3d [core %d] waiting for %d\r\n", pid, core_id, thread_id);
-        __spin_unlock(&newlib_lock);
+        snprintf(buf, 512, "%-3d [core %d] created process with pid %d\r\n", (int) self_id, get_core_id(), (int) thread_id);
+        puts(buf);
+
+        snprintf(buf, 512, "%-3d [core %d] waiting for %d\r\n", (int) self_id, get_core_id(), (int) thread_id);
+        puts(buf);
 
         void *join_status;
         pthread_join(thread_id, &join_status);
 
-        __spin_lock(&newlib_lock);
-        printf("%-3d [core %d] %d has terminated!\r\n", pid, core_id, thread_id);
-        __spin_unlock(&newlib_lock);
+        snprintf(buf, 512, "%-3d [core %d] done waiting %d\r\n", (int) self_id, get_core_id(), (int) thread_id);
+        puts(buf);
     } else {
         pthread_t thread_id;
         pthread_create(&thread_id, NULL, &yield_proc, NULL);

@@ -2,7 +2,7 @@
 #include "include/semaphore.h"
 #include "include/context.h"
 
-int syscall( int req_id, ... ) {
+long syscall( int req_id, ... ) {
     int ret_code;
  
     va_list args;
@@ -26,8 +26,19 @@ uint64_t syssleep(unsigned int ms) {
     return syscall(SYS_SLEEP, ms);
 }
 
+int puts(const char *str)
+{
+    return syscall(SYS_PUTS, str);
+}
+
+char *gets(char *str)
+{
+    return (char *) syscall(SYS_GETS, str);
+}
+
 // Unistd API ...
-pid_t getpid(void) {
+pid_t getpid(void)
+{
     return syscall(PTHREAD_SELF);
 }
 
@@ -37,9 +48,16 @@ int sched_yield(void)
     return syscall(SCHED_YIELD);
 }
 
-int sched_setaffinity(pid_t pid, size_t cpusetsize, cpu_set_t *mask) {
+int sched_setaffinity(pid_t pid, size_t cpusetsize, cpu_set_t *mask)
+{
     return syscall(SCHED_SET_AFFINITY, pid, cpusetsize, mask);
 }
+
+int sched_getaffinity(pid_t pid, size_t cpusetsize, cpu_set_t *mask)
+{
+    return syscall(SCHED_GET_AFFINITY, pid, cpusetsize, mask);
+}
+
 
 // POSIX Thread API ...
 int pthread_create(pthread_t *thread, const pthread_attr_t *attr, void *(*start_routine)(void *), void *arg)

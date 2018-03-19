@@ -149,35 +149,6 @@ void ready( process_t *process ) {
     #endif
 }
 
-// // place a task on the wait queue, until it is woken with alert_on
-// void sleep_on(wait_queue_t *queue, process_t *task) {
-//     task->state = BLOCKED;
-
-//     __spin_lock(&queue->lock);
-
-//     task->blocked_on = queue;
-//     list_del_init(&task->sched_list);
-//     list_add_tail(&task->sched_list, &queue->tasks);
-
-//     __spin_unlock(&queue->lock);
-// }
-
-// // wake up all tasks blocked on the wait queue that satisfy the condition
-// // TODO: wakeup a single process, regardless of the queue... (SIGNALS)
-// void alert_on(wait_queue_t *queue, bool (*condition)(process_t *curr)) {
-//     __spin_lock(&queue->lock);
-    
-//     process_t *curr, *next;
-//     list_for_each_entry_safe(curr, next, &queue->tasks, sched_list) {
-//         if (condition(curr)) {
-//             list_del_init(&curr->sched_list);
-//             ready(curr);
-//         }
-//     }
-
-//     __spin_unlock(&queue->lock);    
-// }
-
 void sleep_on(struct list_head *head, process_t *task, spinlock_t *lock) {
     __spin_lock(lock);
 
@@ -193,7 +164,14 @@ void sleep_on_locked(struct list_head *head, process_t *task) {
     list_add_tail(&task->sched_list, head);
 }
 
-// TODO: alert_on_nr...
+void alert_on_nr(struct list_head *head, bool (*condition)(process_t *task), unsigned int nr, spinlock_t *lock) {
+    __spin_lock(lock);
+
+    alert_on_locked_nr(head, condition, nr);
+
+    __spin_unlock(lock);
+}
+
 void alert_on(struct list_head *head, bool (*condition)(process_t *task), spinlock_t *lock) {
     __spin_lock(lock);
 
@@ -202,14 +180,21 @@ void alert_on(struct list_head *head, bool (*condition)(process_t *task), spinlo
     __spin_unlock(lock);
 }
 
-void alert_on_locked(struct list_head *head, bool (*condition)(process_t *task)) {
+void alert_on_locked_nr(struct list_head *head, bool (*condition)(process_t *task), unsigned int nr) {
     process_t *curr, *next;
     list_for_each_entry_safe(curr, next, head, sched_list) {
+        if (nr == 0)
+            break;
+
         if (condition(curr)) {
             list_del_init(&curr->sched_list);
             ready(curr);
         }
     }
+}
+
+void alert_on_locked(struct list_head *head, bool (*condition)(process_t *task)) {
+    alert_on_locked_nr(head, condition, UINT32_MAX);
 }
 
 // TODO: Separate into context + disp...
@@ -252,6 +237,15 @@ void common_interrupt( int interrupt_type ) {
         case SYS_TIME_SLICE:
             code = proc_tick();
             break;
+        case SYS_PUTS:
+            {
+                char *str = va_arg(args, char *);
+                
+                __spin_lock(&newlib_lock);
+                current->ret = printf("%s", str);
+                __spin_unlock(&newlib_lock);
+            }
+            break;
 
         // Scheduler Routines
         case SCHED_YIELD:
@@ -259,13 +253,26 @@ void common_interrupt( int interrupt_type ) {
             break;
         case SCHED_SET_AFFINITY:
             {
-                pid_t pid = va_arg(args, pid_t);
-                size_t cpusetsize = va_arg(args, pid_t);
+                va_arg(args, pid_t);
+                va_arg(args, size_t);
                 cpu_set_t *mask = va_arg(args, cpu_set_t *);
 
                 current->affinity = *mask;
+                current->ret = 0;
 
-                code = SCHED;
+                // Reschedule a process if it is no longer eligible for the current core
+                if (CPU_ISSET(get_core_id(), &current->affinity))
+                    code = SCHED;
+            }
+            break;
+        case SCHED_GET_AFFINITY:
+            {
+                va_arg(args, pid_t);
+                va_arg(args, size_t);
+                cpu_set_t *mask = va_arg(args, cpu_set_t *);
+
+                *mask = current->affinity;
+                current->ret = 0;
             }
             break;
 
@@ -361,6 +368,7 @@ void common_interrupt( int interrupt_type ) {
         case PTHREAD_MUTEX_TRYLOCK:
         case PTHREAD_MUTEX_UNLOCK:
         case SYS_KILL:
+        case SYS_GETS:
         default:
             __spin_lock(&newlib_lock);        
             printf("%-3d [core %d] dispatcher: unhandled request %ld\r\n", current->pid, get_core_id(), request);
