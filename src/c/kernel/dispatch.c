@@ -123,16 +123,18 @@ void ready( process_t *process ) {
 
     __spin_lock(&target_queue->lock);
 
-    // Is it optimal to migrate this process
-    if (target_queue->length * 100 / live_procs > 25 || !CPU_ISSET(get_core_id(), &process->affinity)) {
+    // Migration to another core will happen under specific conditions:
+    // - The current core is not eligible to run the process (cpu_set_t)
+    // - The current core has more than 25 % of all the live processes
+    // TODO: Cache affinity, metric to "encourage" processes to remain
+    // TODO: Work stealing at sporadic intervals
+    if (!CPU_ISSET(get_core_id(), &process->affinity)
+            || (100 * target_queue->length / live_procs) > 25) 
+    {
         __spin_unlock(&target_queue->lock);
         target_queue = &ready_queue[inactive_core];
-        __spin_lock(&target_queue->lock);        
+        __spin_lock(&target_queue->lock); 
     }
-
-    // TODO: migrating more than one processes to this queue can also be done? eg 100% with inactive core recalc
-
-    // TODO: Possibly pull more than one process.
     
     target_queue->length += 1;
     list_del_init(&process->sched_list);
