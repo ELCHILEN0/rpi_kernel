@@ -1,88 +1,92 @@
-#include "include/semaphore.h"
+#include "include/kernel/semaphore.h"
+#include "include/kernel/const.h"
+#include "include/kernel/context.h"
+#include "include/kernel/sleepq.h"
+#include "include/asm/branch.h"
 
-#include "include/kinit.h"
+ksem_t *ksem_open (sem_t *sem) {
+    return NULL;
+}
 
-int __sem_init (sem_t *sem, int pshared, unsigned int value) {
+int ksem_init (sem_t *sem, int pshared, unsigned int value) {
     if (pshared != 0) {
-        current->ret = ENOSYS;
-        return OK;
+        return ENOSYS;
     }
 
-    sem->lock.flag = 0;
-    sem->count = value;
-    INIT_LIST_HEAD(&sem->tasks);
+    ksem_t *ksem = ksem_open(sem);
+    __spin_init(&ksem->lock);
+    TAILQ_INIT(&ksem->head);
+    ksem->count = value;
 
-    current->ret = 0;
-    return OK;
+    return 0;
 }
 
-int __sem_destroy (sem_t *sem) {
-    __spin_lock(&sem->lock);
-    bool condition(process_t *curr) {
-        return true;
-    }
-    alert_on_locked(&sem->tasks, condition);
+int ksem_destroy (sem_t *sem) {
+    ksem_t *ksem = ksem_open(sem);
 
-    current->ret = 0;
-    return OK;
+    __spin_acquire(&ksem->lock);
+    sleepq_alert_locked(&ksem->head, sleepq_condition_true);
+
+    return 0;
 }
 
-int __sem_wait (sem_t *sem) {
-    __spin_lock(&sem->lock);
+int ksem_wait (sem_t *sem) {
+    ksem_t *ksem = ksem_open(sem);    
 
-    if (likely(sem->count > 0)) {
-        sem->count--;
-        __spin_unlock(&sem->lock); 
+    __spin_acquire(&ksem->lock);
 
-        current->ret = 0;
-        return OK;
+    if (likely(ksem->count > 0)) {
+        ksem->count--;
+
+        current()->state = OK;
     } else {
-        sleep_on_locked(&sem->tasks, current);
-        __spin_unlock(&sem->lock);
+        sleepq_add_locked(&ksem->head, current);
 
-        current->ret = 0;
-        return BLOCK;
+        current()->state = BLOCK;
     }
+
+    __spin_release(&ksem->lock);    
+
+    return 0;
 }
 
-int __sem_trywait (sem_t *sem) {
-    __spin_lock(&sem->lock);
+int ksem_trywait (sem_t *sem) {
+    ksem_t *ksem = ksem_open(sem);    
+    
+    __spin_acquire(&ksem->lock);
 
-    int count = sem->count - 1;
+    int count = ksem->count - 1;
     if (likely(count >= 0))
-        sem->count = count;
+        ksem->count = count;
 
-    __spin_unlock(&sem->lock); 
+    __spin_release(&ksem->lock); 
 
-    current->ret = count < 0 ? EAGAIN : 0;
-    return OK;
+    return count < 0 ? EAGAIN : 0;
 }	
 
-int __sem_post (sem_t *sem) {
-    __spin_lock(&sem->lock);
+int ksem_post (sem_t *sem) {
+    ksem_t *ksem = ksem_open(sem);    
+    
+    __spin_acquire(&ksem->lock);
 
-    bool condition(process_t *curr) {
-        return true;
-    }
-
-    if (likely(list_empty(&sem->tasks)))
-        sem->count++;
+    if (likely(TAILQ_EMPTY(&ksem->head)))
+        ksem->count++;
     else
-        alert_on_locked_nr(&sem->tasks, condition, 1);
+        sleepq_alert_locked_nr(&ksem->head, sleepq_condition_true, 1);
 
-    __spin_unlock(&sem->lock); 
+    __spin_release(&ksem->lock); 
 
-    current->ret = 0;
-    return OK;
+    return 0;
 }
 
-int __sem_getvalue (sem_t *sem, int *sval) {
-    __spin_lock(&sem->lock);
+int ksem_getvalue (sem_t *sem, int *sval) {
+    ksem_t *ksem = ksem_open(sem);    
+    
+    __spin_acquire(&ksem->lock);
 
-    *sval = sem->count;
+    *sval = ksem->count;
 
-    __spin_unlock(&sem->lock);
+    __spin_release(&ksem->lock);
 
-    current->ret = 0;
-    return OK;
+    return 0;
 }

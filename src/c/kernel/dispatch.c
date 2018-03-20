@@ -1,6 +1,4 @@
-#include "include/dispatch.h"
-
-#include "include/kinit.h"
+#include "include/kernel/dispatch.h"
 
 struct list_head process_list;
 
@@ -149,52 +147,15 @@ void ready( process_t *process ) {
     #endif
 }
 
-void sleep_on(struct list_head *head, process_t *task, spinlock_t *lock) {
-    __spin_lock(lock);
 
-    sleep_on_locked(head, task);
+void common_interrupt( int interrupt_type ) {
+    switch_from(current());
 
-    __spin_unlock(lock);
-}
-
-void sleep_on_locked(struct list_head *head, process_t *task) {
-    task->blocked_on = head;
-
-    list_del_init(&task->sched_list);
-    list_add_tail(&task->sched_list, head);
-}
-
-void alert_on_nr(struct list_head *head, bool (*condition)(process_t *task), unsigned int nr, spinlock_t *lock) {
-    __spin_lock(lock);
-
-    alert_on_locked_nr(head, condition, nr);
-
-    __spin_unlock(lock);
-}
-
-void alert_on(struct list_head *head, bool (*condition)(process_t *task), spinlock_t *lock) {
-    __spin_lock(lock);
-
-    alert_on_locked(head, condition);
-
-    __spin_unlock(lock);
-}
-
-void alert_on_locked_nr(struct list_head *head, bool (*condition)(process_t *task), unsigned int nr) {
-    process_t *curr, *next;
-    list_for_each_entry_safe(curr, next, head, sched_list) {
-        if (nr == 0)
-            break;
-
-        if (condition(curr)) {
-            list_del_init(&curr->sched_list);
-            ready(curr);
-        }
+    for (int i = 0; i < PERF_COUNTERS; i++) {
+        current()->perf_count[0][get_core_id()][i] += pmu_read_pmn(i);
     }
-}
 
-void alert_on_locked(struct list_head *head, bool (*condition)(process_t *task)) {
-    alert_on_locked_nr(head, condition, UINT32_MAX);
+    switch_to(current());
 }
 
 // TODO: Separate into context + disp...

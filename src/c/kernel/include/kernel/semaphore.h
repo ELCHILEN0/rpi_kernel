@@ -11,7 +11,7 @@ extern "C" {
 #include "../sys/queue.h"
 
 typedef struct usem {
-  unsigned int id;  
+    unsigned int id;  
 } sem_t;
 
 // TODO: Move to impl, this is not global

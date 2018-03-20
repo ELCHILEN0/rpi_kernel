@@ -5,6 +5,12 @@
 extern "C" {
 #endif
 
+#include <stddef.h>
+#include <errno.h>
+
+#include <stdint.h>
+#include <stdbool.h>
+
 // begin    - feature flags
 #define SCHED_AFFINITY
 // end      - feature flags

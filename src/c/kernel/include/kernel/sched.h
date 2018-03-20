@@ -28,7 +28,10 @@ int ksched_set_affinity(pid_t pid, size_t cpusetsize, cpu_set_t *mask);
 int ksched_get_affinity(pid_t pid, size_t cpusetsize, cpu_set_t *mask);
 
 struct context *current (void);
-struct context *next    (void);
+struct context *runnable(void);
+
+void set_current    (struct context *curr);
+void set_runnable   (struct context *curr);
 
 #ifdef __cplusplus
 };
