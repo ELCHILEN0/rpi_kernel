@@ -1,0 +1,6 @@
+int sys_call(args...)
+- task->ret == int
+
+int ksys_call(args...)
+- task->state = OK | SCHED | BLOCK ...
+- task->ret = int
