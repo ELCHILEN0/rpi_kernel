@@ -14,7 +14,7 @@ typedef uint8_t lock_t;
 
 typedef volatile struct {
     uint8_t flag;
-} spinlock_t;
+} raw_spinlock_t;
 
 // typedef volatile struct {
 //     lock_t lock;
@@ -23,8 +23,8 @@ typedef volatile struct {
 //     and keep into account the fact that this might be called from the kernel..., only wait from kernel....
 // } semaphore_t;
 
-extern int __spin_lock(spinlock_t *lock);
-extern void __spin_unlock(spinlock_t *lock);
+extern int __spin_lock(raw_spinlock_t *lock);
+extern void __spin_unlock(raw_spinlock_t *lock);
 
 #ifdef __cplusplus
 };

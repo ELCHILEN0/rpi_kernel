@@ -49,7 +49,7 @@ void timer_interrupt();
 void scall_interrupt();
 
 void common_interrupt( int interrupt_type );
-void dispatch_request( int request );
+void dispatch_request( int request, int args_ptr );
 
 #ifdef __cplusplus
 };

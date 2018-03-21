@@ -4,11 +4,16 @@
 #include "sched.h"
 #include "queues.h"
 
-spinlock_t scheduler_lock;
 spinlock_t newlib_lock;
+spinlock_t scheduler_lock;
+spinlock_t process_list_lock;
+spinlock_t process_hash_lock;
 
 uint64_t total_tasks;
 uint64_t live_tasks;
+
+struct task_list process_list;
+struct task_list process_hash[PIDHASH_SZ];
 
 struct context *running[NUM_CORES];
 

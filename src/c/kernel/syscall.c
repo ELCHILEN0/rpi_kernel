@@ -1,6 +1,12 @@
-#include "include/config.h"
-#include "include/semaphore.h"
-#include "include/context.h"
+#include <stdarg.h>
+#include <pthread.h>
+#include <sched.h>
+
+#include "include/kernel/const.h"
+#include "include/kernel/sched.h"
+#include "include/kernel/dispatch.h"
+#include "include/kernel/semaphore.h"
+
 
 long syscall( int req_id, ... ) {
     int ret_code;

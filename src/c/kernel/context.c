@@ -30,7 +30,3 @@ void switch_to(task_t *task) {
         MSR SPSel, #1       \n\
     " :: "r" (task->frame));
 }
-
-// void *align(void *ptr, unsigned int alignment) {
-//     return (void *) ((uint64_t) ptr & -alignment);
-// }

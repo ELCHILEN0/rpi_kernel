@@ -42,7 +42,7 @@ void sleepq_alert_locked_nr(struct task_list *head, bool (*condition)(task_t *ta
 
         if (condition(curr)) {
             TAILQ_REMOVE(head, curr, sched_list);
-            ready(curr);
+            set_runnable(curr);
         }
     }
 }

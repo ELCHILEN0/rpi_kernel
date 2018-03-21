@@ -1,12 +1,12 @@
 #include "include/multicore.h"
 
 // 18.5.2
-int __spin_lock(spinlock_t *lock) {
+int __spin_lock(raw_spinlock_t *lock) {
     while (__sync_lock_test_and_set(&lock->flag, 1));
     return 0;
 }
 
-void __spin_unlock(spinlock_t *lock) {
+void __spin_unlock(raw_spinlock_t *lock) {
     __sync_lock_release(&lock->flag);
 }
 

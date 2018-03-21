@@ -11,6 +11,7 @@ extern "C" {
 
 #include "const.h"
 #include "sched.h"
+#include "queues.h"
 
 // typedef uint64_t pid_t;
 // typedef uint64_t pthread_t;
@@ -48,6 +49,8 @@ typedef struct context {
     TAILQ_ENTRY(context) process_list;
     TAILQ_ENTRY(context) process_hash_list;
     TAILQ_ENTRY(context) sched_list;
+
+    struct sleep_queue waiting;
 
     struct task_list *blocked_on;
 } process_t, thread_t, task_t;

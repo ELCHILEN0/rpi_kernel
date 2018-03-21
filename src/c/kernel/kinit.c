@@ -1,11 +1,19 @@
-#include "include/kinit.h"
-#include "include/config.h"
+#include "include/kernel.h"
+
+#include "../include/interrupts.h"
+#include "../include/mailbox.h"
 
 spinlock_t newlib_lock;
 sem_t psem;
 
 // Low priority user-space process, possibly not required...
 void *idle_proc(void *arg) {
+    cpu_set_t affinity_set;
+    CPU_ZERO(&affinity_set);
+    CPU_SET(cpu_id(), &affinity_set);
+    
+    sched_setaffinity(0, NUM_CORES, &affinity_set);
+
     while(true) asm("wfi");
 
     return NULL;    
@@ -346,7 +354,7 @@ void kernel_start() {
     pmu_reset_pmn();
 
     // Create initial processes
-    running_list[get_core_id()] = &(process_t) { };
+    // running_list[get_core_id()] = &(process_t) { };
     pthread_t idle_thread = 0;
     pthread_t root_thread = 0;
     proc_create(&idle_thread, &idle_proc, NULL, PRIORITY_IDLE);

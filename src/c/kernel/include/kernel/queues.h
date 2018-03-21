@@ -1,5 +1,5 @@
-#ifndef SLEEP_QUEUE_H
-#define SLEEP_QUEUE_H
+#ifndef QUEUES_H
+#define QUEUES_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -16,12 +16,12 @@ TAILQ_HEAD(task_list, context);
 typedef struct ready_queue {
     spinlock_t          lock;
     int                 length;
-    struct task_list    *head[PRIORITY_HIGH + 1];
+    struct task_list    head[PRIORITY_HIGH + 1];
 } ready_queue_t;
 
 typedef struct sleep_queue {
     spinlock_t          lock;
-    struct task_list    *head;
+    struct task_list    head;
 } sleep_queue_t;
 
 struct context;

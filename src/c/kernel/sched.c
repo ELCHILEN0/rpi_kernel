@@ -1,8 +1,4 @@
-#include "include/kernel/sched.h"
-#include "include/kernel/const.h"
-#include "include/kernel/context.h"
-#include "include/kernel/globals.h"
-#include "include/asm/cpu.h"
+#include "include/kernel.h"
 
 void CPU_ZERO(cpu_set_t *set) {
     set->mask = 0;

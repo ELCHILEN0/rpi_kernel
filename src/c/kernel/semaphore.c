@@ -1,8 +1,4 @@
-#include "include/kernel/semaphore.h"
-#include "include/kernel/const.h"
-#include "include/kernel/context.h"
-#include "include/kernel/sleepq.h"
-#include "include/asm/branch.h"
+#include "include/kernel.h"
 
 ksem_t *ksem_open (sem_t *sem) {
     return NULL;
