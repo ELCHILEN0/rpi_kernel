@@ -37,12 +37,14 @@ typedef struct process {
     uint64_t args;
 
     void **status;
+    bool trace;
 
     // Scheduling
     // TODO: Idle Balancing, busiest -> idleest
     // TODO: load balance without locking? per core input channel/buffer, lazy synchronization? lockless queue or spinlock queue or try-acquire/continue?
     //
-    cpu_set_t affinity;
+    cpu_set_t *affinityset;
+    cpu_set_t affinitysetpreallocated;
     enum process_state state;
     enum blocked_state block_state;  
     enum process_priority initial_priority;

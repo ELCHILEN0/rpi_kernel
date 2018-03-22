@@ -36,6 +36,16 @@ char *gets(char *str)
     return (char *) syscall(SYS_GETS, str);
 }
 
+void *sys_malloc(size_t size)
+{
+    return (void *) syscall(SYS_MALLOC, size);
+}
+
+int sys_settrace(bool trace)
+{
+    return syscall(SYS_SET_TRACE, trace);
+} 
+
 // Unistd API ...
 pid_t getpid(void)
 {
@@ -57,7 +67,6 @@ int sched_getaffinity(pid_t pid, size_t cpusetsize, cpu_set_t *mask)
 {
     return syscall(SCHED_GET_AFFINITY, pid, cpusetsize, mask);
 }
-
 
 // POSIX Thread API ...
 int pthread_create(pthread_t *thread, const pthread_attr_t *attr, void *(*start_routine)(void *), void *arg)

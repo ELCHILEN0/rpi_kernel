@@ -37,7 +37,7 @@ process_t *get_process(pid_t pid) {
     return NULL;
 }
 
-enum return_state proc_create(pthread_t *thread, void *(*start_routine)(void *), void *arg, enum process_priority priority) {
+enum return_state proc_create(pthread_t *thread, void *(*start_routine)(void *), void *arg, enum process_priority priority, cpu_set_t *affinityset) {
     int stack_size = PROC_STACK;
     
     __spin_lock(&newlib_lock);
@@ -77,14 +77,21 @@ enum return_state proc_create(pthread_t *thread, void *(*start_routine)(void *),
     process->ret = frame.reg[0];
 
     process->pid = pid;
+    process->trace = false;
 
     process->stack_base = stack_base;
     process->stack_size = stack_size;
     process->frame = memcpy(align(stack_base + stack_size - sizeof(aarch64_frame_t), 16), &frame, sizeof(frame));
 
+    process->affinityset = &process->affinitysetpreallocated;
+    CPU_ZERO(process->affinityset);
     for (int cpu = 0; cpu < NUM_CORES; cpu++) {
-        CPU_SET(cpu, &process->affinity);
-    }
+        CPU_SET(cpu, process->affinityset);
+    } 
+
+    if (affinityset != NULL)
+        process->affinityset = affinityset;
+
     process->state = NEW;    
     process->initial_priority = priority;
     process->current_priority = priority;
@@ -153,34 +160,36 @@ enum return_state proc_exit(void *status) {
     alert_on(&current->waiting.tasks, wake_waiting, &current->waiting.lock);
 
     // TODO: Cleanup sleepers...
-    __spin_lock(&newlib_lock);
-    printf("%-3d [core %d] exiting\r\n", current->pid, get_core_id());
-    printf("MODE %10s %10s %10s %10s %10s %10s\r\n",   
-            "instrs", 
-            "cycles", 
-            "l1 access", 
-            "l1 refill", 
-            "l2 access", 
-            "l2 refill");
-    for (int i = 0; i < NUM_CORES; i++) {
-        printf("USR  %10lu %10lu %10lu %10lu %10lu %10lu\r\n",  
-                current->perf_count[0][i][0],
-                current->perf_count[0][i][1],
-                current->perf_count[0][i][2],
-                current->perf_count[0][i][3],
-                current->perf_count[0][i][4],
-                current->perf_count[0][i][5]);
+    if (current->trace) {
+        __spin_lock(&newlib_lock);
+        printf("%-3d [core %d] exiting\r\n", current->pid, get_core_id());
+        printf("MODE %10s %10s %10s %10s %10s %10s\r\n",   
+                "instrs", 
+                "cycles", 
+                "l1 access", 
+                "l1 refill", 
+                "l2 access", 
+                "l2 refill");
+        for (int i = 0; i < NUM_CORES; i++) {
+            printf("USR  %10lu %10lu %10lu %10lu %10lu %10lu\r\n",  
+                    current->perf_count[0][i][0],
+                    current->perf_count[0][i][1],
+                    current->perf_count[0][i][2],
+                    current->perf_count[0][i][3],
+                    current->perf_count[0][i][4],
+                    current->perf_count[0][i][5]);
+        }
+        for (int i = 0; i < NUM_CORES; i++) {
+            printf("SYS  %10lu %10lu %10lu %10lu %10lu %10lu\r\n",  
+                    current->perf_count[0][i][0],
+                    current->perf_count[1][i][1],
+                    current->perf_count[1][i][2],
+                    current->perf_count[1][i][3],
+                    current->perf_count[1][i][4],
+                    current->perf_count[1][i][5]);
+        }
+        __spin_unlock(&newlib_lock);
     }
-    for (int i = 0; i < NUM_CORES; i++) {
-        printf("SYS  %10lu %10lu %10lu %10lu %10lu %10lu\r\n",  
-                current->perf_count[0][i][0],
-                current->perf_count[1][i][1],
-                current->perf_count[1][i][2],
-                current->perf_count[1][i][3],
-                current->perf_count[1][i][4],
-                current->perf_count[1][i][5]);
-    }
-    __spin_unlock(&newlib_lock);
 
     list_del(&current->process_list);
     list_del(&current->process_hash_list);

@@ -178,6 +178,121 @@ void *perf_strided_scalar_multiply(void *arg) {
     return NULL;    
 }
 
+#define NUM_THREADS 1024
+#define NUM_WORKERS 10
+
+typedef struct work {
+    int         iters;
+    int         m_start, m_end;
+    int         n_start, n_end;
+    uint64_t    *matrix;
+    struct      list_head entry;
+} work_t;
+
+typedef struct {
+    spinlock_t  lock;
+    // semaphore_t sema; // compare to longer work times + longer time to insert (eg work before insert)
+    bool        finished;
+    struct list_head head;
+    // work_t      *head;
+} work_queue_t;
+
+work_queue_t work_queue = {
+    .lock = {0},
+    .finished = false,
+    .head = LIST_HEAD_INIT(work_queue.head),
+};
+
+void *pooled_worker(void *arg) {
+    char buf[128];
+    sprintf(buf, "pooled_worker - %d\r\n", *(int *) arg);
+    puts(buf);
+
+    while (true) {
+        __spin_lock(&work_queue.lock);
+
+        if (list_empty(&work_queue.head)) {
+            __spin_unlock(&work_queue.lock);
+            
+            if (work_queue.finished)
+                break;
+            else {
+                puts("empty\r\n");
+                continue;
+            }   
+        }
+
+        work_t *work = list_first_entry(&work_queue.head, work_t, entry);
+        list_del(&work->entry);
+
+        __spin_unlock(&work_queue.lock);
+
+        for (int i = 0; i < work->iters; i++) {
+            scalar_multiply(work->matrix, 2, work->m_start, work->m_end, work->n_start, work->n_end);
+        }
+    }
+
+    return NULL;
+}
+
+void *single_worker(void *arg) {
+    puts("single_worker\r\n");
+    
+    work_t *work = arg;
+
+    for (int i = 0; i < work->iters; i++) {
+        scalar_multiply(work->matrix, 2, work->m_start, work->m_end, work->n_start, work->n_end);
+    }
+
+    return NULL;
+}
+
+void *perf_thread_pool(void *arg) {
+    puts("thread_pool\r\n");
+    // sys_settrace(true);
+    
+    // do we want to compare with assignment, no locking required
+    pthread_t threads[NUM_WORKERS];
+    for (int i = 0; i < NUM_WORKERS; i++) {
+        int *arg = sys_malloc(sizeof(int));
+        *arg = i;
+        pthread_create(&threads[i], NULL, &pooled_worker, arg);
+    }    
+
+    char buf[128];
+
+    work_t *work;
+    for (int i = 0; i < NUM_THREADS; i++) {
+        __spin_lock(&work_queue.lock);
+
+        work = sys_malloc(sizeof(work_t));
+
+        work->iters = 10;
+        work->m_start = 0;
+        work->n_start = 0;
+        work->m_end = MATRIX_M;        
+        work->n_end = MATRIX_N;
+        work->matrix = samples_s[i % PERF_SAMPLES];        
+
+        INIT_LIST_HEAD(&work->entry);              
+        list_add_tail(&work->entry, &work_queue.head);
+
+        __spin_unlock(&work_queue.lock);
+
+        // TODO: Some work here...
+    }
+
+    work_queue.finished = true;
+
+    for (int i = 0; i < NUM_WORKERS; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+    puts("thread_pool - done\r\n");
+
+    return NULL;
+}
+
 void *perf_root(void *arg) {
     size_t core_id = get_core_id();
 
@@ -188,16 +303,20 @@ void *perf_root(void *arg) {
     // }
 
     if (core_id == 0) {
-        for (int i = 0; i < SECTIONS; i++) {
-            pthread_t thread_id;
-            // pthread_create(&thread_id, NULL, perf_scalar_multiply, NULL);
-            pthread_create(&thread_id, NULL, &perf_strided_scalar_multiply, NULL);
-        }
+        pthread_t thread_id;
+        pthread_create(&thread_id, NULL, &perf_thread_pool, NULL);
+        pthread_join(thread_id, NULL);
 
-        for (int i = 0; i < SECTIONS; i++) {
-            pthread_t thread_id;            
-            pthread_create(&thread_id, NULL, &perf_scalar_multiply, NULL);
-        }
+        // for (int i = 0; i < SECTIONS; i++) {
+        //     pthread_t thread_id;
+        //     // pthread_create(&thread_id, NULL, perf_scalar_multiply, NULL);
+        //     pthread_create(&thread_id, NULL, &perf_strided_scalar_multiply, NULL);
+        // }
+
+        // for (int i = 0; i < SECTIONS; i++) {
+        //     pthread_t thread_id;            
+        //     pthread_create(&thread_id, NULL, &perf_scalar_multiply, NULL);
+        // }
     }
 
     // for (int i = 0; i < SECTIONS/NUM_CORES; i++) {    
@@ -349,8 +468,13 @@ void kernel_start() {
     running_list[get_core_id()] = &(process_t) { };
     pthread_t idle_thread = 0;
     pthread_t root_thread = 0;
-    proc_create(&idle_thread, &idle_proc, NULL, PRIORITY_IDLE);
-    proc_create(&root_thread, &root_proc, NULL, PRIORITY_MED);
+
+    cpu_set_t affinity;
+    CPU_ZERO(&affinity);
+    CPU_SET(get_core_id(), &affinity);
+
+    proc_create(&idle_thread, &idle_proc, NULL, PRIORITY_IDLE, &affinity);
+    proc_create(&root_thread, &perf_root, NULL, PRIORITY_MED, &affinity);
     if (!idle_thread || !root_thread)
         return;
   
@@ -381,9 +505,9 @@ void kernel_init( void )
         disp_init();
 
         // Release Kernel Cores! (value doesnt matter)
-        core_mailbox->set[3][0] = true;
-        core_mailbox->set[2][0] = true;
-        core_mailbox->set[1][0] = true;
+        // core_mailbox->set[3][0] = true;
+        // core_mailbox->set[2][0] = true;
+        // core_mailbox->set[1][0] = true;
         core_mailbox->set[0][0] = true;
     }
 

@@ -26,7 +26,6 @@ extern spinlock_t process_hash_lock;
 extern pid_t    next_pid;
 extern uint64_t live_procs;
 
-
 #ifdef SCHED_AFFINITY
 extern ready_queue_t ready_queue[NUM_CORES];
 #else
@@ -44,8 +43,11 @@ extern void kernel_release_handler();
 extern void proc_init();
 extern void disp_init();
 
+// Non-POSIX System Calls
+extern void *sys_malloc(size_t size);
+
 // System Call Helper Functions
-extern enum return_state proc_create(pthread_t *thread, void *(*start_routine)(void *), void *arg, enum process_priority priority);
+extern enum return_state proc_create(pthread_t *thread, void *(*start_routine)(void *), void *arg, enum process_priority priority, cpu_set_t *affintiyset);
 extern enum return_state proc_exit  (void *status);
 extern enum return_state proc_join  (pid_t pid, void **status);
 

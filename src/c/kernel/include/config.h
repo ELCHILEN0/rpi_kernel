@@ -21,7 +21,8 @@ extern "C" {
 
 #define SCHED_AFFINITY
 
-#define NUM_CORES       4
+// #define NUM_CORES       4
+#define NUM_CORES       1
 #define PERF_COUNTERS   6
 
 // Clock Frequencey 19.2 MHz
@@ -54,10 +55,11 @@ enum interrupt_request {
 
     SYS_KILL,
     SYS_SLEEP,
-    SYS_SET_PERF,
-    SYS_GET_PERF,
     SYS_PUTS,
-    SYS_GETS,   
+    SYS_GETS,  
+    SYS_SET_TRACE,
+    SYS_GET_TRACE, 
+    SYS_MALLOC,
 
     SCHED_YIELD,
     SCHED_SET_AFFINITY,

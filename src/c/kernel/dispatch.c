@@ -118,7 +118,7 @@ void ready( process_t *process ) {
     // process->block_state = NONE;
 
     #ifdef SCHED_AFFINITY
-    int inactive_core = find_inactive_core(&process->affinity);
+    int inactive_core = find_inactive_core(process->affinityset);
     ready_queue_t *target_queue = &ready_queue[get_core_id()];
 
     __spin_lock(&target_queue->lock);
@@ -128,7 +128,7 @@ void ready( process_t *process ) {
     // - The current core has more than 25 % of all the live processes
     // TODO: Cache affinity, metric to "encourage" processes to remain
     // TODO: Work stealing at sporadic intervals
-    if (!CPU_ISSET(get_core_id(), &process->affinity)
+    if (!CPU_ISSET(get_core_id(), process->affinityset)
             || (100 * target_queue->length / live_procs) > 25) 
     {
         __spin_unlock(&target_queue->lock);
@@ -246,6 +246,21 @@ void common_interrupt( int interrupt_type ) {
                 __spin_unlock(&newlib_lock);
             }
             break;
+        case SYS_SET_TRACE:
+            {
+                bool do_trace = va_arg(args, bool);
+                current->trace = do_trace;
+                current->ret = 0;
+            }
+            break;
+        case SYS_MALLOC:
+            {
+                size_t size = va_arg(args, size_t);
+                __spin_lock(&newlib_lock);
+                current->ret = malloc(size);
+                __spin_unlock(&newlib_lock);
+            }
+            break;
 
         // Scheduler Routines
         case SCHED_YIELD:
@@ -255,13 +270,13 @@ void common_interrupt( int interrupt_type ) {
             {
                 va_arg(args, pid_t);
                 va_arg(args, size_t);
-                cpu_set_t *mask = va_arg(args, cpu_set_t *);
+                cpu_set_t *affinityset = va_arg(args, cpu_set_t *);
 
-                current->affinity = *mask;
+                current->affinityset = affinityset;
                 current->ret = 0;
 
                 // Reschedule a process if it is no longer eligible for the current core
-                if (CPU_ISSET(get_core_id(), &current->affinity))
+                if (CPU_ISSET(get_core_id(), current->affinityset))
                     code = SCHED;
             }
             break;
@@ -271,7 +286,7 @@ void common_interrupt( int interrupt_type ) {
                 va_arg(args, size_t);
                 cpu_set_t *mask = va_arg(args, cpu_set_t *);
 
-                *mask = current->affinity;
+                mask = current->affinityset;
                 current->ret = 0;
             }
             break;
@@ -283,8 +298,9 @@ void common_interrupt( int interrupt_type ) {
                 va_arg(args, pthread_attr_t *);
                 void *(*start_routine)(void *) = va_arg(args, void *);
                 void *arg = va_arg(args, void *);
+                cpu_set_t *affinityset = va_arg(args, cpu_set_t *);
 
-                code = proc_create(thread, start_routine, arg, PRIORITY_MED);
+                code = proc_create(thread, start_routine, arg, PRIORITY_MED, affinityset);
             }
             break;
 
