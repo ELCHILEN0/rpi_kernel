@@ -21,8 +21,8 @@ extern "C" {
 
 #define SCHED_AFFINITY
 
-// #define NUM_CORES       4
-#define NUM_CORES       1
+#define NUM_CORES       4
+// #define NUM_CORES       1
 #define PERF_COUNTERS   6
 
 // Clock Frequencey 19.2 MHz
@@ -36,7 +36,7 @@ extern "C" {
 #define PIDHASH_SZ      (4096 >> 6)
 #define pid_hashfn(x)   ((((x) >> 8) ^ (x)) & (PIDHASH_SZ - 1))
 
-#define PROC_STACK      (4096 * 4)
+#define PROC_STACK      (4096)
 
 #define likely(x)       __builtin_expect((x),1)
 #define unlikely(x)     __builtin_expect((x),0)

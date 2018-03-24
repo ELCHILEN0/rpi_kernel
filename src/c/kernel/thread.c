@@ -166,10 +166,10 @@ enum return_state proc_exit(void *status) {
         printf("MODE %10s %10s %10s %10s %10s %10s\r\n",   
                 "instrs", 
                 "cycles", 
-                "l1 access", 
-                "l1 refill", 
-                "l2 access", 
-                "l2 refill");
+                "l1d access", 
+                "l1d refill", 
+                "l1i access", 
+                "l1i refill");
         for (int i = 0; i < NUM_CORES; i++) {
             printf("USR  %10lu %10lu %10lu %10lu %10lu %10lu\r\n",  
                     current->perf_count[0][i][0],

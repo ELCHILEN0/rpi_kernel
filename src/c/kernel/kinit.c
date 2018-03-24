@@ -178,8 +178,9 @@ void *perf_strided_scalar_multiply(void *arg) {
     return NULL;    
 }
 
-#define NUM_THREADS 1024
-#define NUM_WORKERS 10
+#define THREAD_POOL
+#define NUM_THREADS 32
+#define NUM_WORKERS 8
 
 typedef struct work {
     int         iters;
@@ -232,6 +233,7 @@ void *pooled_worker(void *arg) {
         }
     }
 
+    sys_settrace(1);
     return NULL;
 }
 
@@ -244,23 +246,25 @@ void *single_worker(void *arg) {
         scalar_multiply(work->matrix, 2, work->m_start, work->m_end, work->n_start, work->n_end);
     }
 
+    sys_settrace(1);
     return NULL;
 }
 
 void *perf_thread_pool(void *arg) {
     puts("thread_pool\r\n");
-    // sys_settrace(true);
     
-    // do we want to compare with assignment, no locking required
-    pthread_t threads[NUM_WORKERS];
-    for (int i = 0; i < NUM_WORKERS; i++) {
-        int *arg = sys_malloc(sizeof(int));
-        *arg = i;
-        pthread_create(&threads[i], NULL, &pooled_worker, arg);
-    }    
+    #ifdef THREAD_POOL
+        pthread_t threads[NUM_WORKERS];
+        for (int i = 0; i < NUM_WORKERS; i++) {
+            int *arg = sys_malloc(sizeof(int));
+            *arg = i;
+            pthread_create(&threads[i], NULL, &pooled_worker, arg);
+        }
+    #else
+        pthread_t threads[NUM_THREADS]; 
+    #endif
 
     char buf[128];
-
     work_t *work;
     for (int i = 0; i < NUM_THREADS; i++) {
         __spin_lock(&work_queue.lock);
@@ -274,19 +278,27 @@ void *perf_thread_pool(void *arg) {
         work->n_end = MATRIX_N;
         work->matrix = samples_s[i % PERF_SAMPLES];        
 
-        INIT_LIST_HEAD(&work->entry);              
-        list_add_tail(&work->entry, &work_queue.head);
+        #ifdef THREAD_POOL
+            INIT_LIST_HEAD(&work->entry);              
+            list_add_tail(&work->entry, &work_queue.head);
+        #else
+            pthread_create(&threads[i], NULL, &single_worker, work);
+        #endif
 
         __spin_unlock(&work_queue.lock);
-
-        // TODO: Some work here...
     }
 
     work_queue.finished = true;
 
-    for (int i = 0; i < NUM_WORKERS; i++) {
-        pthread_join(threads[i], NULL);
-    }
+    #ifdef THREAD_POOL
+        for (int i = 0; i < NUM_WORKERS; i++) {
+            pthread_join(threads[i], NULL);
+        }
+    #else
+        for (int i = 0; i < NUM_THREADS; i++) {
+            pthread_join(threads[i], NULL);
+        }
+    #endif
 
     puts("thread_pool - done\r\n");
 
@@ -303,6 +315,7 @@ void *perf_root(void *arg) {
     // }
 
     if (core_id == 0) {
+        // Thread Pool
         pthread_t thread_id;
         pthread_create(&thread_id, NULL, &perf_thread_pool, NULL);
         pthread_join(thread_id, NULL);
@@ -449,8 +462,8 @@ void kernel_start() {
     pmu_config_pmn(1, 0x11);
     pmu_config_pmn(2, 0x4);
     pmu_config_pmn(3, 0x3);
-    pmu_config_pmn(4, 0x16);
-    pmu_config_pmn(5, 0x17);
+    pmu_config_pmn(4, 0x14);
+    pmu_config_pmn(5, 0x1);
 
     pmu_enable_pmn(0);
     pmu_enable_pmn(1);
@@ -505,10 +518,9 @@ void kernel_init( void )
         disp_init();
 
         // Release Kernel Cores! (value doesnt matter)
-        // core_mailbox->set[3][0] = true;
-        // core_mailbox->set[2][0] = true;
-        // core_mailbox->set[1][0] = true;
-        core_mailbox->set[0][0] = true;
+        for (int cpu = NUM_CORES - 1; cpu >= 0; cpu--) {
+            core_mailbox->set[cpu][0] = true;
+        }
     }
 
     while(true);

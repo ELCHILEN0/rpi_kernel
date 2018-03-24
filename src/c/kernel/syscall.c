@@ -41,7 +41,7 @@ void *sys_malloc(size_t size)
     return (void *) syscall(SYS_MALLOC, size);
 }
 
-int sys_settrace(bool trace)
+int sys_settrace(int trace)
 {
     return syscall(SYS_SET_TRACE, trace);
 } 

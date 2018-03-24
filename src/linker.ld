@@ -31,11 +31,6 @@ SECTIONS {
     . = ALIGN(8);
     __bss_end = .;
 
-    __heap_start = .;
-    . = . + 0x100000;
-    . = ALIGN(8);
-    __heap_end = .;
-
     .stack_core_0 : {
         . = ALIGN(8);
         __el0_stack_start_core_0 = .;
@@ -79,6 +74,12 @@ SECTIONS {
         . = . + 0x1000;    
         __el1_stack_end_core_3 = .;
     } > RAM
+
+
+    __heap_start = .;
+    . = . + 0x10000000;
+    . = ALIGN(8);
+    __heap_end = .;
 
     .note.gnu.build-id : {
         __build_id = .;

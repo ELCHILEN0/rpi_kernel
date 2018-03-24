@@ -248,8 +248,8 @@ void common_interrupt( int interrupt_type ) {
             break;
         case SYS_SET_TRACE:
             {
-                bool do_trace = va_arg(args, bool);
-                current->trace = do_trace;
+                int trace = va_arg(args, int);
+                current->trace = trace != 0;
                 current->ret = 0;
             }
             break;
