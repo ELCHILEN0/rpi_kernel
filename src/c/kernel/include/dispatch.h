@@ -9,6 +9,8 @@ extern "C" {
 #include "../../include/multicore.h"
 
 typedef struct ready_queue {
+    int                 ticks_to_balance;
+    
     spinlock_t          lock;
     int                 length;
     struct list_head    tasks[PRIORITY_HIGH + 1];

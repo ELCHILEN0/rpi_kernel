@@ -77,7 +77,7 @@ process_t *next( void ) {
     return NULL; // TODO: while(true); ... never run out of processes
 }
 
-int find_busiest_core() {
+int sched_pickcpu_busiest() {
     int busiest_core = 0;
     int busiest_count = 0;
 
@@ -93,7 +93,7 @@ int find_busiest_core() {
     return busiest_core;
 }
 
-int find_inactive_core(cpu_set_t *mask) {
+int sched_pickcpu_inactive(cpu_set_t *mask) {
     int inactive_core = 0;
     int inactive_count = INT32_MAX;
 
@@ -109,6 +109,65 @@ int find_inactive_core(cpu_set_t *mask) {
     return inactive_core;
 }
 
+
+int sched_pickcpu(cpu_set_t *mask) {
+    ready_queue_t *curr = &ready_queue[get_core_id()];
+
+    int cpu_inactive = sched_pickcpu_inactive(mask);
+
+    // threads with hard affinity are restricted
+    // the current core is not eligble to run the process
+    if (!CPU_ISSET(get_core_id(), mask)) {
+        return cpu_inactive;
+    }
+
+    // threads on over-loaded cores are restricted
+    // the current core is over-loaded
+    if ((100 * curr->length / live_procs) > 25) {
+        return cpu_inactive;
+    }
+
+    // it is not preferable to swap to a different core
+    return get_core_id();
+}
+
+void sched_pull() {
+    int cpu_busiest = sched_pickcpu_busiest();
+
+    if (cpu_busiest == get_core_id())
+        return;
+
+    ready_queue_t *busy = &ready_queue[cpu_busiest];
+    ready_queue_t *idle = &ready_queue[get_core_id()];
+
+    cpu_set_t target;
+
+    __spin_lock(&busy->lock);
+
+    process_t *curr, *next;
+    list_for_each_entry_safe_reverse(curr, next, busy->tasks, sched_list) {
+        if (busy->length / idle->length < 1.2)
+            break;
+
+        CPU_ZERO(&target);
+        CPU_SET(get_core_id(), &target);
+        CPU_AND(&target, curr->affinityset);
+
+        if (!CPU_ISSET(get_core_id(), &target))
+            continue;
+            
+        busy->length--;
+
+        cpu_set_t *restore_set = curr->affinityset;
+        curr->affinityset = &target;
+        ready(curr);
+        curr->affinityset = restore_set;
+    }
+
+    __spin_unlock(&busy->lock);
+}
+
+
 /*
  * The ready function shall unblock a process and add it to its current
  * priority ready queue, at the end.
@@ -118,24 +177,9 @@ void ready( process_t *process ) {
     // process->block_state = NONE;
 
     #ifdef SCHED_AFFINITY
-    int inactive_core = find_inactive_core(process->affinityset);
-    ready_queue_t *target_queue = &ready_queue[get_core_id()];
+    ready_queue_t *target_queue = &ready_queue[sched_pickcpu(process->affinityset)];
 
     __spin_lock(&target_queue->lock);
-
-    // Migration to another core will happen under specific conditions:
-    // - The current core is not eligible to run the process (cpu_set_t)
-    // - The current core has more than 25 % of all the live processes
-    // TODO: Cache affinity, metric to "encourage" processes to remain
-    // TODO: Work stealing at sporadic intervals
-    if (!CPU_ISSET(get_core_id(), process->affinityset)
-            || (100 * target_queue->length / live_procs) > 25) 
-    {
-        __spin_unlock(&target_queue->lock);
-        target_queue = &ready_queue[inactive_core];
-        __spin_lock(&target_queue->lock); 
-    }
-    
     target_queue->length += 1;
     list_del_init(&process->sched_list);
     list_add_tail(&process->sched_list, &target_queue->tasks[process->current_priority]);
@@ -235,6 +279,16 @@ void common_interrupt( int interrupt_type ) {
     va_list args = *(va_list *) args_ptr;
     switch (request) {
         case SYS_TIME_SLICE:
+            {
+                ready_queue_t *queue = &ready_queue[get_core_id()];
+
+                queue->ticks_to_balance--;
+                if (queue->ticks_to_balance == 0) {
+                    queue->ticks_to_balance = CLOCK_DIVD;
+                    sched_pull();
+                }
+            }
+
             code = proc_tick();
             break;
         case SYS_PUTS:

@@ -29,7 +29,7 @@ extern "C" {
 // ~ a time slice of 1 S = 19.2e6
 // ~ a time slice of 1 MS = 19.2e6/1e3
 #define CLOCK_FREQ      19200000
-#define CLOCK_DIVD      10
+#define CLOCK_DIVD      1000
 #define TICK_REARM      (CLOCK_FREQ / CLOCK_DIVD)
 
 // Hash Function from: http://www.tldp.org/LDP/lki/lki-2.html

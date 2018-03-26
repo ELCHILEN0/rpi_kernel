@@ -181,7 +181,7 @@ enum return_state proc_exit(void *status) {
         }
         for (int i = 0; i < NUM_CORES; i++) {
             printf("SYS  %10lu %10lu %10lu %10lu %10lu %10lu\r\n",  
-                    current->perf_count[0][i][0],
+                    current->perf_count[1][i][0],
                     current->perf_count[1][i][1],
                     current->perf_count[1][i][2],
                     current->perf_count[1][i][3],

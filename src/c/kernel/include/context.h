@@ -23,6 +23,7 @@ void CPU_SET(int cpu, cpu_set_t *set);
 void CPU_CLR(int cpu, cpu_set_t *set);
 int  CPU_ISSET(int cpu, cpu_set_t *set);
 int  CPU_COUNT(cpu_set_t *set);
+void CPU_AND(cpu_set_t *dst, cpu_set_t *src);
 
 // For implementation details see the __load_context routine.
 typedef struct frame {

@@ -54,3 +54,7 @@ int  CPU_COUNT(cpu_set_t *set) {
     }
     return count;
 }
+void CPU_AND(cpu_set_t *dst, cpu_set_t *src)
+{
+    dst->count &= src->count;
+}
