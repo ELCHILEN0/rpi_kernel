@@ -178,7 +178,7 @@ void *perf_strided_scalar_multiply(void *arg) {
     return NULL;    
 }
 
-// #define THREAD_POOL
+#define THREAD_POOL
 #define NUM_THREADS 32
 #define NUM_WORKERS 8
 
