@@ -29,14 +29,11 @@ void *yield_proc(void *arg) {
 #define MATRIX_P 1
 
 // Small Matrix
-// #define MATRIX_M 20
-// #define MATRIX_N 25
-// #define MATRIX_P 1
-
+// #define MATRIX_M 10
+// #define MATRIX_N 20
 // Average Matrix
 // #define MATRIX_M 40
 // #define MATRIX_N 50
-
 // Large Matrix
 #define MATRIX_M 80
 #define MATRIX_N 100
@@ -301,6 +298,68 @@ void *perf_thread_pool(void *arg) {
     #endif
 
     puts("thread_pool - done\r\n");
+
+    return NULL;
+}
+
+#define LOW_RUNTIME 100
+#define MED_RUNTIME 1000
+#define BIG_RUNTIME 10000
+void *runtime_task(void *arg) {
+    int runtime = *(int *) arg;
+
+    char buf[256];
+    sprintf(buf, "runtime_task - %d\r\n", runtime);
+    puts(buf);
+
+    for (int i = 0; i < runtime; i++) {
+        scalar_multiply(NULL, 2, 0, MATRIX_M, 0, MATRIX_N);
+    }
+
+    sys_settrace(1);
+    return NULL;
+}
+
+void *perf_runtime(void *arg) {
+    puts("runtime\r\n");
+
+    int low = LOW_RUNTIME;
+    int med = MED_RUNTIME;
+    int big = BIG_RUNTIME;
+
+    pthread_t threads[60];
+    for (int i = 0; i < 20; i++) {
+        pthread_create(&threads[i], NULL, runtime_task, &low);
+        pthread_create(&threads[i+1], NULL, runtime_task, &med);
+        pthread_create(&threads[i+2], NULL, runtime_task, &big);
+    }
+
+    for (int i = 0; i < 60; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+    return NULL;
+}
+
+void *perf_death(void *arg) {
+    puts("death\r\n");
+    
+    int low = LOW_RUNTIME;
+    int big = BIG_RUNTIME;
+
+    const int num_threads = 16 * 5;
+    pthread_t threads[num_threads];
+    for (int i = 0; i < num_threads / 5; i++) {
+        pthread_create(&threads[i], NULL, runtime_task, &big);
+        pthread_create(&threads[i+1], NULL, runtime_task, &low);
+        pthread_create(&threads[i+2], NULL, runtime_task, &low);
+        pthread_create(&threads[i+3], NULL, runtime_task, &low);
+        pthread_create(&threads[i+4], NULL, runtime_task, &low);
+    }
+
+    for (int i = 0; i < num_threads / 5; i++) {
+        pthread_join(threads[i], NULL);
+    }
 
     return NULL;
 }
