@@ -28,15 +28,28 @@ void *yield_proc(void *arg) {
 // #define MATRIX_P 28
 #define MATRIX_P 1
 
-// Small Matrix
 // #define MATRIX_M 10
 // #define MATRIX_N 20
+// Small Matrix
+#define MATRIX_M 20
+#define MATRIX_N 25
 // Average Matrix
 // #define MATRIX_M 40
 // #define MATRIX_N 50
 // Large Matrix
-#define MATRIX_M 80
-#define MATRIX_N 100
+// #define MATRIX_M 80
+// #define MATRIX_N 100
+
+#define STRIDE 2
+#define SECTIONS STRIDE * STRIDE
+
+// #define THREAD_POOL
+#define NUM_THREADS 32
+#define NUM_WORKERS 8
+
+#define LOW_RUNTIME 100
+#define MED_RUNTIME 1000
+#define BIG_RUNTIME 10000
 
 /*
     Matrix Multiplication:
@@ -140,9 +153,6 @@ void inner_multiply(const uint64_t a[MATRIX_M][MATRIX_N],
     }
 }
 
-#define STRIDE 2
-#define SECTIONS STRIDE * STRIDE
-
 void *perf_scalar_multiply(void *arg) {
     for (int i = 0; i < 1000; i++) {
         scalar_multiply(samples_s[0], 2,
@@ -174,10 +184,6 @@ void *perf_strided_scalar_multiply(void *arg) {
 
     return NULL;    
 }
-
-#define THREAD_POOL
-#define NUM_THREADS 32
-#define NUM_WORKERS 8
 
 typedef struct work {
     int         iters;
@@ -268,7 +274,7 @@ void *perf_thread_pool(void *arg) {
 
         work = sys_malloc(sizeof(work_t));
 
-        work->iters = 10;
+        work->iters = MED_RUNTIME;
         work->m_start = 0;
         work->n_start = 0;
         work->m_end = MATRIX_M;        
@@ -289,22 +295,22 @@ void *perf_thread_pool(void *arg) {
 
     #ifdef THREAD_POOL
         for (int i = 0; i < NUM_WORKERS; i++) {
+            puts("waiting...\r\n");            
             pthread_join(threads[i], NULL);
         }
     #else
         for (int i = 0; i < NUM_THREADS; i++) {
+            puts("waiting...\r\n");
             pthread_join(threads[i], NULL);
         }
     #endif
 
     puts("thread_pool - done\r\n");
 
+    sys_settrace(1);
     return NULL;
 }
 
-#define LOW_RUNTIME 100
-#define MED_RUNTIME 1000
-#define BIG_RUNTIME 10000
 void *runtime_task(void *arg) {
     int runtime = *(int *) arg;
 
