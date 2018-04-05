@@ -40,12 +40,14 @@ void *yield_proc(void *arg) {
 // #define MATRIX_M 80
 // #define MATRIX_N 100
 
+#define PERF_SAMPLES 16
+
 #define STRIDE 2
 #define SECTIONS STRIDE * STRIDE
 
-// #define THREAD_POOL
-#define NUM_THREADS 32
-#define NUM_WORKERS 8
+#define THREAD_POOL
+#define NUM_THREADS 64
+#define NUM_WORKERS 16
 
 #define LOW_RUNTIME 100
 #define MED_RUNTIME 1000
@@ -97,7 +99,6 @@ void *yield_proc(void *arg) {
 // Areas of interest:
 // Cache utilization with per/core processes, process migration -> how to improve scheduling
 // Splitting up the task between processors, easily parallelizable independent vs problems with communication via shared memory
-#define PERF_SAMPLES 2
 // uint64_t samples_a[PERF_SAMPLES][MATRIX_M][MATRIX_N] = {
 //     [0 ... PERF_SAMPLES - 1][0 ... MATRIX_M - 1][0 ... MATRIX_N - 1] = 0xa
 // };
@@ -236,7 +237,7 @@ void *pooled_worker(void *arg) {
         }
     }
 
-    sys_settrace(1);
+    // sys_settrace(1);
     return NULL;
 }
 
@@ -249,7 +250,7 @@ void *single_worker(void *arg) {
         scalar_multiply(work->matrix, 2, work->m_start, work->m_end, work->n_start, work->n_end);
     }
 
-    sys_settrace(1);
+    // sys_settrace(1);
     return NULL;
 }
 
@@ -295,12 +296,14 @@ void *perf_thread_pool(void *arg) {
 
     #ifdef THREAD_POOL
         for (int i = 0; i < NUM_WORKERS; i++) {
-            puts("waiting...\r\n");            
+            sprintf(buf, "waiting (%d/%d)\r\n", i, NUM_WORKERS);
+            puts(buf);            
             pthread_join(threads[i], NULL);
         }
     #else
         for (int i = 0; i < NUM_THREADS; i++) {
-            puts("waiting...\r\n");
+            sprintf(buf, "waiting (%d/%d)\r\n", i, NUM_THREADS);
+            puts(buf); 
             pthread_join(threads[i], NULL);
         }
     #endif
@@ -315,7 +318,7 @@ void *runtime_task(void *arg) {
     int runtime = *(int *) arg;
 
     char buf[256];
-    sprintf(buf, "runtime_task - %d\r\n", runtime);
+    sprintf(buf, "runtime_task - %ud\r\n", runtime);
     puts(buf);
 
     for (int i = 0; i < runtime; i++) {
@@ -381,9 +384,16 @@ void *perf_root(void *arg) {
 
     if (core_id == 0) {
         // Thread Pool
+        char buf[256];
+        sprintf(buf, "perf_root - begin (%d)\r\n", core_timer_count());
+        puts(buf);
+
         pthread_t thread_id;
         pthread_create(&thread_id, NULL, &perf_thread_pool, NULL);
         pthread_join(thread_id, NULL);
+
+        sprintf(buf, "perf_root - death (%d)\r\n", core_timer_count());
+        puts(buf);        
 
         // for (int i = 0; i < SECTIONS; i++) {
         //     pthread_t thread_id;

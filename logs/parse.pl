@@ -5,10 +5,12 @@ use warnings;
 
 my $logfile = $ARGV[0];
 my $numcpus = $ARGV[1];
+# print "parsing $logfile using $numcpus cpus\n";
 
 open(my $in, "<", $logfile) or die "Can't open $logfile: $!";
 my @lines = <$in>;
 
+my $total_time;
 my %runtime;
 my $pid;
 my $sys;
@@ -28,10 +30,12 @@ foreach(@lines) {
         $pid = $1;
         $sys = 0;   
         $cpu = 0;     
+    } elsif (/.* - begin \((\d+)\)/) {
+        $total_time = $1;
+    } elsif (/.* - death \((\d+)\)/) {
+        $total_time = $1 - $total_time;
     }
 }
-
-print "\n";
 
 my %instrs;
 my %cycles;
@@ -40,7 +44,7 @@ my %refill;
 
 my @pids = keys %runtime;
 foreach my $pid (@pids) {
-    print "runtime for PID: $pid\n";
+    # print "runtime for PID: $pid\n";
     my $total_instrs = [0, 0];
     my $total_cycles = [0, 0];
     my $total_access = [0, 0];
@@ -68,19 +72,6 @@ foreach my $pid (@pids) {
     $cycles{$pid} = $total_cycles;
     $access{$pid} = $total_access;
     $refill{$pid} = $total_refill;
-
-    # my $throughput  = [ @$total_instrs[0]/@$total_cycles[0],
-    #                     @$total_instrs[1]/@$total_cycles[1] ];
-    # my $refill_rate = [ @$total_access[0]/@$total_refill[0],
-    #                     @$total_access[1]/@$total_refill[1] ];
-    # print "[@$total_instrs], [@$total_cycles] = $throughput\n";
-    # print "[@$total_access], [@$total_refill] = $refill_rate\n";
-
-    # print "@$throughput[0]\n";
-    # print "@$throughput[1]\n";
-    # print "-----------------\n";
-    # print "@$refill_rate[0]\n";
-    # print "@$refill_rate[1]\n";
 }
 
 my $total_instrs = [0, 0];
@@ -98,19 +89,42 @@ for my $pid (@pids) {
     @$total_refill[1] += @{$refill{$pid}}[1];
 }
 
-print "totals:\n"
+print "summary (usr, sys, total):\n";
+print "instrs: ----------\n";
 print "@$total_instrs[0]\n";
 print "@$total_instrs[1]\n";
-print "-----------------\n";
+print "@{[@$total_instrs[0]+@$total_instrs[1]]}\n";
+
+print "cycles: ----------\n";
 print "@$total_cycles[0]\n";
 print "@$total_cycles[1]\n";
-print "-----------------\n";
+print "@{[@$total_cycles[0]+@$total_cycles[1]]}\n";
+
+print "l1 access: -------\n";
 print "@$total_access[0]\n";
 print "@$total_access[1]\n";
-print "-----------------\n";
+print "@{[@$total_access[0]+@$total_access[1]]}\n";
+
+print "l1 refill: -------\n";
 print "@$total_refill[0]\n";
 print "@$total_refill[1]\n";
-print "-----------------\n";
+print "@{[@$total_refill[0]+@$total_refill[1]]}\n";
+
+print "statistics:\n";
+print "runtime: ---------\n";
+print "$total_time\n";
+print "throughput: ------\n";
+print "@{[(@$total_instrs[0]+@$total_instrs[1])/($total_time)]}\n";
+print "ipc: -------------\n";
+print "@{[(@$total_instrs[0])/(@$total_cycles[0])]}\n";
+print "@{[(@$total_instrs[1])/(@$total_cycles[1])]}\n";
+print "@{[(@$total_instrs[0]+@$total_instrs[1])/(@$total_cycles[0]+@$total_cycles[1])]}\n";
+print "apr: -------------\n";
+print "@{[(@$total_access[0])/(@$total_refill[0])]}\n";
+print "@{[(@$total_access[1])/(@$total_refill[1])]}\n";
+print "@{[(@$total_access[0]+@$total_access[1])/(@$total_refill[0]+@$total_refill[1])]}\n";
+
+
 
 # $, = " ";
 # print "@{$runtime{$pid}{$cpu}{$sys}}\n";
