@@ -328,7 +328,7 @@ void *runtime_task(void *arg) {
     int runtime = *(int *) arg;
 
     char buf[256];
-    sprintf(buf, "runtime_task - %ud\r\n", runtime);
+    sprintf(buf, "runtime_task - %d\r\n", runtime);
     puts(buf);
 
     for (int i = 0; i < runtime; i++) {
@@ -421,24 +421,18 @@ void *perf_root(void *arg) {
         //     pthread_join(threads[i], NULL);
         // }
 
+        // Death
+        // pthread_t thread_id;
+        // pthread_create(&thread_id, NULL, &perf_death, NULL);
+        // pthread_join(thread_id, NULL);
+
         pthread_t thread_id;
-        pthread_create(&thread_id, NULL, &perf_death, NULL);
+        pthread_create(&thread_id, NULL, &perf_runtime, NULL);
         pthread_join(thread_id, NULL);
 
         sprintf(buf, "perf_root - death (%d)\r\n", core_timer_count());
         puts(buf);  
     }
-
-    // for (int i = 0; i < SECTIONS/NUM_CORES; i++) {    
-    //     pthread_t thread_id;
-    //     pthread_create(&thread_id, NULL, &perf_proc, NULL);
-    // }
-
-    // for (int i = 0; i < SECTIONS/NUM_CORES; i++) {
-    //     pthread_t thread_id;        
-    //     // pthread_create(&thread_id, NULL, perf_scalar_multiply, NULL);
-    //     pthread_create(&thread_id, NULL, perf_strided_scalar_multiply, NULL);
-    // }      
 
     while(true) sched_yield();
 }
