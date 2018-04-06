@@ -399,32 +399,31 @@ void *perf_root(void *arg) {
         sprintf(buf, "perf_root - begin (%d)\r\n", core_timer_count());
         puts(buf);
 
-
         // Pool
         // pthread_t thread_id;        
         // pthread_create(&thread_id, NULL, &perf_thread_pool, NULL);
         // pthread_join(thread_id, NULL);
 
-        // Baseline
+        // Baseline single-core
         // pthread_t thread_id;                
         // pthread_create(&thread_id, NULL, &perf_scalar_multiply, NULL);
         // pthread_join(thread_id, NULL);
 
-        pthread_t threads[SECTIONS];
-        for (int i = 0; i < SECTIONS; i++) {
-            pthread_create(&threads[i], NULL, &perf_strided_scalar_multiply, NULL);
-        }
-
-        for (int i = 0; i < SECTIONS; i++) {
-            sprintf(buf, "waiting (%d/%d)\r\n", i, SECTIONS);
-            puts(buf);      
-            pthread_join(threads[i], NULL);
-        }
+        // Baseline multi-core
+        // pthread_t threads[SECTIONS];
+        // for (int i = 0; i < SECTIONS; i++) {
+        //     pthread_create(&threads[i], NULL, &perf_strided_scalar_multiply, NULL);
+        // }
 
         // for (int i = 0; i < SECTIONS; i++) {
-        //     pthread_t thread_id;            
-        //     pthread_create(&thread_id, NULL, &perf_scalar_multiply, NULL);
+        //     sprintf(buf, "waiting (%d/%d)\r\n", i, SECTIONS);
+        //     puts(buf);      
+        //     pthread_join(threads[i], NULL);
         // }
+
+        pthread_t thread_id;
+        pthread_create(&thread_id, NULL, &perf_death, NULL);
+        pthread_join(thread_id, NULL);
 
         sprintf(buf, "perf_root - death (%d)\r\n", core_timer_count());
         puts(buf);  

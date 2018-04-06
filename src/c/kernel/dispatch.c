@@ -271,11 +271,14 @@ void common_interrupt( int interrupt_type ) {
                 #ifdef SCHED_AFFINITY
                 ready_queue_t *queue = &ready_queue[get_core_id()];
 
-                queue->ticks_to_balance--;
-                if (queue->ticks_to_balance == 0) {
-                    queue->ticks_to_balance = CLOCK_DIVD;
-                    sched_pull();
-                }
+                #ifdef SCHED_PULL_MIGRATION
+                    queue->ticks_to_balance--;
+                    if (queue->ticks_to_balance == 0) {
+                        queue->ticks_to_balance = CLOCK_DIVD;
+                        sched_pull();
+                    }
+                #endif
+
                 #endif
             }
 

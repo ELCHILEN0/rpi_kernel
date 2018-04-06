@@ -20,6 +20,7 @@ extern "C" {
 #include "list.h"
 
 #define SCHED_AFFINITY
+// #define SCHED_PULL_MIGRATION
 
 #define NUM_CORES       4
 // #define NUM_CORES       1
