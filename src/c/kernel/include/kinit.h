@@ -19,7 +19,6 @@ extern "C" {
 #include "../../include/interrupts.h"
 
 extern spinlock_t newlib_lock;
-extern spinlock_t scheduler_lock;
 extern spinlock_t process_list_lock;
 extern spinlock_t process_hash_lock;
 
@@ -29,8 +28,7 @@ extern uint64_t live_procs;
 #ifdef SCHED_AFFINITY
 extern ready_queue_t ready_queue[NUM_CORES];
 #else
-extern spinlock_t scheduler_lock;
-extern struct list_head ready_queue[];    
+extern ready_queue_t ready_queue; 
 #endif
 
 extern process_t *running_list[NUM_CORES];

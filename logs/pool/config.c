@@ -3,6 +3,7 @@
 
 // sm
 #define PERF_SAMPLES 4
+// reg
 #define PERF_SAMPLES 16
 
 // #define THREAD_POOL

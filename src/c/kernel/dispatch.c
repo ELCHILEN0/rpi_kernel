@@ -7,12 +7,11 @@ struct list_head process_list;
 #ifdef SCHED_AFFINITY
 ready_queue_t ready_queue[NUM_CORES] = {0};
 #else
-extern struct list_head ready_queue[PRIORITY_HIGH + 1];    
+ready_queue_t ready_queue;
+// struct list_head ready_queue[PRIORITY_HIGH + 1];    
 #endif
 
 process_t *running_list[NUM_CORES];
-
-spinlock_t scheduler_lock;
 
 /**
  * Initialize the process table and schedule lists.
@@ -26,7 +25,7 @@ void disp_init() {
             INIT_LIST_HEAD(&ready_queue[j].tasks[i]);
         }
         #else
-        INIT_LIST_HEAD(&ready_queue[i]);
+        INIT_LIST_HEAD(&ready_queue.tasks[i]);
         #endif        
     }
 }
@@ -41,24 +40,19 @@ process_t *next( void ) {
         // struct list_head *head = &ready_queue[get_core_id()][i];
         ready_queue_t *target_queue = &ready_queue[get_core_id()];
 
-        __spin_lock(&target_queue->lock);
         // struct list_head *head = &ready_queue[get_core_id()].tasks[i];
-        struct list_head *head = &target_queue->tasks[i];
         #else
-        __spin_lock(&scheduler_lock);        
-        struct list_head *head = &ready_queue[i];
-        #endif     
+        ready_queue_t *target_queue = &ready_queue;
+        #endif  
+        __spin_lock(&target_queue->lock);           
+        struct list_head *head = &target_queue->tasks[i];        
 
         process_t *process, *next;
         list_for_each_entry_safe(process, next, head, sched_list) {
             list_del_init(&process->sched_list);
             
-            #ifdef SCHED_AFFINITY
-            target_queue->length -= 1;
-            __spin_unlock(&target_queue->lock);    
-            #else        
-            __spin_unlock(&scheduler_lock);
-            #endif
+            target_queue->length -= 1;            
+            __spin_unlock(&target_queue->lock);                
 
             // Reset its priority when it runs 
             // process->current_priority = process->initial_priority;
@@ -67,16 +61,13 @@ process_t *next( void ) {
             return process;
         }
 
-        #ifdef SCHED_AFFINITY
         __spin_unlock(&target_queue->lock);
-        #else
-        __spin_unlock(&scheduler_lock);   
-        #endif      
     }
 
     return NULL; // TODO: while(true); ... never run out of processes
 }
 
+#ifdef SCHED_AFFINITY
 int sched_pickcpu_busiest() {
     int busiest_core = 0;
     int busiest_count = 0;
@@ -167,6 +158,7 @@ void sched_pull() {
     __spin_unlock(&busy->lock);
 }
 
+#endif
 
 /*
  * The ready function shall unblock a process and add it to its current
@@ -178,19 +170,15 @@ void ready( process_t *process ) {
 
     #ifdef SCHED_AFFINITY
     ready_queue_t *target_queue = &ready_queue[sched_pickcpu(process->affinityset)];
+    #else
+    ready_queue_t *target_queue = &ready_queue;    
+    #endif
 
     __spin_lock(&target_queue->lock);
     target_queue->length += 1;
     list_del_init(&process->sched_list);
     list_add_tail(&process->sched_list, &target_queue->tasks[process->current_priority]);
     __spin_unlock(&target_queue->lock);
-        
-    #else
-    __spin_lock(&scheduler_lock);    
-    list_del_init(&process->sched_list);    
-    list_add_tail(&process->sched_list, &ready_queue[process->current_priority]);
-    __spin_unlock(&scheduler_lock);        
-    #endif
 }
 
 void sleep_on(struct list_head *head, process_t *task, spinlock_t *lock) {
@@ -280,6 +268,7 @@ void common_interrupt( int interrupt_type ) {
     switch (request) {
         case SYS_TIME_SLICE:
             {
+                #ifdef SCHED_AFFINITY
                 ready_queue_t *queue = &ready_queue[get_core_id()];
 
                 queue->ticks_to_balance--;
@@ -287,6 +276,7 @@ void common_interrupt( int interrupt_type ) {
                     queue->ticks_to_balance = CLOCK_DIVD;
                     sched_pull();
                 }
+                #endif
             }
 
             code = proc_tick();

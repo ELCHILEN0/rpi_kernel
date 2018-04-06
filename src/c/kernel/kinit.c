@@ -31,19 +31,21 @@ void *yield_proc(void *arg) {
 // #define MATRIX_M 10
 // #define MATRIX_N 20
 // Small Matrix
-#define MATRIX_M 20
-#define MATRIX_N 25
+// #define MATRIX_M 20
+// #define MATRIX_N 25
 // Average Matrix
 // #define MATRIX_M 40
 // #define MATRIX_N 50
 // Large Matrix
-// #define MATRIX_M 80
-// #define MATRIX_N 100
+#define MATRIX_M 80
+#define MATRIX_N 100
 
-#define PERF_SAMPLES 16
+#define PERF_SAMPLES 1
+// #define PERF_SAMPLES 4
+// #define PERF_SAMPLES 16
 
 #define STRIDE 2
-#define SECTIONS STRIDE * STRIDE
+#define SECTIONS (STRIDE * STRIDE)
 
 #define THREAD_POOL
 #define NUM_THREADS 64
@@ -155,18 +157,25 @@ void inner_multiply(const uint64_t a[MATRIX_M][MATRIX_N],
 }
 
 void *perf_scalar_multiply(void *arg) {
-    for (int i = 0; i < 1000; i++) {
+    for (int i = 0; i < BIG_RUNTIME; i++) {
         scalar_multiply(samples_s[0], 2,
                         0, MATRIX_M,
                         0, MATRIX_N);
     }
 
+    sys_settrace(1);
     return NULL;    
 }
 
 static int scalar_multiply_id = 0;
 void *perf_strided_scalar_multiply(void *arg) {
     int my_id = __atomic_fetch_add(&scalar_multiply_id, 1, __ATOMIC_RELAXED) % SECTIONS;
+    #ifdef SCHED_AFFINITY
+    cpu_set_t affinity_set;
+    CPU_ZERO(&affinity_set);
+    CPU_SET(my_id, &affinity_set);
+    sched_setaffinity(pthread_self(), NUM_CORES, &affinity_set);
+    #endif
 
     const int x = my_id % STRIDE;
     const int y = my_id / STRIDE;
@@ -177,12 +186,13 @@ void *perf_strided_scalar_multiply(void *arg) {
     const int m_end = MATRIX_M * (x + 1)/STRIDE;
     const int n_end = MATRIX_M * (y + 1)/STRIDE;
 
-    for (int rep = 0; rep < 1000; ++rep) {
+    for (int rep = 0; rep < BIG_RUNTIME; rep++) {
         scalar_multiply(samples_s[0], 2,
                         m_start, m_end,
                         n_start, n_end);
     }
 
+    sys_settrace(1);
     return NULL;    
 }
 
@@ -375,36 +385,49 @@ void *perf_death(void *arg) {
 
 void *perf_root(void *arg) {
     size_t core_id = get_core_id();
-
+    // puts(buf);
     // for (int i = 0; i < SECTIONS/NUM_CORES; i++) {
     //     pthread_t thread_id;
     //     // pthread_create(&thread_id, NULL, perf_scalar_multiply, NULL);
     //     pthread_create(&thread_id, NULL, perf_strided_scalar_multiply, NULL);
+    //     pthread_join(thread_id, NULL);
     // }
 
+
     if (core_id == 0) {
-        // Thread Pool
         char buf[256];
         sprintf(buf, "perf_root - begin (%d)\r\n", core_timer_count());
         puts(buf);
 
-        pthread_t thread_id;
-        pthread_create(&thread_id, NULL, &perf_thread_pool, NULL);
-        pthread_join(thread_id, NULL);
 
-        sprintf(buf, "perf_root - death (%d)\r\n", core_timer_count());
-        puts(buf);        
+        // Pool
+        // pthread_t thread_id;        
+        // pthread_create(&thread_id, NULL, &perf_thread_pool, NULL);
+        // pthread_join(thread_id, NULL);
 
-        // for (int i = 0; i < SECTIONS; i++) {
-        //     pthread_t thread_id;
-        //     // pthread_create(&thread_id, NULL, perf_scalar_multiply, NULL);
-        //     pthread_create(&thread_id, NULL, &perf_strided_scalar_multiply, NULL);
-        // }
+        // Baseline
+        // pthread_t thread_id;                
+        // pthread_create(&thread_id, NULL, &perf_scalar_multiply, NULL);
+        // pthread_join(thread_id, NULL);
+
+        pthread_t threads[SECTIONS];
+        for (int i = 0; i < SECTIONS; i++) {
+            pthread_create(&threads[i], NULL, &perf_strided_scalar_multiply, NULL);
+        }
+
+        for (int i = 0; i < SECTIONS; i++) {
+            sprintf(buf, "waiting (%d/%d)\r\n", i, SECTIONS);
+            puts(buf);      
+            pthread_join(threads[i], NULL);
+        }
 
         // for (int i = 0; i < SECTIONS; i++) {
         //     pthread_t thread_id;            
         //     pthread_create(&thread_id, NULL, &perf_scalar_multiply, NULL);
         // }
+
+        sprintf(buf, "perf_root - death (%d)\r\n", core_timer_count());
+        puts(buf);  
     }
 
     // for (int i = 0; i < SECTIONS/NUM_CORES; i++) {    
@@ -416,7 +439,7 @@ void *perf_root(void *arg) {
     //     pthread_t thread_id;        
     //     // pthread_create(&thread_id, NULL, perf_scalar_multiply, NULL);
     //     pthread_create(&thread_id, NULL, perf_strided_scalar_multiply, NULL);
-    // }
+    // }      
 
     while(true) sched_yield();
 }
