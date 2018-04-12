@@ -23,8 +23,6 @@ foreach(@lines) {
         }
         $runtime{$pid}{$cpu}{$sys} = [$1, $2, $3, $4, $5, $6];
         $cpu += 1;
-
-        # print;
     } elsif (/(\d+)\s+\[core \d\] exiting/) {
         # print "runtime for PID: $1\n";
         $pid = $1;

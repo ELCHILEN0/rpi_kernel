@@ -9173,214 +9173,464 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 [core0] Executing from 0x84AD0
-[core1] Executing from 0x84B7C!
 [core3] Executing from 0x84B7C!
-[core2] Executing from 0x84B7C!
-[interrupt] releasing core 3
 [interrupt] releasing core 0
+[core1] Executing from 0x84B7C!
+[interrupt] releasing core 3
 [interrupt] releasing core 1
+[core2] Executing from 0x84B7C!
 [interrupt] releasing core 2
-perf_root - begin (272154873)
+perf_root - begin (226488367)
 death
-runtime_task - 100d
-runtime_task - 10000d
-runtime_task - 100d
-runtime_task - 10000d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 10000d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 10000d
-runtime_task - 10000d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 10000d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 10000d
-runtime_task - 100d
-runtime_task - 10000d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 10000d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 10000d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 10000d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 10000d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 10000d
-runtime_task - 10000d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 10000d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 10000d
-runtime_task - 100d
-runtime_task - 100d
-runtime_task - 100d
+runtime_task - 3, 100
+runtime_task - 4, 100
+runtime_task - 0, 10000
+runtime_task - 7, 100
 14  [core 2] exiting
 MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
-USR    18536975   27551201   10480511       4729    9846253         92
+USR     1185313    1769083     669463         51     658743         87
 USR           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
-SYS      386583    3487814     138170      19652     457047         67
+SYS      228347    2392833      65874       9784     239166         49
 SYS           0          0          0          0          0          0
+runtime_task - 1, 100
+runtime_task - 5, 10000
 13  [core 1] exiting
 MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
 USR           0          0          0          0          0          0
-USR    18530049   27553807   10476590       5325    9841936         92
+USR     1184876    1767952     669214         54     658453         84
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
-SYS      160869    1177822      44172       1221     121500         56
+SYS      116987    1186683      18789         38      70605         48
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
-19  [core 3] exiting
+11  [core 2] exiting
 MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR        2093       3951        763         28       2323          7
 USR           0          0          0          0          0          0
+USR     1183212    1758639     668687         25     656110          1
 USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR    18531238   27529272   10477265       4451    9844234         24
+SYS     3879288   37714579    1593429     301375    5737792         15
 SYS           0          0          0          0          0          0
+SYS        3919       6285       1998          2       4573          3
 SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS      146500     941734      42712        433     115043         31
+runtime_task - 2, 100
 17  [core 1] exiting
 MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
 USR           0          0          0          0          0          0
-USR    18534636   27531591   10479225       4242    9844248         24
+USR     1184849    1763078     669198         33     658421         17
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
-SYS     1024956    4721746     349545      20436     869627         36
+SYS      463878    3736283     154873      21471     566109         31
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
-28  [core 3] exiting
+runtime_task - 6, 100
+runtime_task - 9, 100
+runtime_task - 11, 100
+runtime_task - 12, 100
+runtime_task - 8, 100
+12  [core 3] exiting
 MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR      203378     303356     114509         36     113914          9
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR    18531738   27528133   10477563       4392    9843417         14
+USR      981929    1459181     554955         22     544428          5
+SYS    13108886   73117989    4956577     609575   17214134         14
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS      787984    7835386     311720      55574    1083614         33
+SYS        3284       5364       1676          3       3794          6
+runtime_task - 10, 10000
 22  [core 2] exiting
 MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
-USR    18531002   27552703   10477133       6157    9845449         19
+USR     1185146    1764064     669348        105     658316         18
 USR           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
-SYS      422924    2978103     145123      13850     428330         39
+SYS      416931    2294984     120315       5762     330908         24
 SYS           0          0          0          0          0          0
-36  [core 3] exiting
+19  [core 1] exiting
 MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
 USR           0          0          0          0          0          0
+USR     1185307    1762570     669459         51     658488         17
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
-USR    18534274   27536845   10479009       4896    9844475          7
+SYS           0          0          0          0          0          0
+SYS      132050    1202487      20875         31      78949         28
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS      802152    8047000     318615      57856    1104134         26
+runtime_task - 13, 100
 21  [core 1] exiting
 MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
 USR           0          0          0          0          0          0
-USR    18528370   27520447   10475635       4568    9843340         17
+USR     1185351    1762843     669458        100     658501          8
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
-SYS      657990    6207473     253776      41781     877797         35
+SYS      135899    1262634      21426         13      81271         26
 SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+runtime_task - 14, 100
+runtime_task - 16, 100
+runtime_task - 17, 100
+runtime_task - 21, 100
+runtime_task - 20, 10000
+runtime_task - 26, 100
+runtime_task - 15, 10000
+runtime_task - 19, 100
+runtime_task - 18, 100
+runtime_task - 24, 100
+runtime_task - 22, 100
+runtime_task - 30, 10000
+runtime_task - 23, 100
+runtime_task - 2, 100
+runtime_task - 27, 100
+runtime_task - 28, 100
+runtime_task - 25, 10000
+runtime_task - 0, 100
+runtime_task - 29, 100
+runtime_task - 31, 100
+runtime_task - 4, 100
+runtime_task - 6, 100
+runtime_task - 1, 100
+runtime_task - 3, 10000
+runtime_task - 5, 100
+runtime_task - 8, 10000
+runtime_task - 7, 100
+runtime_task - 12, 100
+runtime_task - 11, 100
+runtime_task - 10, 100
+runtime_task - 15, 100
+runtime_task - 14, 100
+23  [core 1] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR        2137       3647        768         26       2327          8
+USR     1183212    1758437     668694         41     656238          1
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS    15743704   35950518    5222708         27    8749964         22
+SYS        3757       6592       1917         10       4567         10
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+27  [core 2] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR     1185347    1763847     669460        124     658533          9
+USR           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS      243665    2318773      68715       8820     250892         26
+SYS           0          0          0          0          0          0
+runtime_task - 16, 100
+16  [core 3] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR      808005    1201626     456186         85     448935          8
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR      377301     561013     213275         43     209488          0
+SYS    16013266   36507840    5314008         48    8901387         13
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS        1355       2430        696         13       1681          3
+26  [core 1] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR           0          0          0          0          0          0
+USR     1184794    1761362     669149         90     658192         11
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS      116861    1151220      18711         44      70378         26
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+34  [core 2] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR     1184821    1762966     669164        198     658168          4
+USR           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS      679721    6427770     250447      43016     903598         16
+SYS           0          0          0          0          0          0
+31  [core 3] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR     1185350    1764704     669459        135     658532         20
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS      316700    3308404     101821      16789     370957         29
+runtime_task - 9, 100
+33  [core 1] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR           0          0          0          0          0          0
+USR     1185347    1764305     669461        185     658502          7
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS      610435    6427439     227177      42236     823649         24
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+42  [core 2] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR     1185302    1763896     669458        180     658413          8
+USR           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS      247552    2582554      73778      11314     268424         26
 SYS           0          0          0          0          0          0
 44  [core 3] exiting
 MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
-USR    18533899   27537474   10478763       4823    9844096         14
+USR     1185302    1762911     669453        150     658295          4
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
-SYS      583190    5623680     223395      37205     769187         30
-29  [core 1] exiting
+SYS      237618    2476688      69473      10419     251929         13
+54  [core 2] exiting
 MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
 USR           0          0          0          0          0          0
-USR    18531146   27530567   10477215       5015    9843064          9
 USR           0          0          0          0          0          0
+USR     1185349    1763873     669462        211     658438          3
 USR           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
-SYS      684403    6730955     267271      46639     921119         27
 SYS           0          0          0          0          0          0
+SYS      235607    2477102      67518      10044     246079         15
 SYS           0          0          0          0          0          0
-16  [core 0] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR    18536018   27554154   10479953       5717    9845097         16
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS      175572    1199628      46321       1207     129484         28
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-37  [core 1] exiting
+runtime_task - 13, 10000
+38  [core 2] exiting
 MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
 USR           0          0          0          0          0          0
-USR    18533050   27522096   10478278       4209    9843649         12
+USR           0          0          0          0          0          0
+USR     1185525    1763909     669596        169     658753          5
+USR           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS      721460    7639738     275434      52526     996359         14
+SYS           0          0          0          0          0          0
+41  [core 1] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR           0          0          0          0          0          0
+USR     1185190    1763771     669373        190     658207          5
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
-SYS      379696    3516520     137162      20263     456156         31
+SYS      606097    6375100     225305      41778     816714         23
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+57  [core 2] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR     1185294    1763911     669464        143     658641         10
+USR           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS      385040    3793170     128622      20719     466077         15
+SYS           0          0          0          0          0          0
+49  [core 1] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR           0          0          0          0          0          0
+USR     1184958    1762393     669262        152     658029          3
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS      359158    3741864     121173      20664     439146         20
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+46  [core 2] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR     1185660    1764521     669728        203     659275         12
+USR           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS      356167    3740532     120224      20748     434394         12
+SYS           0          0          0          0          0          0
+runtime_task - 17, 100
+58  [core 1] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR           0          0          0          0          0          0
+USR     1185070    1763369     669306        183     658329          7
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS     3479904   36561260    1446877     286805    5238842         24
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
 52  [core 3] exiting
@@ -9388,189 +9638,29 @@ MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
-USR    18532056   27525809   10477730       4255    9842871          8
+USR     1185349    1763456     669464        178     658371          4
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
-SYS     1206837   11260565     479563      84102    1688207         32
-12  [core 0] exiting
+SYS      956970   10063488     374662      72092    1356957         19
+59  [core 2] exiting
 MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR    18536126   27572045   10480067       7055    9845517         18
+USR        2136       4491        767         33       2337          8
 USR           0          0          0          0          0          0
+USR     1183215    1758640     668694         71     655979          0
 USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS      176158    1199804      46629       1085     130196         36
+SYS    16939413  177743618    7183493    1443360   25927983         11
 SYS           0          0          0          0          0          0
+SYS        3960       6159       2014          8       4509          2
 SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-49  [core 1] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR    18536683   27535772   10480343       4716    9844906         11
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS      576258    5624494     221488      37770     758443         30
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-24  [core 0] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR    18529335   27558690   10476180       6756    9841536         15
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS      807272    8049159     320001      57672    1112046         29
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-34  [core 2] exiting
+37  [core 1] exiting
 MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
 USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR    18533529   27524205   10478556       3938    9844168          9
-USR           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS      275647    2408446      92676      10960     296030         32
-SYS           0          0          0          0          0          0
-53  [core 1] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR    18527646   27521840   10475210       4864    9840482         11
+USR     1185502    1764437     669586        204     658791          5
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
-SYS      481490    4623001     181014      29609     610908         29
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-64  [core 3] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR    18532988   27536332   10478253       4520    9843352         10
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS      362288    2304151     118496      10729     388239         34
-31  [core 0] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR    18533343   27546218   10478446       5539    9843641         13
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS      268333    2305432      89109      10124     283325         31
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-72  [core 3] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR    18532730   27538945   10478110       4939    9843263         12
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS      862562    3411457     284796      10764     666085         26
-61  [core 1] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR    18533548   27531292   10478607       4791    9843396          6
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS      369070    3411187     132698      19431     436935         30
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-39  [core 0] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR    18532968   27553419   10478229       5984    9843466         13
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS      729845    6941330     284201      48281     983762         33
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-84  [core 3] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR    18533756   27526413   10478694       4181    9843578         11
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS      667841    2303680     210821       1165     403095         26
-47  [core 0] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR    18534189   27555407   10478927       5942    9844095         12
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS      381535    3516155     137620      20025     459014         27
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-69  [core 1] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR    18533716   27531803   10478656       4713    9843407         10
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS      379261    2411222     125079      11859     415121         32
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-42  [core 2] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR    18524870   27518094   10473700       4303    9839658          8
-USR           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS      476936    4516046     178455      28132     601298         37
-SYS           0          0          0          0          0          0
-23  [core 3] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR    18529089   27534092   10476114       4916    9842645         17
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS     1023992   10363575     412999      76330    1445463         36
-62  [core 0] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR    18533001   27551944   10478263       5770    9843552         15
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS      369090    3410507     132744      19333     437437         26
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-78  [core 1] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR    18537702   27531926   10480936       4307    9845607         10
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS      670397    2305598     211120       1320     404434         34
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-74  [core 0] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR    18534427   27559731   10479069       6330    9844040          6
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS      370945    3411320     133238      19270     440598         30
-SYS           0          0          0          0          0          0
+SYS      239968    2477018      68710       9845     249734         23
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
 48  [core 3] exiting
@@ -9578,490 +9668,400 @@ MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
-USR    18535676   27534589   10479842       4383    9845255         11
+USR     1185483    1764193     669595        164     658855          8
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
-SYS      380794    3516519     137621      20151     456083         27
-81  [core 0] exiting
+SYS      953996   10062613     375430      72489    1353887         12
+18  [core 2] exiting
 MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR    18451142   27455197   10431994       8362    9800232          8
+USR      808174    1201596     456278         78     449104          9
+USR           0          0          0          0          0          0
+USR      376876     560281     213034         33     209268          0
+USR           0          0          0          0          0          0
+SYS      812578    3134419     253061       5759     548767         26
+SYS           0          0          0          0          0          0
+SYS        1396       2512        723          7       1754          3
+SYS           0          0          0          0          0          0
+53  [core 1] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR           0          0          0          0          0          0
+USR     1185526    1763577     669598        146     658988          4
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS      244740    2529896      70741      10274     258692         19
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+36  [core 3] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
-SYS      362264    2306410     118526      10849     388809         30
+USR     1185086    1764389     669384        161     658982         21
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
+SYS      260103    2633990      75589      11259     274809         18
+29  [core 1] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR           0          0          0          0          0          0
+USR     1185704    1765468     669730        179     659320         14
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS      811028    7797477     306070      54014    1104718         21
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+runtime_task - 19, 100
+runtime_task - 18, 10000
 56  [core 3] exiting
 MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
-USR    18531628   27516105   10477526       3605    9843076          8
+USR     1185704    1764504     669725        172     659370         10
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
-SYS      361921    2304847     118399      10735     389370         30
-89  [core 0] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR    18537468   27558315   10480819       6367    9845760          7
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS      360904    2305694     118172      10916     389616         28
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-86  [core 1] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR    18535016   27533299   10479428       4915    9844027         12
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS      717049    2410081     226782       1264     430304         34
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-27  [core 0] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR    18531474   27547869   10477431       5778    9843093         12
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS      267020    2306827      88808      10379     279827         28
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-33  [core 1] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR    18532130   27524804   10477790       4466    9843150          9
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS      474892    4517672     177780      28306     599692         27
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-59  [core 2] exiting
+SYS      247893    2529281      70391      10625     256685         15
+runtime_task - 20, 100
+61  [core 2] exiting
 MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
-USR    18529933   27557072   10476526       6894    9842164         11
+USR     1185349    1763518     669464        152     658273         15
 USR           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
-SYS      371130    3411504     133276      19456     440258         32
+SYS     3379144   35599101    1412429     285242    5075943         20
 SYS           0          0          0          0          0          0
-76  [core 3] exiting
+28  [core 1] exiting
 MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR      606362     902506     342213        116     337113          9
+USR      568974     845733     321588         41     315712          0
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR    18532917   27522465   10478248       3856    9843829         12
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS      670537    2305269     211230       1325     404612         22
-67  [core 2] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR    18534107   27537031   10478918       4714    9844122         13
-USR           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS      369331    3410422     132768      19527     436273         30
-SYS           0          0          0          0          0          0
-38  [core 1] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR      175456     261970      99262        128      93712          0
-USR    18356859   27261904   10378635       3720    9750466         12
-USR           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS         713       1865        374         22       1010          6
-SYS      372931    3407915     133684      19139     442901         18
-SYS           0          0          0          0          0          0
-88  [core 3] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR    18534636   27532250   10479221       4254    9844492         16
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS      175318    1199801      46232       1280     129539         30
-79  [core 2] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR    18527382   27515709   10475087       4024    9840693         13
-USR           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS      375946    3409879     134671      19015     443735         21
-SYS           0          0          0          0          0          0
-32  [core 3] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR    18535606   27522749   10479805       3599    9845899         14
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS      708771    6940759     276704      48258     953506         32
-73  [core 1] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR    18531850   27523409   10477668       4443    9842802          8
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS      954711    5730591     345301      40591    1207203         31
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-43  [core 0] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR    18529950   27552692   10476555       6228    9842285         11
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS      375392    3411185     134460      19017     443359         31
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-87  [core 2] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR    18532917   27540115   10478220       4716    9843452         12
-USR           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS      368956    3409695     132727      19390     436176         29
-SYS           0          0          0          0          0          0
-68  [core 3] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR    18529297   27562326   10476228       6756    9842215         13
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS      381143    2410630     125770      11622     415457         30
-26  [core 2] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR    18532238   27531206   10477868       4424    9844366         16
-USR           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS      276870    2408653      92905      11072     298824         28
-SYS           0          0          0          0          0          0
-66  [core 0] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR    18530593   27555873   10476934       6524    9842705          7
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS      380938    3516072     137540      20051     453127         29
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-82  [core 1] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR    18533420   27534320   10478528       4957    9843661          8
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS      670577    2304388     211163       1251     404482         33
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-77  [core 0] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR    18529214   27545264   10476152       5868    9841661         14
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS      384768    3409945     135787      18965     447745         29
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-71  [core 3] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR    18357676   27262111   10379124       4019    9750496          9
-USR      175952     261578      99540         30      93953          1
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS      591288    5726677     227108      38233     777488         19
-SYS         734       1988        387          8       1084          9
-83  [core 2] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR    18532182   27528763   10477841       4133    9843444         15
-USR           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS      380784    3515899     137454      20216     453060         29
-SYS           0          0          0          0          0          0
-11  [core 0] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR    18645011   27726046   10541722       6798    9903874         25
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS      671669    2306960     211782       1128     406111         42
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-41  [core 1] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR    18535393   27525896   10479683       4250    9845088         11
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS      623081    5835510     238638      39372     822833         27
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-18  [core 3] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR    18127563   26965410   10249006       6899    9628137         26
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR      404797     604355     228991        265     216173          2
-SYS      181159    1398725      51751       2854     148809         34
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS        1974       4110       1007         31       2447          8
-54  [core 0] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR    18537653   27556749   10480958       5745    9846761         10
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS      489327    4623635     183123      29024     619166         28
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-58  [core 2] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR    15924087   23668065    9003132       4561    8457437         10
-USR           0          0          0          0          0          0
-USR     2600802    3879880    1470549       1844    1381966          3
-USR           0          0          0          0          0          0
-SYS      259856    2289764      84890       9847     272195         23
-SYS           0          0          0          0          0          0
-SYS        8382      13736       4238         96       9335         10
-SYS           0          0          0          0          0          0
-63  [core 0] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR      213008     318714     120517        215     113922          0
-USR           0          0          0          0          0          0
-USR    18316706   27262875   10355954       7699    9728614         12
-USR           0          0          0          0          0          0
-SYS        1312       2595        672         14       1716          4
-SYS           0          0          0          0          0          0
-SYS      594576    5727251     227834      38152     777469         24
-SYS           0          0          0          0          0          0
-57  [core 1] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR    18532670   27526572   10478139       4556    9843614         10
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS     1111053   11367617     451275      85454    1585619         28
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-46  [core 1] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR      167708     249735      94916         42      90033          3
-USR    18357692   27262077   10379130       3844    9750771         10
-USR           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS         713       1596        374         10       1073          6
-SYS      481582    4619324     180992      29306     611351         24
-SYS           0          0          0          0          0          0
-51  [core 1] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR    12896693   19175283    7291429       4256    6849801          8
-USR     5637597    8389866    3187617       2446    2995046          4
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS      250864    2274773      80233       9768     262828         26
-SYS       17989      31011       9007        380      19587          5
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-45  [core 1] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR  1852984121 2753529869 1047675621     534702  983995192         13
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS     5833526   12929090    2847160     133856    6387045         23
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-25  [core 1] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR  1853073051 2754132602 1047725553     563951  984235295         16
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS     5769246   10932655    2880317      36169    6282878         44
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-65  [core 1] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR  1852806970 2753637879 1047575577     570627  983915022         20
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS     6499649   16247926    3096081     164820    7263304         30
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-30  [core 1] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR           0          0          0          0          0          0
-USR   706951422 1050170448  399711935     172421  375487705          1
-USR  1146126610 1703476211  648023073     347975  608692971         18
-USR           0          0          0          0          0          0
+SYS      242974    2525747      69744      10280     257822         16
+SYS        1974       3439       1006         15       2343          3
 SYS           0          0          0          0          0          0
-SYS     2110751    3185567    1072918       5998    2305654          8
-SYS     3821828    7988208    1879840      45017    4072128         31
 SYS           0          0          0          0          0          0
 15  [core 3] exiting
 MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
-USR  1853434978 2755492406 1047931001     624514  984216108         90
+USR   118278928  175699280   66839508        654   65528159         85
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
-SYS     5775867   11741144    2828949     118283    6203867         60
-60  [core 3] exiting
+SYS     4865943   43290667    2028751     345621    7025332         48
+runtime_task - 21, 100
+24  [core 1] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR      404920     602565     228380         62     225586         11
+USR      780428    1160316     441083         66     432813          2
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS       85943     796563      13360         41      51001         19
+SYS        2594       4441       1317         14       3115          3
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+32  [core 2] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR      807961    1201538     456138        125     448797          3
+USR           0          0          0          0          0          0
+USR      377388     561428     213324         48     209561          0
+USR           0          0          0          0          0          0
+SYS      241594    2526857      69551      10446     254413         14
+SYS           0          0          0          0          0          0
+SYS        1382       2601        718          6       1791          3
+SYS           0          0          0          0          0          0
+63  [core 3] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR        2137       3684        766         28       2326         10
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR     1182774    1757395     668441         37     655711          0
+SYS     6703585   70041691    2820152     565363   10163867         18
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS        3834       6041       1936          1       4368          3
+51  [core 1] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR        2091       3695        763         28       2275          3
+USR     1183388    1759756     668832         89     656749          4
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS    25282662  223104243   10335857    1807114   36018540         13
+SYS        3757       6849       1919         21       4574         15
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+runtime_task - 22, 100
+waiting - 10
+runtime_task - 24, 100
+39  [core 0] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR     1185347    1763801     669461        182     658281         10
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS      237484    2476903      68051      10051     246961         22
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+runtime_task - 26, 100
+47  [core 0] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR     1185025    1762960     669301        142     658129          6
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS      246043    2529688      72556      10605     267049         22
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+runtime_task - 27, 100
+10  [core 2] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR        2128       6525        769         28       2571         30
+USR           0          0          0          0          0          0
+USR   118284683  175717327   66843862       2636   65534393         13
+USR           0          0          0          0          0          0
+SYS      251277    2517805      68865       9748     255869         36
+SYS           0          0          0          0          0          0
+SYS      366629     546656     185183        330     395547         20
+SYS           0          0          0          0          0          0
+68  [core 3] exiting
 MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
-USR  1852993442 2754859270 1047681281     626835  984038604         19
+USR     1185347    1762647     669459         72     658359         18
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
-SYS     5886686   11930830    2864837     128994    6356221         29
-80  [core 3] exiting
+SYS     6144603   37658463    2344765     316083    8432444         29
+runtime_task - 23, 10000
+66  [core 1] exiting
 MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
 USR           0          0          0          0          0          0
+USR     1185351    1762696     669465        122     658543         15
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
-USR  1853124184 2755008446 1047756370     623414  984059157         13
+SYS           0          0          0          0          0          0
+SYS      123337    1149135      19691         34      74105         21
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS     6179493   11781408    2951293     118426    6347650         32
-85  [core 0] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR  1852877136 2756355395 1047615839     755491  983828246         12
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS     6674282   16419891    3167365     163120    7440043         29
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-20  [core 0] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR  1853129940 2756836230 1047758837     748274  983961226         19
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS     5781305   11880519    2831408     121688    6230341         39
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-35  [core 0] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR  1853174356 2757175602 1047783964     783991  983986692         17
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-USR           0          0          0          0          0          0
-SYS     5991732   14166636    2921296     144173    6553083         32
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-SYS           0          0          0          0          0          0
-10  [core 1] exiting
-MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR        1781       7151        656         19       2104         36
-USR   283845314  421550748  160486003      61882  150761626          1
-USR  1569332619 2333030516  887299735     524886  833356535          0
-USR           0          0          0          0          0          0
-SYS      426550    3518354     138843      19751     509026         37
-SYS      847730    1283785     430925       2134     931772          4
-SYS     4711903    7965174    2347603      84734    5111976          0
-SYS           0          0          0          0          0          0
-50  [core 2] exiting
+runtime_task - 25, 100
+69  [core 1] exiting
 MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
 USR           0          0          0          0          0          0
+USR     1185525    1763235     669597        158     658814         12
 USR           0          0          0          0          0          0
-USR  1852991992 2754277120 1047680178     580624  984024621         17
 USR           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
+SYS     9882403   73123995    3908860     614038   14077742         14
 SYS           0          0          0          0          0          0
-SYS     5818049   11596242    2865385      92000    6280405         35
 SYS           0          0          0          0          0          0
-55  [core 0] exiting
+waiting - 11
+67  [core 2] exiting
 MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR   254055970  377729150  143643815      89017  134915343          1
+USR        2136       3889        765         26       2317          9
 USR           0          0          0          0          0          0
-USR  1599118027 2377088943  904141491     530767  849148328         13
+USR     1183210    1758550     668689         89     655914          0
 USR           0          0          0          0          0          0
-SYS      769855    1305909     384059      14242     835596          8
+SYS    16016062   36555918    5313493         19    8901351         13
 SYS           0          0          0          0          0          0
-SYS     4996241   10132749    2442839     103410    5376085         23
+SYS        3834       6350       1936         17       4346          3
 SYS           0          0          0          0          0          0
-75  [core 2] exiting
+43  [core 0] exiting
 MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR     1185435    1764355     669569        198     658811         11
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
-USR  2321246621 3449894043 1312431794     713642 1232645762         14
 USR           0          0          0          0          0          0
+SYS      467637    4900178     167653      30206     607192         19
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
-SYS     7336396   15134702    3611176     142376    7963093         30
 SYS           0          0          0          0          0          0
 40  [core 3] exiting
 MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
-USR  3348525069 4976102543 1893253192     969954 1778387235         20
+USR    46581053   69200723   26322989        834   25810225         17
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
-SYS    11172717   23015742    5556602     103904   12271403         38
-70  [core 0] exiting
+SYS      887908    8010211     353009      52341    1172240         28
+waiting - 12
+waiting - 13
+waiting - 14
+waiting - 15
+waiting - 16
+waiting - 17
+waiting - 18
+62  [core 0] exiting
 MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
-USR  4413692511 6567829936 2495512146    2159315 2343681983         24
+USR     1185702    1769634     669726        457     659578         14
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
 USR           0          0          0          0          0          0
-SYS    13416712   25094068    6631166     279201   14496716         34
+SYS     4961254   36121797    1908502     259344    5784533         32
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
 SYS           0          0          0          0          0          0
-perf_root - death (1429370965)
+waiting - 19
+64  [core 0] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR     1185531    1763583     669600        177     659028         16
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS    15341094   35054807    5089138         93    8529064         31
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+waiting - 20
+20  [core 3] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR        2160       3857        770         27       2376          8
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR   118284277  175705411   66843152       1264   65530258          1
+SYS     3814184   36661327    1553847     286171    5349798         10
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS      365965     561819     183501        946     394209         19
+waiting - 21
+waiting - 22
+waiting - 23
+waiting - 24
+waiting - 25
+25  [core 3] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR      405102     603382     228465         84     225766         12
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR   117876032  175095259   66612788        897   65305659          5
+SYS      165042    1722745      33923       2984     127888         22
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS      369478     553704     185947        376     400166         10
+30  [core 2] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR   118284525  175733062   66843427       3107   65538059         16
+USR           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS      619419    3172336     256220      10382     660454         32
+SYS           0          0          0          0          0          0
+waiting - 26
+50  [core 2] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+USR   118271965  175704885   66835687       2848   65522615         12
+USR           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS      949185    6828828     397780      42284    1174573         26
+SYS           0          0          0          0          0          0
+waiting - 27
+waiting - 28
+waiting - 29
+55  [core 2] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR        2161       3936        771         33       2361          5
+USR           0          0          0          0          0          0
+USR   118274527  175695366   66837914       1596   65524028          4
+USR           0          0          0          0          0          0
+SYS    13476839  142552151    5720350    1158206   20617799         12
+SYS           0          0          0          0          0          0
+SYS      362954     568336     181554       1422     395078         10
+SYS           0          0          0          0          0          0
+waiting - 30
+45  [core 1] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR           0          0          0          0          0          0
+USR   118281262  175719796   66841255       2977   65528781         10
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS      828682    5515554     344858      31607     989941         24
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+waiting - 31
+waiting - 32
+waiting - 33
+60  [core 1] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR           0          0          0          0          0          0
+USR   118267566  175690535   66833473       2049   65523096         16
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+SYS      625812    3194863     252984      11966     659952         24
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+waiting - 34
+waiting - 35
+65  [core 2] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR    56459561   83862028   31905073        346   31279608         25
+USR           0          0          0          0          0          0
+USR    61827112   91836716   34938454        506   34255174          0
+USR           0          0          0          0          0          0
+SYS    10466258   73186061    4120048     611760   14741598         57
+SYS           0          0          0          0          0          0
+SYS      194400     307627      98171       1208     209013          2
+SYS           0          0          0          0          0          0
+35  [core 0] exiting
+MODE     instrs     cycles l1d access l1d refill l1i access l1i refill
+USR    48117819   71474640   27191158        348   26658694          8
+USR    70167575  104242161   39652233       1739   38876158          3
+USR           0          0          0          0          0          0
+USR           0          0          0          0          0          0
+SYS      875836    7967222     347515      52917    1161318         25
+SYS      213195     319541     108114        260     234676          9
+SYS           0          0          0          0          0          0
+SYS           0          0          0          0          0          0
+waiting - 36
+waiting - 37
+waiting - 38
+waiting - 39
+waiting - 40
+waiting - 41
+waiting - 42
+waiting - 43
+waiting - 44
+waiting - 45
+waiting - 46
+waiting - 47
+waiting - 48
+waiting - 49
+waiting - 50
+waiting - 51
+waiting - 52
+waiting - 53
+waiting - 54
+waiting - 55
+waiting - 56
+waiting - 57
+waiting - 58
+waiting - 59
+waiting - 60
+waiting - 61
+waiting - 62
+waiting - 63
+waiting - 64
+waiting - 65
+waiting - 66
+waiting - 67
+waiting - 68
+waiting - 69
+perf_root - death (378809795)
 

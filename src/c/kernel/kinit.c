@@ -31,18 +31,18 @@ void *yield_proc(void *arg) {
 // #define MATRIX_M 10
 // #define MATRIX_N 20
 // Small Matrix
-// #define MATRIX_M 20
-// #define MATRIX_N 25
+#define MATRIX_M 20
+#define MATRIX_N 25
 // Average Matrix
 // #define MATRIX_M 40
 // #define MATRIX_N 50
 // Large Matrix
-#define MATRIX_M 80
-#define MATRIX_N 100
+// #define MATRIX_M 80
+// #define MATRIX_N 100
 
-#define PERF_SAMPLES 1
 // #define PERF_SAMPLES 4
-// #define PERF_SAMPLES 16
+// #define PERF_SAMPLES 8
+#define PERF_SAMPLES 16
 
 #define STRIDE 2
 #define SECTIONS (STRIDE * STRIDE)
@@ -324,15 +324,20 @@ void *perf_thread_pool(void *arg) {
     return NULL;
 }
 
+typedef struct runtime_work {
+    int runtime;
+    int id;
+} runtime_work_t;
+
 void *runtime_task(void *arg) {
-    int runtime = *(int *) arg;
+    runtime_work_t *work = arg;
 
     char buf[256];
-    sprintf(buf, "runtime_task - %d\r\n", runtime);
+    sprintf(buf, "runtime_task - %d, %d\r\n", work->id, work->runtime);
     puts(buf);
 
-    for (int i = 0; i < runtime; i++) {
-        scalar_multiply(NULL, 2, 0, MATRIX_M, 0, MATRIX_N);
+    for (int i = 0; i < work->runtime; i++) {
+        scalar_multiply(samples_s[work->id], 2, 0, MATRIX_M, 0, MATRIX_N);
     }
 
     sys_settrace(1);
@@ -346,14 +351,28 @@ void *perf_runtime(void *arg) {
     int med = MED_RUNTIME;
     int big = BIG_RUNTIME;
 
-    pthread_t threads[60];
+    runtime_work_t work[60];
     for (int i = 0; i < 20; i++) {
-        pthread_create(&threads[i], NULL, runtime_task, &low);
-        pthread_create(&threads[i+1], NULL, runtime_task, &med);
-        pthread_create(&threads[i+2], NULL, runtime_task, &big);
+        work[((i * 3) + 0)].id = ((i * 3) + 0) % PERF_SAMPLES;
+        work[((i * 3) + 0)].runtime = low;
+        
+        work[((i * 3) + 1)].id = ((i * 3) + 1) % PERF_SAMPLES;
+        work[((i * 3) + 1)].runtime = med;
+
+        work[((i * 3) + 2)].id = ((i * 3) + 2) % PERF_SAMPLES;
+        work[((i * 3) + 2)].runtime = big;
+    }
+
+    pthread_t threads[60];
+    for (int i = 0; i < 60; i++) {
+        pthread_create(&threads[i], NULL, runtime_task, &work[i]);
     }
 
     for (int i = 0; i < 60; i++) {
+        char buf[256];
+        sprintf(buf, "waiting - %d\r\n", threads[i]);
+        puts(buf);
+        
         pthread_join(threads[i], NULL);
     }
 
@@ -366,17 +385,36 @@ void *perf_death(void *arg) {
     int low = LOW_RUNTIME;
     int big = BIG_RUNTIME;
 
-    const int num_threads = 16 * 5;
-    pthread_t threads[num_threads];
+    const int num_threads = 12 * 5;
+    runtime_work_t work[num_threads];
     for (int i = 0; i < num_threads / 5; i++) {
-        pthread_create(&threads[i], NULL, runtime_task, &big);
-        pthread_create(&threads[i+1], NULL, runtime_task, &low);
-        pthread_create(&threads[i+2], NULL, runtime_task, &low);
-        pthread_create(&threads[i+3], NULL, runtime_task, &low);
-        pthread_create(&threads[i+4], NULL, runtime_task, &low);
+        work[(i * 5) + 0].id = ((i * 5) + 0) % PERF_SAMPLES;
+        work[(i * 5) + 0].runtime = big;
+
+        work[(i * 5) + 1].id = ((i * 5) + 1) % PERF_SAMPLES;
+        work[(i * 5) + 1].runtime = low;
+        work[(i * 5) + 2].id = ((i * 5) + 2) % PERF_SAMPLES;
+        work[(i * 5) + 2].runtime = low;
+        work[(i * 5) + 3].id = ((i * 5) + 3) % PERF_SAMPLES;
+        work[(i * 5) + 3].runtime = low;
+        work[(i * 5) + 4].id = ((i * 5) + 4) % PERF_SAMPLES;
+        work[(i * 5) + 4].runtime = low;
     }
 
+    pthread_t threads[num_threads];
     for (int i = 0; i < num_threads / 5; i++) {
+        pthread_create(&threads[(i * 5) + 0], NULL, runtime_task, &work[(i * 5) + 0]);
+        pthread_create(&threads[(i * 5) + 1], NULL, runtime_task, &work[(i * 5) + 1]);
+        pthread_create(&threads[(i * 5) + 2], NULL, runtime_task, &work[(i * 5) + 2]);
+        pthread_create(&threads[(i * 5) + 3], NULL, runtime_task, &work[(i * 5) + 3]);
+        pthread_create(&threads[(i * 5) + 4], NULL, runtime_task, &work[(i * 5) + 4]);
+    }
+
+    for (int i = 0; i < num_threads; i++) {
+        char buf[256];
+        sprintf(buf, "waiting - %d\r\n", threads[i]);
+        puts(buf);
+
         pthread_join(threads[i], NULL);
     }
 
@@ -426,6 +464,7 @@ void *perf_root(void *arg) {
         // pthread_create(&thread_id, NULL, &perf_death, NULL);
         // pthread_join(thread_id, NULL);
 
+        // Runtime
         pthread_t thread_id;
         pthread_create(&thread_id, NULL, &perf_runtime, NULL);
         pthread_join(thread_id, NULL);
