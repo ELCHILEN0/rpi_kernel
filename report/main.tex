@@ -46,6 +46,7 @@ The OS will be compiled for the ARMv8 (aarch64) instruction set and will be exec
 \section{Definitions}
 \label{sec:definitions}
 
+\begin{figure}
 \begin{tikzpicture}[shorten >=1pt,node distance=1.0cm,on grid,auto,
     running/.style={circle, draw=green!100, fill=green!30},
     ready/.style={circle, draw=purple!100, fill=purple!30}
@@ -56,7 +57,7 @@ The OS will be compiled for the ARMv8 (aarch64) instruction set and will be exec
     \node[ready] (p_6) [left=of p_5] {P6};
     \node[ready] (p_7) [left=of p_6] {P7};
 
-    \node[state,rectangle] (q_0) [fit={(p_4) (p_5) (p_6) (p_7)}] [label=Global Ready Queue] {};
+    \node[state,rectangle] (q_0) [fit={(p_4) (p_5) (p_6) (p_7)}] [label=Ready Queue] {};
 
     \node[running] (r_0) [right=of q_0, xshift=24mm] {P0};
     \node[running] (r_1) [below=of r_0] {P1};
@@ -70,18 +71,106 @@ The OS will be compiled for the ARMv8 (aarch64) instruction set and will be exec
     \draw[->] (q_0.east) -- (r_2.west);
     \draw[->] (q_0.east) -- (r_3.west);
 
+    \draw[->] (p_7.east) -- (p_6.west);
+    \draw[->] (p_6.east) -- (p_5.west);
+    \draw[->] (p_5.east) -- (p_4.west);
 
-    \draw[->] (q_1.south) |- ++(0,-5mm) -| (q_0.south) node[midway] {preemted};
-
-    % \node[state,rectangle, align=center] (q_r) [] {This is a \\ square}; % Here the nodes and coordinates are defined
-    % \node[coordinate] (q_0) [right=of q_r, xshift=3cm]   {};
-    % \node[coordinate] (q_1) [left=of q_r, xshift=-3cm, yshift=1mm]   {};
-    % \node[coordinate] (q_2) [left=of q_r, xshift=-3cm, yshift=-1mm]   {};
-    % \path[->] % path and draw commands connect the nodes and coordinates to each other.
-    % (q_r) edge [] node  {This is an arrow} (q_0);   
-    % \draw[->] ([yshift=-3mm]q_1) -- ([yshift=-2mm]q_r.west) node[midway,swap] {This is an arrow};
-    % \draw[->] ([yshift=3mm]q_2) -- ([yshift=2mm]q_r.west) node[midway] {This is an arrow};
+    \draw[->] (r_0.east) -- ++(10mm,0) node[near end] {exited};
+    \draw[->] (r_1.east) -- ++(10mm,0) node[near end] {exited};
+    \draw[->] (r_2.east) -- ++(10mm,0) node[near end] {exited};
+    \draw[->] (r_3.east) -- ++(10mm,0) node[near end] {exited};
+     
+    \draw[->] (q_1.south) |- ++(0,-5mm) -| (q_0.south) node[near end] {preemted};
 \end{tikzpicture}
+\caption{Global Ready Queue}
+\end{figure}
+
+\begin{figure}
+\begin{tikzpicture}[shorten >=1pt,node distance=1.0cm,on grid,auto,
+    running/.style={circle, draw=green!100, fill=green!30},
+    ready/.style={circle, draw=purple!100, fill=purple!30}
+    ]
+
+    \node[ready] (p_4) [] {P4};
+    \node[ready] (p_5) [below=of p_4, yshift=-2mm] {P5};
+    \node[ready] (p_6) [below=of p_5, yshift=-2mm] {P6};
+    \node[ready] (p_7) [below=of p_6, yshift=-2mm] {P7};
+
+    \node[ready] (p_8) [left=of p_4] {P8};
+    \node[ready] (p_9) [left=of p_5] {P9};
+    \node[ready] (p_10) [left=of p_6] {Pa};
+    \node[ready] (p_11) [left=of p_7] {Pb};    
+
+    \node[state,rectangle] (q_0) [fit={(p_4) (p_8)}] [label=Ready Queues] {};
+    \node[state,rectangle] (q_1) [fit={(p_5) (p_9)}] [below=of q_0, yshift=-2mm] {};
+    \node[state,rectangle] (q_2) [fit={(p_6) (p_10)}] [below=of q_1, yshift=-2mm] {};
+    \node[state,rectangle] (q_3) [fit={(p_7) (p_11)}] [below=of q_2, yshift=-2mm] {};
+
+    \node[running] (r_0) [right=of q_0, xshift=24mm] {P0};
+    \node[running] (r_1) [below=of r_0, yshift=-2mm] {P1};
+    \node[running] (r_2) [below=of r_1, yshift=-2mm] {P2};
+    \node[running] (r_3) [below=of r_2, yshift=-2mm] {P3};
+
+    \node[state,rectangle] (q_r) [fit={(r_0) (r_1) (r_2) (r_3)}] [label=Running] {};
+
+    \draw[->] (q_0.east) -- (r_0.west);
+    \draw[->] (q_1.east) -- (r_1.west);
+    \draw[->] (q_2.east) -- (r_2.west);
+    \draw[->] (q_3.east) -- (r_3.west);
+
+    \draw[->] (p_8.east) -- (p_4.west);
+    \draw[->] (p_9.east) -- (p_5.west);
+    \draw[->] (p_10.east) -- (p_6.west);
+    \draw[->] (p_11.east) -- (p_7.west);
+     
+    \draw[->] (q_r.south) |- ++(0,-5mm) -| (q_3.south) node[near end] {preemted};
+    \draw[->] (r_0.east) -- ++(10mm,0) node[near end] {exited};
+    \draw[->] (r_1.east) -- ++(10mm,0) node[near end] {exited};
+    \draw[->] (r_2.east) -- ++(10mm,0) node[near end] {exited};
+    \draw[->] (r_3.east) -- ++(10mm,0) node[near end] {exited};
+\end{tikzpicture}
+\caption{Per Core Ready Queue}
+\end{figure}
+
+\begin{figure}
+\begin{tikzpicture}[shorten >=1pt,node distance=1.0cm,on grid,auto,
+    running/.style={circle, draw=green!100, fill=green!30},
+    ready/.style={circle, draw=purple!100, fill=purple!30},
+    empty/.style={circle, draw=none, fill=none, text=white}
+    ]
+
+    \node[ready] (p_4) [] {P4};
+    \node[ready] (p_5) [below=of p_4, yshift=-2mm] {P5};
+
+    \node[ready] (p_6) [left=of p_5] {P8};
+    \node[ready] (p_7) [left=of p_6] {P9};
+    \node[ready] (p_8) [left=of p_7] {Pa};
+    \node[ready] (p_9) [left=of p_8] {Pb}; 
+    
+    \node[empty] (p_e) [above=of p_9, yshift=+2mm] {Pe};
+
+    \node[state,rectangle] (q_0) [fit={(p_4) (p_e)}] [label=CPU Ready Queues] {};
+    \node[state,rectangle] (q_1) [fit={(p_5) (p_6) (p_7) (p_8) (p_9)}] [below=of q_0, yshift=-2mm] {};
+
+    \node[running] (r_0) [right=of q_0, xshift=24mm] {P0};
+    \node[running] (r_1) [below=of r_0, yshift=-2mm] {P1};
+
+    \node[state,rectangle] (q_r) [fit={(r_0) (r_1)}] [label=Running] {};
+
+    \draw[->] (q_0.east) -- (r_0.west);
+    \draw[->] (q_1.east) -- (r_1.west);
+
+    \draw[->] (p_9.east) -- (p_8.west);
+    \draw[->] (p_8.east) -- (p_7.west);
+    \draw[->] (p_7.east) -- (p_6.west);
+    \draw[->] (p_6.east) -- (p_5.west);
+     
+    \draw[->] (q_r.south) |- ++(0,-5mm) -| (q_1.south) node[near end] {preemted};
+    \draw[->] (r_0.east) -- ++(10mm,0) node[near end] {exited};
+    \draw[->] (r_1.east) -- ++(10mm,0) node[near end] {exited};
+\end{tikzpicture}
+\caption{Unbalanced Scheduling}
+\end{figure}
 
 
 \section{Performance Tests}
@@ -91,12 +180,6 @@ Various user programs were tested against different variations of the scheduler.
 The impact of per-core scheduler with and without pull migration was analyzed with tasks with varying runtime.  Three classes of processes were defined as short, medium and long; each, with 10x the runtime of the previous case.  An even distribution of each type of task and the data set was tested against these schedulers.  Additionally the schedulers were tested against many short runtime processes compared to the few long runtime processes.
 
 Finally, a common pattern; in resource intensive and parallelizable tasks, is to create a smaller subset of OS tasks and pull work off a shared queue.  Otherwise known as a thread pool, the difference between allowing the OS to manage all the tasks compared to semi-manual work queueing was examined.  Work was divided into 64 threads with 16 workers for the pooled case.  Additionally the locality of the data being worked on was constrained to both 4 (sm) and 16 (lg) matrices of a smaller size than the L1 cache.  All tests ran on the per-core scheduler with pull migration.  
-
-% TODO: remove this, breaking other tables for some reason...
-\begin{table}[h!]
-    \centering
-    \caption{Table to test captions and labels}
-\end{table}
 
 \begin{table}[h!]
 % \begin{center}
