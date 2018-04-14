@@ -196,6 +196,8 @@ Finally, a common pattern; in resource intensive and parallelizable tasks, is to
 %     \caption{Table to test captions and labels}
 % \end{table}
 
+In general for the following examples the runtime gives a rough measurement of elapsed jiffies.  However, the cycle count provides a better perforamnce measurement.  Additionally, it is important to all data is cached in the L2 cache and thus stalls for fetching from main memory are generally minimized.
+
 \begin{table}[h!]
     \centering
     \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
@@ -226,6 +228,8 @@ Finally, a common pattern; in resource intensive and parallelizable tasks, is to
     \caption{single core - matrix 4x utilization}
 \end{table}
 
+This initial example aims to show the stark difference between process cache utilization.  The two examples operate on a matrix fully utilizes the L1 cache and overloads the cache in the second instance.  It is important to note that while the cycle count is nearly 4x larger as expected, the refill rate for the larger matrix is larger by a factor of nearly 900x.  In these examples the most noticeable difference is the instructions per cycle in the kernel being roughly 11\% slower, due to the frequent thrashing of kernel memory. 
+
 \begin{table}[h!]
     \centering
     \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
@@ -255,6 +259,8 @@ Finally, a common pattern; in resource intensive and parallelizable tasks, is to
     \end{tabular}}
     \caption{multi core - cpu queue (affinity)}
 \end{table}
+
+Extending the trivial example to multicore serves as a demonstration of easily parallelizable code and the benefit of process affinity.  For this example, the instructions per cycle is nearly 1\% faster in the kernel for the case with constrained affinity.  Again, the kernel data structures generally remain in the L1 cache as evident by the a lower number of access per refill \approx 1.6\% in the global runqueue case.  It is also important to note that the number of kernel instructions is \approx 68\% less in the per core runqueue, howing to less lock contention between cores.
 
 \begin{table}[h!]
     \centering
@@ -300,6 +306,9 @@ Finally, a common pattern; in resource intensive and parallelizable tasks, is to
     \end{tabular}}
     \caption{death - no-pull}
 \end{table}
+
+The previous examples operate on _______.  TODO: this case needs fleshing out...
+specific pattern likely samples of the same matrix get flushed to the idle cores.  May want to repeat these tests with affinity for the idle procs.
 
 \begin{table}[h!]
     \centering
