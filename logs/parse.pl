@@ -87,41 +87,48 @@ for my $pid (@pids) {
     @$total_refill[1] += @{$refill{$pid}}[1];
 }
 
-print "summary (usr, sys, total):\n";
-print "instrs: ----------\n";
-print "@$total_instrs[0]\n";
-print "@$total_instrs[1]\n";
-print "@{[@$total_instrs[0]+@$total_instrs[1]]}\n";
+if (0) {
+    print "summary (usr, sys, total):\n";
+    print "instrs: ----------\n";
+    print "@$total_instrs[0]\n";
+    print "@$total_instrs[1]\n";
+    print "@{[@$total_instrs[0]+@$total_instrs[1]]}\n";
 
-print "cycles: ----------\n";
-print "@$total_cycles[0]\n";
-print "@$total_cycles[1]\n";
-print "@{[@$total_cycles[0]+@$total_cycles[1]]}\n";
+    print "cycles: ----------\n";
+    print "@$total_cycles[0]\n";
+    print "@$total_cycles[1]\n";
+    print "@{[@$total_cycles[0]+@$total_cycles[1]]}\n";
 
-print "l1 access: -------\n";
-print "@$total_access[0]\n";
-print "@$total_access[1]\n";
-print "@{[@$total_access[0]+@$total_access[1]]}\n";
+    print "l1 access: -------\n";
+    print "@$total_access[0]\n";
+    print "@$total_access[1]\n";
+    print "@{[@$total_access[0]+@$total_access[1]]}\n";
 
-print "l1 refill: -------\n";
-print "@$total_refill[0]\n";
-print "@$total_refill[1]\n";
-print "@{[@$total_refill[0]+@$total_refill[1]]}\n";
+    print "l1 refill: -------\n";
+    print "@$total_refill[0]\n";
+    print "@$total_refill[1]\n";
+    print "@{[@$total_refill[0]+@$total_refill[1]]}\n";
 
-print "statistics:\n";
-print "runtime: ---------\n";
-print "$total_time\n";
-print "throughput: ------\n";
-print "@{[(@$total_instrs[0]+@$total_instrs[1])/($total_time)]}\n";
-print "ipc: -------------\n";
-print "@{[(@$total_instrs[0])/(@$total_cycles[0])]}\n";
-print "@{[(@$total_instrs[1])/(@$total_cycles[1])]}\n";
-print "@{[(@$total_instrs[0]+@$total_instrs[1])/(@$total_cycles[0]+@$total_cycles[1])]}\n";
-print "apr: -------------\n";
-print "@{[(@$total_access[0])/(@$total_refill[0])]}\n";
-print "@{[(@$total_access[1])/(@$total_refill[1])]}\n";
-print "@{[(@$total_access[0]+@$total_access[1])/(@$total_refill[0]+@$total_refill[1])]}\n";
-
+    print "statistics:\n";
+    print "runtime: ---------\n";
+    print "$total_time\n";
+    print "throughput: ------\n";
+    print "@{[(@$total_instrs[0]+@$total_instrs[1])/($total_time)]}\n";
+    print "ipc: -------------\n";
+    print "@{[(@$total_instrs[0])/(@$total_cycles[0])]}\n";
+    print "@{[(@$total_instrs[1])/(@$total_cycles[1])]}\n";
+    print "@{[(@$total_instrs[0]+@$total_instrs[1])/(@$total_cycles[0]+@$total_cycles[1])]}\n";
+    print "apr: -------------\n";
+    print "@{[(@$total_access[0])/(@$total_refill[0])]}\n";
+    print "@{[(@$total_access[1])/(@$total_refill[1])]}\n";
+    print "@{[(@$total_access[0]+@$total_access[1])/(@$total_refill[0]+@$total_refill[1])]}\n";
+} else {
+    print "Instrs & @{[@$total_instrs[0]+@$total_instrs[1]]} & @$total_instrs[0] & @$total_instrs[1] \\\\ \n";
+    print "Cycles & @{[@$total_cycles[0]+@$total_cycles[1]]} & @$total_cycles[0] & @$total_cycles[1] \\\\ \n";
+    print "Access & @{[@$total_access[0]+@$total_access[1]]} & @$total_access[0] & @$total_access[1] \\\\ \n";
+    print "Refill & @{[@$total_refill[0]+@$total_refill[1]]} & @$total_refill[0] & @$total_refill[1] \\\\ \n";
+    print "Runtime & $total_time & - & - \\\\ \n";
+}
 
 
 # $, = " ";

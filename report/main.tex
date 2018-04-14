@@ -1,6 +1,8 @@
 \documentclass{cys}
 \usepackage[ansinew]{inputenc}
 
+\usepackage{adjustbox}
+
 \usepackage{graphicx}
 \usepackage{tikz}
 \usetikzlibrary{automata,positioning,fit}
@@ -46,9 +48,9 @@ The OS will be compiled for the ARMv8 (aarch64) instruction set and will be exec
 \section{Definitions}
 \label{sec:definitions}
 
-A ready queue can be defined as a generic data structure with two primary operations: ready and next.  For its internal manipulation a ready queue is protected by a spinlock.  Internally there are several internal queues corresponding to different priority levels allowing for processes with different priorities to be pushed onto the queues with no contention.  However, for discussion we will assume that a ready queue is a singular list of processes protected by a spinlock.
+A ready queue can be defined as a generic data structure with two primary operations: ready and next.  For its internal manipulation a ready queue is protected by a spinlock.  Internally there are several queues corresponding to different priority levels allowing for processes with different priorities to be pushed onto the queues with no contention.  However, for discussion we will assume that all processes run at the same priority.
 
-A naieve implementation for a SMP scheduler involves a global ready queue which all cores pull processes from.  This naieve implementation acts identical to a ready queue implentation in a single core system.  On SMP systems this data structure is benificial since it guarantees equal distribution of workload across all cores in addition to implementation simplicity.  Additionally, this workload distribution is not affected by a rapid stream of exiting processes. (TODO possibly example)
+A naieve implementation for a SMP scheduler involves a global ready queue which all cores pull processes from.  This naieve implementation acts identical that in a single core system.  On SMP systems this data structure is benificial since it guarantees equal distribution of workload across all cores in addition to implementation simplicity.  Additionally, this workload distribution is not affected by a rapid stream of exiting processes. (TODO possibly example)  However, the approach suffers from kernel lock contention since all cores must synchronize access to the queue.
 
 \begin{figure}
 \begin{tikzpicture}[shorten >=1pt,node distance=1.0cm,on grid,auto,
@@ -136,7 +138,7 @@ A naieve implementation for a SMP scheduler involves a global ready queue which 
 \caption{Per Core Ready Queue}
 \end{figure}
 
-Under the current scheduler, a process, if eligible, is migrated at its preemption.  In general the scheduler will opt to keep a process on the same CPU unless another core is sufficiently empty.  In essence this rebalancing means that as processes are rescheduled, the cores will tend towards a balanced configuration.  However, it is also possible that a core will have a stream of processes terminate leading to a load imbalance between ready queues (fig. 3).
+Under the current scheduler, a process, if eligible, is migrated during preemption.  In general the scheduler will opt to keep a process on the same CPU unless another core is sufficiently empty or its affinity set dictates otherwise.  In essence this rebalancing means that as processes are rescheduled, the cores will tend towards a balanced configuration.  However, it is also possible that a core will have a stream of processes terminate leading to a load imbalance between ready queues (fig. 3).
 
 \begin{figure}
 \begin{tikzpicture}[shorten >=1pt,node distance=1.0cm,on grid,auto,
@@ -181,7 +183,6 @@ Under the current scheduler, a process, if eligible, is migrated at its preempti
 Pull migration is an effort to improve the rebalancing latency for queues which exhibit the behaivour in fig. 3.  Periodically, an idle core will search for an overloaded core and pull eligible processes from the tail of its queue.  This task requires locking the busy queue for a longer period of time; while, the idle queue tends to have have its lock acquired more frequently.  This task leads to high lock contention for both queues which can negatively impact the time spent in the kernel.  Specifically, while iterating, the busy core will be unable to retrieve the next runnable process.  Thus it is important to pick a large enough interval to do the rebalancing that it does not cause much strain on performance.  However, in most cases, if a core is not sufficiently loaded the pull migration task will instead exit prematurely instead of locking both cores.
 
 
-
 \section{Performance Tests}
 \label{sec:perfTests}
 Various user programs were tested against different variations of the scheduler.  In general the tests were performed on processes tasked with performing a scalar multiply on a data set with a size relative to the L1 cache.  As a baseline, the OS was configured to run on only a single core and a matrix multiplication was performed on a matrix exactly the size of the cache.  For more interesting results, a data set 4x the size of the cache was tested with the global run-queue and the per-core run-queue with evenly distributed CPU affinity.  In these cases each process would work on an independent part of the data set.  
@@ -190,22 +191,221 @@ The impact of per-core scheduler with and without pull migration was analyzed wi
 
 Finally, a common pattern; in resource intensive and parallelizable tasks, is to create a smaller subset of OS tasks and pull work off a shared queue.  Otherwise known as a thread pool, the difference between allowing the OS to manage all the tasks compared to semi-manual work queueing was examined.  Work was divided into 64 threads with 16 workers for the pooled case.  Additionally the locality of the data being worked on was constrained to both 4 (sm) and 16 (lg) matrices of a smaller size than the L1 cache.  All tests ran on the per-core scheduler with pull migration.  
 
+% \begin{table}[h!]
+%     \centering
+%     \caption{Table to test captions and labels}
+% \end{table}
+
 \begin{table}[h!]
-% \begin{center}
     \centering
-    \begin{tabular}{ l|rrr }
-        & Total & User & Kernel \\
+    \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
+        Type & Total & User & Kernel \\
         \hline
-        Instrs & 0 & 0 & 0 \\
-        Cycles & 0 & 0 & 0 \\
-        Access & 0 & 0 & 0 \\
-        Refill & 0 & 0 & 0 \\
-        Runtime & 0 & 0 & 0 \\
+        Instrs & 467617788 & 466380022 & 1237766 \\ 
+        Cycles & 693267321 & 691411106 & 1856215 \\ 
+        Access & 264291472 & 263665636 & 625836 \\ 
+        Refill & 1539 & 1340 & 199 \\ 
+        Runtime & 45374884 & - & - \\ 
         \hline
-    \end{tabular}
-    \caption{table caption}        
-% \end{center}
+    \end{tabular}}
+    \caption{single core - matrix 1x utilization}
 \end{table}
+
+\begin{table}[h!]
+    \centering
+    \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
+        Type & Total & User & Kernel \\
+        \hline
+        Instrs & 1858506765 & 1853566311 & 4940454 \\ 
+        Cycles & 2768987855 & 2760678046 & 8309809 \\ 
+        Access & 1050488228 & 1047990323 & 2497905 \\ 
+        Refill & 1389770 & 1293188 & 96582 \\ 
+        Runtime & 178608294 & - & - \\ 
+        \hline
+    \end{tabular}}
+    \caption{single core - matrix 4x utilization}
+\end{table}
+
+\begin{table}[h!]
+    \centering
+    \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
+        Type & Total & User & Kernel \\
+        \hline
+        Instrs & 354249559 & 353629318 & 620241 \\ 
+        Cycles & 527538552 & 526403550 & 1135002 \\ 
+        Access & 200305644 & 199963039 & 342605 \\ 
+        Refill & 125708 & 116722 & 8986 \\ 
+        Runtime & 41175374 & - & - \\ 
+        \hline
+    \end{tabular}}
+    \caption{multi core - global queue}
+\end{table}
+
+\begin{table}[h!]
+    \centering
+    \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
+        Type & Total & User & Kernel \\
+        \hline
+        Instrs & 375176881 & 374755150 & 421731 \\ 
+        Cycles & 556693572 & 556049701 & 643871 \\ 
+        Access & 212114934 & 211903384 & 211550 \\ 
+        Refill & 15332 & 14735 & 597 \\ 
+        Runtime & 40603738 & - & - \\ 
+        \hline
+    \end{tabular}}
+    \caption{multi core - cpu queue (affinity)}
+\end{table}
+
+\begin{table}[h!]
+    \centering
+    \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
+        Type & Total & User & Kernel \\
+        \hline
+        Instrs & 1543135939 & 1396850683 & 146285256 \\ 
+        Cycles & 3146576481 & 2076522276 & 1070054205 \\ 
+        Access & 845516444 & 789349384 & 56167060 \\ 
+        Refill & 7653514 & 112360 & 7541154 \\ 
+        Runtime & 152657484 & - & - \\
+        \hline
+    \end{tabular}}
+    \caption{death - no pull sm}
+\end{table}
+
+\begin{table}[h!]
+    \centering
+    \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
+        Type & Total & User & Kernel \\
+        \hline
+        Instrs & 1468299596 & 1398454567 & 69845029 \\ 
+        Cycles & 2552848279 & 2079318879 & 473529400 \\ 
+        Access & 816022596 & 790256656 & 25765940 \\ 
+        Refill & 3126952 & 140213 & 2986739 \\ 
+        Runtime & 156804356 & - & - \\ 
+        \hline
+    \end{tabular}}
+    \caption{death - pulled sm}
+\end{table}
+
+\begin{table}[h!]
+    \centering
+    \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
+        Type & Total & User & Kernel \\
+        \hline
+        Instrs & 1613944771 & 1404552990 & 209391781 \\ 
+        Cycles & 3491698429 & 2086636583 & 1405061846 \\ 
+        Access & 873214573 & 793699999 & 79514574 \\ 
+        Refill & 9792188 & 28820 & 9763368 \\ 
+        Runtime & 152321428 & - & - \\ 
+        \hline
+    \end{tabular}}
+    \caption{death - no-pull}
+\end{table}
+
+\begin{table}[h!]
+    \centering
+    \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
+        Type & Total & User & Kernel \\
+        \hline
+        Instrs & 1520575475 & 1445743126 & 74832349 \\ 
+        Cycles & 2574353547 & 2147872630 & 426480917 \\ 
+        Access & 843643737 & 816978128 & 26665609 \\ 
+        Refill & 2283806 & 34930 & 2248876 \\ 
+        Runtime & 161631896 & - & - \\ 
+        \hline
+    \end{tabular}}
+    \caption{death - pulled}
+\end{table}
+
+\begin{table}[h!]
+    \centering
+    \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
+        Type & Total & User & Kernel \\
+        \hline
+        Instrs & 2945961318 & 2829092653 & 116868665 \\ 
+        Cycles & 4881259967 & 4206238780 & 675021187 \\ 
+        Access & 1642115209 & 1598721424 & 43393785 \\ 
+        Refill & 4570467 & 298213 & 4272254 \\ 
+        Runtime & 175864992 & - & - \\
+        \hline
+    \end{tabular}}
+    \caption{runtime - no pull}
+\end{table}
+
+% \begin{table}[h!]
+%     \centering
+%     \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
+%         Type & Total & User & Kernel \\
+%         \hline
+%         Instrs & 2727027846 & 2625810066 & 101217780 \\ 
+%         Cycles & 4421745433 & 3903078399 & 518667034 \\ 
+%         Access & 1520521397 & 1483845439 & 36675958 \\ 
+%         Refill & 3226996 & 222090 & 3004906 \\ 
+%         Runtime & 171909144 & - & - \\
+%         \hline
+%     \end{tabular}}
+%     \caption{runtime - pulled}
+% \end{table}
+
+% \begin{table}[h!]
+%     \centering
+%     \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
+%         Type & Total & User & Kernel \\
+%         \hline
+%         Instrs & 836416320 & 753346040 & 83070280 \\ 
+%         Cycles & 1724034904 & 1123196400 & 600838504 \\ 
+%         Access & 456170314 & 426134109 & 30036205 \\ 
+%         Refill & 4027452 & 231590 & 3795862 \\ 
+%         Runtime & 165276806 & - & - \\
+%         \hline
+%     \end{tabular}}
+%     \caption{pool - unpooled sm}
+% \end{table}
+
+% \begin{table}[h!]
+%     \centering
+%     \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
+%         Type & Total & User & Kernel \\
+%         \hline
+%         Instrs & 811243405 & 741653152 & 69590253 \\ 
+%         Cycles & 1789217832 & 1113471653 & 675746179 \\ 
+%         Access & 444450115 & 419398612 & 25051503 \\ 
+%         Refill & 4540858 & 379326 & 4161532 \\ 
+%         Runtime & 66534692 & - & - \\
+%         \hline
+%     \end{tabular}}
+%     \caption{pool - pooled sm}
+% \end{table}
+
+\begin{table}[h!]
+    \centering
+    \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
+        Type & Total & User & Kernel \\
+        \hline
+        Instrs & 819345284 & 755845609 & 63499675 \\ 
+        Cycles & 1672284752 & 1125235476 & 547049276 \\ 
+        Access & 450878090 & 427546852 & 23331238 \\ 
+        Refill & 3740754 & 148469 & 3592285 \\ 
+        Runtime & 167143162 & - & - \\ 
+        \hline
+    \end{tabular}}
+    \caption{pool - unpooled}
+\end{table}
+
+\begin{table}[h!]
+    \centering
+    \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
+        Type & Total & User & Kernel \\
+        \hline
+        Instrs & 840132648 & 753613514 & 86519134 \\ 
+        Cycles & 1849770029 & 1127098953 & 722671076 \\ 
+        Access & 457128942 & 426166739 & 30962203 \\ 
+        Refill & 4435166 & 143616 & 4291550 \\ 
+        Runtime & 66158114 & - & - \\ 
+        \hline
+    \end{tabular}}
+    \caption{pool - pooled}
+\end{table}
+
 
 \subsection{Linguistic Features}
 \label{subsection:linguistic}
@@ -228,10 +428,9 @@ H(X|Y) = - \sum_{y \in Y} P(y_i) \sum_{x \in X} p(x_i|y_i)\log p(x_i|y_i)
 
 Conclusions here.
 
-\section*{Acknowledgements} 
+\section{Acknowledgements} 
 We would like to thank.. 
 
-This work is funded by...
 
 
 % OBLIGATORY: use BIBTEX formatting!
@@ -240,24 +439,6 @@ This work is funded by...
 \bibliography{biblio}
 }
 \normalsize
-
-
-\begin{biography}[foto.JPG]{John Smith} 
-is professor ...
-\end{biography}
-
-\begin{biography}[foto.JPG]{Juan Perez} 
-is researcher...
-\end{biography}
-
-\begin{biography}[foto.JPG]{Ivan Petrov} 
-is researcher...
-\end{biography}
-
-
-{\vskip 12pt}
-\noindent
-\footnotesize {Article received on 06/12/2012; accepted on 16/01/2013.}
 
 \end{document}
 
