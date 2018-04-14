@@ -178,6 +178,9 @@ Under the current scheduler, a process, if eligible, is migrated at its preempti
 \caption{Unbalanced Scheduling}
 \end{figure}
 
+Pull migration is an effort to improve the rebalancing latency for queues which exhibit the behaivour in fig. 3.  Periodically, an idle core will search for an overloaded core and pull eligible processes from the tail of its queue.  This task requires locking the busy queue for a longer period of time; while, the idle queue tends to have have its lock acquired more frequently.  This task leads to high lock contention for both queues which can negatively impact the time spent in the kernel.  Specifically, while iterating, the busy core will be unable to retrieve the next runnable process.  Thus it is important to pick a large enough interval to do the rebalancing that it does not cause much strain on performance.  However, in most cases, if a core is not sufficiently loaded the pull migration task will instead exit prematurely instead of locking both cores.
+
+
 
 \section{Performance Tests}
 \label{sec:perfTests}
