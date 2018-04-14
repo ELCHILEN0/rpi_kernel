@@ -46,10 +46,14 @@ The OS will be compiled for the ARMv8 (aarch64) instruction set and will be exec
 \section{Definitions}
 \label{sec:definitions}
 
+A ready queue can be defined as a generic data structure with two primary operations: ready and next.  For its internal manipulation a ready queue is protected by a spinlock.  Internally there are several internal queues corresponding to different priority levels allowing for processes with different priorities to be pushed onto the queues with no contention.  However, for discussion we will assume that a ready queue is a singular list of processes protected by a spinlock.
+
+A naieve implementation for a SMP scheduler involves a global ready queue which all cores pull processes from.  This naieve implementation acts identical to a ready queue implentation in a single core system.  On SMP systems this data structure is benificial since it guarantees equal distribution of workload across all cores in addition to implementation simplicity.  Additionally, this workload distribution is not affected by a rapid stream of exiting processes. (TODO possibly example)
+
 \begin{figure}
 \begin{tikzpicture}[shorten >=1pt,node distance=1.0cm,on grid,auto,
     running/.style={circle, draw=green!100, fill=green!30},
-    ready/.style={circle, draw=purple!100, fill=purple!30}
+    ready/.style={circle, draw=orange!100, fill=orange!30}
     ]
 
     \node[ready] (p_4) [] {P4};
@@ -88,7 +92,7 @@ The OS will be compiled for the ARMv8 (aarch64) instruction set and will be exec
 \begin{figure}
 \begin{tikzpicture}[shorten >=1pt,node distance=1.0cm,on grid,auto,
     running/.style={circle, draw=green!100, fill=green!30},
-    ready/.style={circle, draw=purple!100, fill=purple!30}
+    ready/.style={circle, draw=orange!100, fill=orange!30}
     ]
 
     \node[ready] (p_4) [] {P4};
@@ -132,10 +136,12 @@ The OS will be compiled for the ARMv8 (aarch64) instruction set and will be exec
 \caption{Per Core Ready Queue}
 \end{figure}
 
+Under the current scheduler, a process, if eligible, is migrated at its preemption.  In general the scheduler will opt to keep a process on the same CPU unless another core is sufficiently empty.  In essence this rebalancing means that as processes are rescheduled, the cores will tend towards a balanced configuration.  However, it is also possible that a core will have a stream of processes terminate leading to a load imbalance between ready queues (fig. 3).
+
 \begin{figure}
 \begin{tikzpicture}[shorten >=1pt,node distance=1.0cm,on grid,auto,
     running/.style={circle, draw=green!100, fill=green!30},
-    ready/.style={circle, draw=purple!100, fill=purple!30},
+    ready/.style={circle, draw=orange!100, fill=orange!30},
     empty/.style={circle, draw=none, fill=none, text=white}
     ]
 
