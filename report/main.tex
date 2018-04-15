@@ -1,15 +1,17 @@
-\documentclass{cys}
-\usepackage[ansinew]{inputenc}
+\documentclass[11pt, twocolumn]{proc}
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+
+\usepackage{breakurl}
+\usepackage{url}
 
 \usepackage{adjustbox}
-
 \usepackage{graphicx}
 \usepackage{tikz}
+
 \usetikzlibrary{automata,positioning,fit}
 
-
-
-\title{Theoretical and Experimental Approach to SMP Scheduling}
+\title{Analysis of SMP Kernel Scheduling}
 
 \author{Jnaneshwar Weibel}
 
@@ -22,6 +24,7 @@
 % }
 
 \begin{document}
+% \begin{multicols}{2}
 
 \maketitle
 
@@ -29,9 +32,11 @@
 Over the years computer hardware has grown increasingly efficient; in particular, the capability for multiprocessing allows systems to distribute work across multiple CPUs.  Modern operating systems and their respective schedulers have the opportunity to make policy decisions about this distribution that may influence the performance of user programs.  Shared memory and locality of data ...
 \end{abstract}
 
-\begin{keywords} 
-Word1, word2, word3.
-\end{keywords} 
+% \begin{keywords} 
+% Word1, word2, word3.
+% \end{keywords} 
+
+% \tableofcontents
 
 \section{Introduction}
 \label{sec:introduction}
@@ -43,7 +48,7 @@ A run-queue will consist of a FIFO list of tasks and will be protected by a run-
 
 \section{Environment?}
 \label{sec:environment?}
-The OS will be compiled for the ARMv8 (aarch64) instruction set and will be executed on the Raspberry Pi 3 B.  The device includes a 1.2 GHz 64-bit quad-core ARM Cortex-A53 processor and consists of a 16KB L1 cache and a 128KB L2 cache.  Intra-core cache coherency is enabled and uses the MOESI protocol \cite{https://developer.arm.com/docs/ddi0500/e/level-1-memory-system/cache-behavior/data-cache-coherency}.  The memory address space is configured using a linear two level translation table with accessible memory configured as normal outer and inner write-back, write-allocate and device register memory configured as device nGnRnE.  Performance will be measured using the ARM Performance Monitor Unit (PMU) and the core timer.  The timer executes at a frequency of 19.2 MHz and each core maintains its own core timer which will preempt the current task each MS. \cite{https://www.raspberrypi.org/documentation/hardware/raspberrypi/bcm2836/QA7_rev3.4.pdf}
+The OS will be compiled for the ARMv8 (aarch64) instruction set and will be executed on the Raspberry Pi 3 B.  The device includes a 1.2 GHz 64-bit quad-core ARM Cortex-A53 processor and consists of a 16KB L1 cache and a 128KB L2 cache.  Intra-core cache coherency is enabled and uses the MOESI protocol \cite{arm-dcache-coherency}.  The memory address space is configured using a linear two level translation table with accessible memory configured as normal outer and inner write-back, write-allocate and device register memory configured as device nGnRnE.  Performance will be measured using the ARM Performance Monitor Unit (PMU) and the core timer.  The timer executes at a frequency of 19.2 MHz and each core maintains its own core timer which will preempt the current task each MS. \cite{bcm2386}
 
 \section{Definitions}
 \label{sec:definitions}
@@ -191,11 +196,6 @@ The impact of per-core scheduler with and without pull migration was analyzed wi
 
 Finally, a common pattern; in resource intensive and parallelizable tasks, is to create a smaller subset of OS tasks and pull work off a shared queue.  Otherwise known as a thread pool, the difference between allowing the OS to manage all the tasks compared to semi-manual work queueing was examined.  Work was divided into 64 threads with 16 workers for the pooled case.  Additionally the locality of the data being worked on was constrained to both 4 (sm) and 16 (lg) matrices of a smaller size than the L1 cache.  All tests ran on the per-core scheduler with pull migration.  
 
-% \begin{table}[h!]
-%     \centering
-%     \caption{Table to test captions and labels}
-% \end{table}
-
 In general for the following examples the runtime gives a rough measurement of elapsed jiffies.  However, the cycle count provides a better perforamnce measurement.  Additionally, it is important to all data is cached in the L2 cache and thus stalls for fetching from main memory are generally minimized.
 
 \begin{table}[h!]
@@ -260,7 +260,7 @@ This initial example aims to show the stark difference between process cache uti
     \caption{multi core - cpu queue (affinity)}
 \end{table}
 
-Extending the trivial example to multicore serves as a demonstration of easily parallelizable code and the benefit of process affinity.  For this example, the instructions per cycle is nearly 1\% faster in the kernel for the case with constrained affinity.  Again, the kernel data structures generally remain in the L1 cache as evident by the a lower number of access per refill \approx 1.6\% in the global runqueue case.  It is also important to note that the number of kernel instructions is \approx 68\% less in the per core runqueue, howing to less lock contention between cores.
+Extending the trivial example to multicore serves as a demonstration of easily parallelizable code and the benefit of process affinity.  For this example, the instructions per cycle is nearly 1$\%$ faster in the kernel for the case with constrained affinity.  Again, the kernel data structures generally remain in the L1 cache as evident by the a lower number of access per refill $\approx$ 1.6$\%$ in the global runqueue case.  It is also important to note that the number of kernel instructions is $\approx$ 68$\%$ less in the per core runqueue, howing to less lock contention between cores.
 
 \begin{table}[h!]
     \centering
@@ -292,6 +292,8 @@ Extending the trivial example to multicore serves as a demonstration of easily p
     \caption{death - pulled sm}
 \end{table}
 
+Notes:  lower cache locality leads to fewer lost cycles, additionally migration without pull migration tends to lead to more kernel contention.  Likely because full cores try to migrate to the local core...
+
 \begin{table}[h!]
     \centering
     \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
@@ -306,9 +308,6 @@ Extending the trivial example to multicore serves as a demonstration of easily p
     \end{tabular}}
     \caption{death - no-pull}
 \end{table}
-
-The previous examples operate on _______.  TODO: this case needs fleshing out...
-specific pattern likely samples of the same matrix get flushed to the idle cores.  May want to repeat these tests with affinity for the idle procs.
 
 \begin{table}[h!]
     \centering
@@ -325,6 +324,9 @@ specific pattern likely samples of the same matrix get flushed to the idle cores
     \caption{death - pulled}
 \end{table}
 
+The previous examples operate on TODO.  TODO: this case needs fleshing out...
+specific pattern likely samples of the same matrix get flushed to the idle cores.  May want to repeat these tests with affinity for the idle procs.
+
 \begin{table}[h!]
     \centering
     \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
@@ -340,50 +342,52 @@ specific pattern likely samples of the same matrix get flushed to the idle cores
     \caption{runtime - no pull}
 \end{table}
 
-% \begin{table}[h!]
-%     \centering
-%     \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
-%         Type & Total & User & Kernel \\
-%         \hline
-%         Instrs & 2727027846 & 2625810066 & 101217780 \\ 
-%         Cycles & 4421745433 & 3903078399 & 518667034 \\ 
-%         Access & 1520521397 & 1483845439 & 36675958 \\ 
-%         Refill & 3226996 & 222090 & 3004906 \\ 
-%         Runtime & 171909144 & - & - \\
-%         \hline
-%     \end{tabular}}
-%     \caption{runtime - pulled}
-% \end{table}
+\begin{table}[h!]
+    \centering
+    \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
+        Type & Total & User & Kernel \\
+        \hline
+        Instrs & 2727027846 & 2625810066 & 101217780 \\ 
+        Cycles & 4421745433 & 3903078399 & 518667034 \\ 
+        Access & 1520521397 & 1483845439 & 36675958 \\ 
+        Refill & 3226996 & 222090 & 3004906 \\ 
+        Runtime & 171909144 & - & - \\
+        \hline
+    \end{tabular}}
+    \caption{runtime - pulled}
+\end{table}
 
-% \begin{table}[h!]
-%     \centering
-%     \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
-%         Type & Total & User & Kernel \\
-%         \hline
-%         Instrs & 836416320 & 753346040 & 83070280 \\ 
-%         Cycles & 1724034904 & 1123196400 & 600838504 \\ 
-%         Access & 456170314 & 426134109 & 30036205 \\ 
-%         Refill & 4027452 & 231590 & 3795862 \\ 
-%         Runtime & 165276806 & - & - \\
-%         \hline
-%     \end{tabular}}
-%     \caption{pool - unpooled sm}
-% \end{table}
+Same characteristics as death example
 
-% \begin{table}[h!]
-%     \centering
-%     \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
-%         Type & Total & User & Kernel \\
-%         \hline
-%         Instrs & 811243405 & 741653152 & 69590253 \\ 
-%         Cycles & 1789217832 & 1113471653 & 675746179 \\ 
-%         Access & 444450115 & 419398612 & 25051503 \\ 
-%         Refill & 4540858 & 379326 & 4161532 \\ 
-%         Runtime & 66534692 & - & - \\
-%         \hline
-%     \end{tabular}}
-%     \caption{pool - pooled sm}
-% \end{table}
+\begin{table}[h!]
+    \centering
+    \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
+        Type & Total & User & Kernel \\
+        \hline
+        Instrs & 836416320 & 753346040 & 83070280 \\ 
+        Cycles & 1724034904 & 1123196400 & 600838504 \\ 
+        Access & 456170314 & 426134109 & 30036205 \\ 
+        Refill & 4027452 & 231590 & 3795862 \\ 
+        Runtime & 165276806 & - & - \\
+        \hline
+    \end{tabular}}
+    \caption{pool - unpooled sm}
+\end{table}
+
+\begin{table}[h!]
+    \centering
+    \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
+        Type & Total & User & Kernel \\
+        \hline
+        Instrs & 811243405 & 741653152 & 69590253 \\ 
+        Cycles & 1789217832 & 1113471653 & 675746179 \\ 
+        Access & 444450115 & 419398612 & 25051503 \\ 
+        Refill & 4540858 & 379326 & 4161532 \\ 
+        Runtime & 66534692 & - & - \\
+        \hline
+    \end{tabular}}
+    \caption{pool - pooled sm}
+\end{table}
 
 \begin{table}[h!]
     \centering
@@ -416,38 +420,22 @@ specific pattern likely samples of the same matrix get flushed to the idle cores
 \end{table}
 
 
-\subsection{Linguistic Features}
-\label{subsection:linguistic}
-
-Features. 
-
-\subsubsection{Lexical Features}
-\label{subsection:lexicalFeatures}
-
-Other features.
-
-\begin{equation}
-H(X|Y) = - \sum_{y \in Y} P(y_i) \sum_{x \in X} p(x_i|y_i)\log p(x_i|y_i)
-\label{equation:conditionalEntropy1}
-\end{equation}
+This example has ipc larger in both cases.    However, one noticeable factor is that for larger sample size there is less l1 thrashing relavent in the APR (contributing factor for larger runtimes).  Instead for the smaller case the caches are able to be fully utilized.
 
 
-\section{Conclusion and Future Work}
-\label{sec:conclusionAndFutureWork}
+\section{Conclusion}
+\label{sec:conclusion}
 
-Conclusions here.
+Conclusions here \cite{freebsd} \cite{unix}.
 
-\section{Acknowledgements} 
-We would like to thank.. 
+% \section{Acknowledgements} 
 
-
-
-% OBLIGATORY: use BIBTEX formatting!
-\small{
-\bibliographystyle{cys}
+\onecolumn
+\begin{sloppypar}
+\bibliographystyle{acm}
 \bibliography{biblio}
-}
-\normalsize
+\end{sloppypar}
 
+% \end{multicols}
 \end{document}
 
