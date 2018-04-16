@@ -29,7 +29,7 @@
 \maketitle
 
 \begin{abstract}
-Over the years computer hardware has grown increasingly efficient; in particular, the capability for multiprocessing allows systems to distribute work across multiple CPUs.  Modern operating systems and their respective schedulers have the opportunity to make policy decisions about this distribution that may influence the performance of user programs.  Shared memory and locality of data ...
+As algorithms become larger and more resource intensive, computer hardware must become increasingly efficient to effectively run such programs.  In particular the capability for multiprocessing allows systems to distribute work across multiple CPUs.  Modern operating systems and their respective schedulers have the opportunity to make policy decisions, such as load balancing and locality of access to shared memory, when distributing programs that can influence the performance of both the kernel and user programs.
 \end{abstract}
 
 % \begin{keywords} 
@@ -40,18 +40,18 @@ Over the years computer hardware has grown increasingly efficient; in particular
 
 \section{Introduction}
 \label{sec:introduction}
-Modern computer hardware has grown increasingly efficient to improve the performance of various systems by improving areas such as processor frequency and memory latency.   While instruction throughput can be improved with optimizations to a CPU pipeline, multiprocessing is also increasingly important for improving throughput.  To improve shared memory latency, processors have adopted smaller memory subsystems, or caches, that allows quicker data access.
+Hardware has evolved to become increasingly more complex and efficient, through areas such as processor frequency and memory latency.  Amdhal's law gives diminishing returns on the impact of parallelizing computation.  However, with respect to symmetric multiprocessing (SMP) in the kernel, Gustafon's law proves as now as a \textbf{scheduler?} can run ``in the same time with a larger workload'' \cite{gustafon}.  Thus as new system architectures take advantage of these processors.  They also require new approaches for system software and applications that run on top of this hardware \cite{nitrd}.
 
-As the hardware evolves, software must be able to take advantage of these changes.  Within an operating system, the scheduler is responsible for running user tasks and determining an execution order; however, with multiple processors these tasks can be distributed across cores.  In a preemptive system, a task may migrate between different processors and this migration will generally impact cache performance; however, globally this migration my improve performance.  Thus several distinct policy decisions relating to task scheduling will be compared.
+Within an operating system, the task scheduler is responsible for running user tasks and determining an execution order.  Yet with multiprocessing the scheduler offers an oporunity to distribute work across multiple cores.  In a preemptive system, the scheduler may migrate tasks between different cores which generally will incur a local penalty in cache performance yet may improve global performance.  Thus for this report several variations on the classical task scheduler will be compared to their impact on system performance and task scheduling.
 
 A run-queue will consist of a FIFO list of tasks and will be protected by a run-queue specific lock.  The performance of several tasks will be measured using a single global run-queue, a per-core run-queue without pull migration, and a per-core run-queue with pull migration.  Pull migration refers to periodically re-balancing the load on two run-queues.  In addition, some tasks will be constrained to a smaller set of CPUs and thus may be fixed to a single process or not undergo push migration.  This paper will demonstrate the performance implications that various scheduling algorithms have on both local and global task execution.
 
 \section{Environment?}
 \label{sec:environment?}
-The OS will be compiled for the ARMv8 (aarch64) instruction set and will be executed on the Raspberry Pi 3 B.  The device includes a 1.2 GHz 64-bit quad-core ARM Cortex-A53 processor and consists of a 16KB L1 cache and a 128KB L2 cache.  Intra-core cache coherency is enabled and uses the MOESI protocol \cite{arm-dcache-coherency}.  The memory address space is configured using a linear two level translation table with accessible memory configured as normal outer and inner write-back, write-allocate and device register memory configured as device nGnRnE.  Performance will be measured using the ARM Performance Monitor Unit (PMU) and the core timer.  The timer executes at a frequency of 19.2 MHz \cite{bcm2386} and each core maintains its own core timer which will preempt the current task each MS.  Both the kernel and pseudo-user processes will execute in EL1; however, the kernel will use SPx and the user processes will use SP0.
+The OS will be compiled for the ARMv8 (aarch64) instruction set and will be executed on the Raspberry Pi 3 B.  The device includes a 1.2 GHz 64-bit quad-core ARM Cortex-A53 processor and consists of a 16KB L1 data cache, a 16KB L1 instruction cache, and a 128KB L2 cache.  Intra-core cache coherency is enabled and uses the MOESI protocol \cite{arm-dcache-coherency}.  The memory address space is configured using a linear two level translation table with accessible memory configured as normal outer and inner write-back, write-allocate and device register memory configured as device nGnRnE.  Performance will be measured using the ARM Performance Monitor Unit (PMU) and the core timer.  The timer executes at a frequency of 19.2 MHz \cite{bcm2386} and each core maintains its own core timer which will preempt the current task each MS.  Both the kernel and pseudo-user processes will execute in EL1; however, the kernel will use SPx and the user processes will use SP0.
 
-\section{Definitions}
-\label{sec:definitions}
+\section{Definitions?}
+\label{sec:definitions?}
 
 A ready queue can be defined as a generic data structure with two primary operations: ready and next.  For its internal manipulation a ready queue is protected by a spinlock.  Internally there are several queues corresponding to different priority levels allowing for processes with different priorities to be pushed onto the queues with no contention.  However, for discussion we will assume that all processes run at the same priority.
 
@@ -190,13 +190,9 @@ Pull migration is an effort to improve the rebalancing latency for queues which 
 
 \section{Performance}
 \label{sec:performance}
-Various user programs were tested against different variations of the scheduler.  In general the tests were performed on processes tasked with performing a scalar multiply on a data set with a size relative to the L1 cache.  As a baseline, the OS was configured to run on only a single core and a matrix multiplication was performed on a matrix exactly the size of the cache.  For more interesting results, a data set 4x the size of the cache was tested with the global run-queue and the per-core run-queue with evenly distributed CPU affinity.  In these cases each process would work on an independent part of the data set.  
+Different user programs were tested against the variations of the OS scheduler described previously.  In general the tests consist of performing a scalar multiply for a specified runtime.  These tests aim to simulate process cache access and utilization and provide repeatable results for user and kernel event counters.  For example, some examples heavily utilize memory while others operate on smaller subsets of data.  Additionally other processes are designed to run for longer or shorter periods of time to represent variability in task runtime.
 
-The impact of per-core scheduler with and without pull migration was analyzed with tasks with varying runtime.  Three classes of processes were defined as short, medium and long; each, with 10x the runtime of the previous case.  An even distribution of each type of task and the data set was tested against these schedulers.  Additionally the schedulers were tested against many short runtime processes compared to the few long runtime processes.
-
-Finally, a common pattern; in resource intensive and parallelizable tasks, is to create a smaller subset of OS tasks and pull work off a shared queue.  Otherwise known as a thread pool, the difference between allowing the OS to manage all the tasks compared to semi-manual work queueing was examined.  Work was divided into 64 threads with 16 workers for the pooled case.  Additionally the locality of the data being worked on was constrained to both 4 (sm) and 16 (lg) matrices of a smaller size than the L1 cache.  All tests ran on the per-core scheduler with pull migration.  
-
-In general for the following examples the runtime gives a rough measurement of elapsed jiffies.  However, the cycle count provides a better perforamnce measurement.  Additionally, it is important to all data is cached in the L2 cache and thus stalls for fetching from main memory are generally minimized.
+While the actual measured runtime is presented in jiffies, these measurements should rarely be compared as they are rough measurements based on the CPU timer.  Additionally, tasks which may have a variable amount of IO with the FTDI output device are likely to see unrepresentative results compared to the actual execution of tasks.  Finally it is also important to note that all data fits into the L2 cache and thus pipeline stalls involved when fetching from main memory are limited the initial cold start.  \textbf{TODO: talk about the L2 cache in conclusion as it amplifies performance penalty}
 
 \begin{table}[h!]
     \centering
@@ -228,7 +224,9 @@ In general for the following examples the runtime gives a rough measurement of e
     \caption{single core - matrix 4x utilization}
 \end{table}
 
-This initial example aims to show the stark difference between process cache utilization.  The two examples operate on a matrix fully utilizes the L1 cache and overloads the cache in the second instance.  It is important to note that while the cycle count is nearly 4x larger as expected, the refill rate for the larger matrix is larger by a factor of nearly 900x.  In these examples the most noticeable difference is the instructions per cycle in the kernel being roughly 11\% slower, due to the frequent thrashing of kernel memory. 
+This initial example aims to show the stark difference between process cache utilization.  Each example operates on a matrix fully utilizes the L1 cache and one which overloads the cache.  It is important to note that while the cycle count is nearly 4x larger as expected, the refill rate for the larger matrix is larger by a factor of nearly 900.  In these examples the most noticeable difference is the instructions per cycle in the kernel being roughly 11\% slower, due to the frequent thrashing of kernel memory. 
+
+TODO: note about how to improve global runtime in userspace programs
 
 \begin{table}[h!]
     \centering
@@ -260,7 +258,7 @@ This initial example aims to show the stark difference between process cache uti
     \caption{multi core - cpu queue (affinity)}
 \end{table}
 
-Extending the trivial example to multicore serves as a demonstration of easily parallelizable code and the benefit of process affinity.  For this example, the instructions per cycle is nearly 1$\%$ faster in the kernel for the case with constrained affinity.  Again, the kernel data structures generally remain in the L1 cache as evident by the a lower number of access per refill $\approx$ 1.6$\%$ in the global runqueue case.  It is also important to note that the number of kernel instructions is $\approx$ 68$\%$ less in the per core runqueue, howing to less lock contention between cores.
+Extending the trivial example to multicore serves as a demonstration of easily parallelizable code and the benefit of process affinity.  When processor affinity is specified the number of kernel cycles is $76\%$ less than without which results in a $20\%$ improvement in instructions per cycle.  Again the improvement in kernel runtime is due to reduced thrashing of the kernel cores as evident in the lower APR.  However, there is also a $5\%$ loss in number of cycles, \textbf{TODO}.  Additionally it is important to note that the number of kernel instructions executed for the per core runqueue is $47\%$ less, owing to less scheduler lock contention between cores during a context switch.
 
 \begin{table}[h!]
     \centering
@@ -291,6 +289,9 @@ Extending the trivial example to multicore serves as a demonstration of easily p
     \end{tabular}}
     \caption{death - pulled sm}
 \end{table}
+
+\textbf{TODO}
+Need to discuss this case..., may involve a bit of non-determinism...
 
 Notes:  lower cache locality leads to fewer lost cycles, additionally migration without pull migration tends to lead to more kernel contention.  Likely because full cores try to migrate to the local core...
 
@@ -324,7 +325,8 @@ Notes:  lower cache locality leads to fewer lost cycles, additionally migration 
     \caption{death - pulled}
 \end{table}
 
-The previous examples operate on TODO.  TODO: this case needs fleshing out...
+\textbf{TODO}
+Again same as above...
 specific pattern likely samples of the same matrix get flushed to the idle cores.  May want to repeat these tests with affinity for the idle procs.
 
 \begin{table}[h!]
@@ -357,7 +359,7 @@ specific pattern likely samples of the same matrix get flushed to the idle cores
     \caption{runtime - pulled}
 \end{table}
 
-Same characteristics as death example
+This case is important at showing the benefits of pull migration in relation to long term scheduling.  Specifically, since processes which execute for longer periods of time will undergo more context switches which incurs performance and leads to more kernel thrashing.  This example allows work to be migrated sooner and hence the total runtime decreases as well as the number of context switches.  In addition, since processes are moved from busy to idle cores, the user process cache utilization is more likely to be equally distributed across the processors \textbf{TODO: this sentence a little misworded}.  \textbf{TODO: mention size of data}
 
 \begin{table}[h!]
     \centering
@@ -419,7 +421,8 @@ Same characteristics as death example
     \caption{pool - pooled}
 \end{table}
 
-
+\textbf{TODO: remeasure runtimes? repeat tests with different MD case?}
+\textbf{TODO: mention that these were unexpected, was expecting much better performance with the pooled - md}
 This example has ipc larger in both cases.    However, one noticeable factor is that for larger sample size there is less l1 thrashing relavent in the APR (contributing factor for larger runtimes).  Instead for the smaller case the caches are able to be fully utilized.
 
 
