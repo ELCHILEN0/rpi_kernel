@@ -1,4 +1,5 @@
-\documentclass[11pt, twocolumn]{proc}
+\documentclass[11pt]{article}
+\usepackage[margin=.7in]{geometry}    
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
 
@@ -6,6 +7,15 @@
 \usepackage{url}
 
 \usepackage{adjustbox}
+\usepackage{subcaption}
+\captionsetup{
+    font=small,
+    labelfont=bf,
+    margin=3em,
+    compatibility=false
+}
+
+\usepackage{tabularx}
 \usepackage{graphicx}
 \usepackage{tikz}
 
@@ -24,12 +34,10 @@
 % }
 
 \begin{document}
-% \begin{multicols}{2}
-
 \maketitle
 
 \begin{abstract}
-As algorithms become larger and more resource intensive, computer hardware must become increasingly efficient to effectively run such programs.  In particular the capability for multiprocessing allows systems to distribute work across multiple CPUs.  Modern operating systems and their respective schedulers have the opportunity to make policy decisions, such as load balancing and locality of access to shared memory, when distributing programs that can influence the performance of both the kernel and user programs.
+	As algorithms become larger and more resource intensive, computer hardware must become increasingly efficient to effectively run such programs.  In particular the capability for multiprocessing allows systems to distribute work across multiple CPUs.  Modern operating systems and their respective schedulers have the opportunity to make policy decisions, such as load balancing and locality of access to shared memory, when distributing programs that can influence the performance of both the kernel and user programs.
 \end{abstract}
 
 % \begin{keywords} 
@@ -55,137 +63,145 @@ The OS will be compiled for the ARMv8 (aarch64) instruction set and will be exec
 
 A ready queue can be defined as a generic data structure with two primary operations: ready and next.  For its internal manipulation a ready queue is protected by a spinlock.  Internally there are several queues corresponding to different priority levels allowing for processes with different priorities to be pushed onto the queues with no contention.  However, for discussion we will assume that all processes run at the same priority.
 
-A naieve implementation for a SMP scheduler involves a global ready queue which all cores pull processes from.  This naieve implementation acts identical that in a single core system.  On SMP systems this data structure is benificial since it guarantees equal distribution of workload across all cores in addition to implementation simplicity.  Additionally, this workload distribution is not affected by a rapid stream of exiting processes. (TODO possibly example)  However, the approach suffers from kernel lock contention since all cores must synchronize access to the queue.
+A naieve implementation for a SMP scheduler involves a global ready queue which all cores pull processes from.  This naieve implementation acts identical that in a single core system.  On SMP systems this data structure is benificial since it guarantees equal distribution of workload across all cores in addition to implementation simplicity.  Additionally, this workload distribution is not affected by a rapid stream of exiting processes.  However, the approach suffers from kernel lock contention since all cores must synchronize access to the queue.
 
-\begin{figure}[h]
-\begin{tikzpicture}[shorten >=1pt,node distance=1.0cm,on grid,auto,
-    running/.style={circle, draw=green!100, fill=green!30},
-    ready/.style={circle, draw=orange!100, fill=orange!30}
-    ]
-
-    \node[ready] (p_4) [] {P4};
-    \node[ready] (p_5) [left=of p_4] {P5};
-    \node[ready] (p_6) [left=of p_5] {P6};
-    \node[ready] (p_7) [left=of p_6] {P7};
-
-    \node[state,rectangle] (q_0) [fit={(p_4) (p_5) (p_6) (p_7)}] [label=Ready Queue] {};
-
-    \node[running] (r_0) [right=of q_0, xshift=24mm] {P0};
-    \node[running] (r_1) [below=of r_0] {P1};
-    \node[running] (r_2) [below=of r_1] {P2};
-    \node[running] (r_3) [below=of r_2] {P3};
-
-    \node[state,rectangle] (q_1) [fit={(r_0) (r_1) (r_2) (r_3)}] [label=Running] {};
-
-    \draw[->] (q_0.east) -- (r_0.west);
-    \draw[->] (q_0.east) -- (r_1.west);
-    \draw[->] (q_0.east) -- (r_2.west);
-    \draw[->] (q_0.east) -- (r_3.west);
-
-    \draw[->] (p_7.east) -- (p_6.west);
-    \draw[->] (p_6.east) -- (p_5.west);
-    \draw[->] (p_5.east) -- (p_4.west);
-
-    \draw[->] (r_0.east) -- ++(10mm,0) node[near end] {exited};
-    \draw[->] (r_1.east) -- ++(10mm,0) node[near end] {exited};
-    \draw[->] (r_2.east) -- ++(10mm,0) node[near end] {exited};
-    \draw[->] (r_3.east) -- ++(10mm,0) node[near end] {exited};
-     
-    \draw[->] (q_1.south) |- ++(0,-5mm) -| (q_0.south) node[near end] {preemted};
-\end{tikzpicture}
-\caption{Global Ready Queue}
-\end{figure}
-
-\begin{figure}[h]
-\begin{tikzpicture}[shorten >=1pt,node distance=1.0cm,on grid,auto,
-    running/.style={circle, draw=green!100, fill=green!30},
-    ready/.style={circle, draw=orange!100, fill=orange!30}
-    ]
-
-    \node[ready] (p_4) [] {P4};
-    \node[ready] (p_5) [below=of p_4, yshift=-2mm] {P5};
-    \node[ready] (p_6) [below=of p_5, yshift=-2mm] {P6};
-    \node[ready] (p_7) [below=of p_6, yshift=-2mm] {P7};
-
-    \node[ready] (p_8) [left=of p_4] {P8};
-    \node[ready] (p_9) [left=of p_5] {P9};
-    \node[ready] (p_10) [left=of p_6] {Pa};
-    \node[ready] (p_11) [left=of p_7] {Pb};    
-
-    \node[state,rectangle] (q_0) [fit={(p_4) (p_8)}] [label=Ready Queues] {};
-    \node[state,rectangle] (q_1) [fit={(p_5) (p_9)}] [below=of q_0, yshift=-2mm] {};
-    \node[state,rectangle] (q_2) [fit={(p_6) (p_10)}] [below=of q_1, yshift=-2mm] {};
-    \node[state,rectangle] (q_3) [fit={(p_7) (p_11)}] [below=of q_2, yshift=-2mm] {};
-
-    \node[running] (r_0) [right=of q_0, xshift=24mm] {P0};
-    \node[running] (r_1) [below=of r_0, yshift=-2mm] {P1};
-    \node[running] (r_2) [below=of r_1, yshift=-2mm] {P2};
-    \node[running] (r_3) [below=of r_2, yshift=-2mm] {P3};
-
-    \node[state,rectangle] (q_r) [fit={(r_0) (r_1) (r_2) (r_3)}] [label=Running] {};
-
-    \draw[->] (q_0.east) -- (r_0.west);
-    \draw[->] (q_1.east) -- (r_1.west);
-    \draw[->] (q_2.east) -- (r_2.west);
-    \draw[->] (q_3.east) -- (r_3.west);
-
-    \draw[->] (p_8.east) -- (p_4.west);
-    \draw[->] (p_9.east) -- (p_5.west);
-    \draw[->] (p_10.east) -- (p_6.west);
-    \draw[->] (p_11.east) -- (p_7.west);
-     
-    \draw[->] (q_r.south) |- ++(0,-5mm) -| (q_3.south) node[near end] {preemted};
-    \draw[->] (r_0.east) -- ++(10mm,0) node[near end] {exited};
-    \draw[->] (r_1.east) -- ++(10mm,0) node[near end] {exited};
-    \draw[->] (r_2.east) -- ++(10mm,0) node[near end] {exited};
-    \draw[->] (r_3.east) -- ++(10mm,0) node[near end] {exited};
-\end{tikzpicture}
-\caption{Per Core Ready Queue}
-\end{figure}
+\begin{figure*}[h!]
+	\centering
+	\begin{subfigure}{.48\linewidth}
+		% \subfloat[Global Ready Queue]{
+		% \centering
+		\begin{tikzpicture}[shorten >=1pt,node distance=1.0cm,on grid,auto,
+				running/.style={circle, draw=green!100, fill=green!30},
+				ready/.style={circle, draw=orange!100, fill=orange!30}
+			]
+			
+			\node[ready] (p_4) [] {P4};
+			\node[ready] (p_5) [left=of p_4] {P5};
+			\node[ready] (p_6) [left=of p_5] {P6};
+			\node[ready] (p_7) [left=of p_6] {P7};
+			
+			\node[state,rectangle] (q_0) [fit={(p_4) (p_5) (p_6) (p_7)}] [label=Ready Queue] {};
+			
+			\node[running] (r_0) [right=of q_0, xshift=24mm] {P0};
+			\node[running] (r_1) [below=of r_0] {P1};
+			\node[running] (r_2) [below=of r_1] {P2};
+			\node[running] (r_3) [below=of r_2] {P3};
+			
+			\node[state,rectangle] (q_1) [fit={(r_0) (r_1) (r_2) (r_3)}] [label=Running] {};
+			
+			\draw[->] (q_0.east) -- (r_0.west);
+			\draw[->] (q_0.east) -- (r_1.west);
+			\draw[->] (q_0.east) -- (r_2.west);
+			\draw[->] (q_0.east) -- (r_3.west);
+			
+			\draw[->] (p_7.east) -- (p_6.west);
+			\draw[->] (p_6.east) -- (p_5.west);
+			\draw[->] (p_5.east) -- (p_4.west);
+			
+			\draw[->] (r_0.east) -- ++(10mm,0) node[near end] {exited};
+			\draw[->] (r_1.east) -- ++(10mm,0) node[near end] {exited};
+			\draw[->] (r_2.east) -- ++(10mm,0) node[near end] {exited};
+			\draw[->] (r_3.east) -- ++(10mm,0) node[near end] {exited};
+			     
+			\draw[->] (q_1.south) |- ++(0,-5mm) -| (q_0.south) node[near end] {preemted};
+		\end{tikzpicture}
+		\caption{Global Scheduling}
+	\end{subfigure}
+	% 
+	\begin{subfigure}{.48\linewidth}
+		\begin{tikzpicture}[shorten >=1pt,node distance=1.0cm,on grid,auto,
+				running/.style={circle, draw=green!100, fill=green!30},
+				ready/.style={circle, draw=orange!100, fill=orange!30}
+			]
+			
+			\node[ready] (p_4) [] {P4};
+			\node[ready] (p_5) [below=of p_4, yshift=-2mm] {P5};
+			\node[ready] (p_6) [below=of p_5, yshift=-2mm] {P6};
+			\node[ready] (p_7) [below=of p_6, yshift=-2mm] {P7};
+			
+			\node[ready] (p_8) [left=of p_4] {P8};
+			\node[ready] (p_9) [left=of p_5] {P9};
+			\node[ready] (p_10) [left=of p_6] {Pa};
+			\node[ready] (p_11) [left=of p_7] {Pb};    
+			
+			\node[state,rectangle] (q_0) [fit={(p_4) (p_8)}] [label=Ready Queues] {};
+			\node[state,rectangle] (q_1) [fit={(p_5) (p_9)}] [below=of q_0, yshift=-2mm] {};
+			\node[state,rectangle] (q_2) [fit={(p_6) (p_10)}] [below=of q_1, yshift=-2mm] {};
+			\node[state,rectangle] (q_3) [fit={(p_7) (p_11)}] [below=of q_2, yshift=-2mm] {};
+			
+			\node[running] (r_0) [right=of q_0, xshift=24mm] {P0};
+			\node[running] (r_1) [below=of r_0, yshift=-2mm] {P1};
+			\node[running] (r_2) [below=of r_1, yshift=-2mm] {P2};
+			\node[running] (r_3) [below=of r_2, yshift=-2mm] {P3};
+			
+			\node[state,rectangle] (q_r) [fit={(r_0) (r_1) (r_2) (r_3)}] [label=Running] {};
+			
+			\draw[->] (q_0.east) -- (r_0.west);
+			\draw[->] (q_1.east) -- (r_1.west);
+			\draw[->] (q_2.east) -- (r_2.west);
+			\draw[->] (q_3.east) -- (r_3.west);
+			
+			\draw[->] (p_8.east) -- (p_4.west);
+			\draw[->] (p_9.east) -- (p_5.west);
+			\draw[->] (p_10.east) -- (p_6.west);
+			\draw[->] (p_11.east) -- (p_7.west);
+			     
+			\draw[->] (q_r.south) |- ++(0,-5mm) -| (q_3.south) node[near end] {preemted};
+			\draw[->] (r_0.east) -- ++(10mm,0) node[near end] {exited};
+			\draw[->] (r_1.east) -- ++(10mm,0) node[near end] {exited};
+			\draw[->] (r_2.east) -- ++(10mm,0) node[near end] {exited};
+			\draw[->] (r_3.east) -- ++(10mm,0) node[near end] {exited};
+		\end{tikzpicture}
+		\caption{Per Core Ready Queue}
+	\end{subfigure}
+\end{figure*}
 
 Under the current scheduler, a process, if eligible, is migrated during preemption.  In general the scheduler will opt to keep a process on the same CPU unless another core is sufficiently empty or its affinity set dictates otherwise.  In essence this rebalancing means that as processes are rescheduled, the cores will tend towards a balanced configuration.  However, it is also possible that a core will have a stream of processes terminate leading to a load imbalance between ready queues (fig. 3).
 
 \begin{figure}[h]
-\begin{tikzpicture}[shorten >=1pt,node distance=1.0cm,on grid,auto,
-    running/.style={circle, draw=green!100, fill=green!30},
-    ready/.style={circle, draw=orange!100, fill=orange!30},
-    empty/.style={circle, draw=none, fill=none, text=white}
-    ]
-
-    \node[ready] (p_4) [] {P4};
-    \node[ready] (p_5) [below=of p_4, yshift=-2mm] {P5};
-
-    \node[ready] (p_6) [left=of p_5] {P8};
-    \node[ready] (p_7) [left=of p_6] {P9};
-    \node[ready] (p_8) [left=of p_7] {Pa};
-    \node[ready] (p_9) [left=of p_8] {Pb}; 
-    
-    \node[empty] (p_e) [above=of p_9, yshift=+2mm] {Pe};
-
-    \node[state,rectangle] (q_0) [fit={(p_4) (p_e)}] [label=CPU Ready Queues] {};
-    \node[state,rectangle] (q_1) [fit={(p_5) (p_6) (p_7) (p_8) (p_9)}] [below=of q_0, yshift=-2mm] {};
-
-    \node[running] (r_0) [right=of q_0, xshift=24mm] {P0};
-    \node[running] (r_1) [below=of r_0, yshift=-2mm] {P1};
-
-    \node[state,rectangle] (q_r) [fit={(r_0) (r_1)}] [label=Running] {};
-
-    \draw[->] (q_0.east) -- (r_0.west);
-    \draw[->] (q_1.east) -- (r_1.west);
-
-    \draw[->] (p_9.east) -- (p_8.west);
-    \draw[->] (p_8.east) -- (p_7.west);
-    \draw[->] (p_7.east) -- (p_6.west);
-    \draw[->] (p_6.east) -- (p_5.west);
-     
-    \draw[->] (q_r.south) |- ++(0,-5mm) -| (q_1.south) node[near end] {preemted};
-    \draw[->] (r_0.east) -- ++(10mm,0) node[near end] {exited};
-    \draw[->] (r_1.east) -- ++(10mm,0) node[near end] {exited};
-\end{tikzpicture}
-\caption{Unbalanced Scheduling}
+	\centering
+	\begin{tikzpicture}[shorten >=1pt,node distance=1.0cm,on grid,auto,
+			running/.style={circle, draw=green!100, fill=green!30},
+			ready/.style={circle, draw=orange!100, fill=orange!30},
+			empty/.style={circle, draw=none, fill=none, text=white}
+		]
+		
+		\node[ready] (p_4) [] {P4};
+		\node[ready] (p_5) [below=of p_4, yshift=-2mm] {P5};
+		
+		\node[ready] (p_6) [left=of p_5] {P8};
+		\node[ready] (p_7) [left=of p_6] {P9};
+		\node[ready] (p_8) [left=of p_7] {Pa};
+		\node[ready] (p_9) [left=of p_8] {Pb}; 
+		    
+		\node[empty] (p_e) [above=of p_9, yshift=+2mm] {Pe};
+		
+		\node[state,rectangle] (q_0) [fit={(p_4) (p_e)}] [label=CPU Ready Queues] {};
+		\node[state,rectangle] (q_1) [fit={(p_5) (p_6) (p_7) (p_8) (p_9)}] [below=of q_0, yshift=-2mm] {};
+		
+		\node[running] (r_0) [right=of q_0, xshift=24mm] {P0};
+		\node[running] (r_1) [below=of r_0, yshift=-2mm] {P1};
+		
+		\node[state,rectangle] (q_r) [fit={(r_0) (r_1)}] [label=Running] {};
+		
+		\draw[->] (q_0.east) -- (r_0.west);
+		\draw[->] (q_1.east) -- (r_1.west);
+		
+		\draw[->] (p_9.east) -- (p_8.west);
+		\draw[->] (p_8.east) -- (p_7.west);
+		\draw[->] (p_7.east) -- (p_6.west);
+		\draw[->] (p_6.east) -- (p_5.west);
+		     
+		\draw[->] (q_r.south) |- ++(0,-5mm) -| (q_1.south) node[near end] {preemted};
+		\draw[->] (r_0.east) -- ++(10mm,0) node[near end] {exited};
+		\draw[->] (r_1.east) -- ++(10mm,0) node[near end] {exited};
+	\end{tikzpicture}
+	\caption{Unbalanced Scheduling}
 \end{figure}
 
 Pull migration is an effort to improve the rebalancing latency for queues which exhibit the behaivour in fig. 3.  Periodically, an idle core will search for an overloaded core and pull eligible processes from the tail of its queue.  This task requires locking the busy queue for a longer period of time; while, the idle queue tends to have have its lock acquired more frequently.  This task leads to high lock contention for both queues which can negatively impact the time spent in the kernel.  Specifically, while iterating, the busy core will be unable to retrieve the next runnable process.  Thus it is important to pick a large enough interval to do the rebalancing that it does not cause much strain on performance.  However, in most cases, if a core is not sufficiently loaded the pull migration task will instead exit prematurely instead of locking both cores.
+
+\textbf{TODO: Process Fairness}
 
 
 \section{Performance}
@@ -194,251 +210,285 @@ Different user programs were tested against the variations of the OS scheduler d
 
 While the actual measured runtime is presented in jiffies, these measurements should rarely be compared as they are rough measurements based on the CPU timer.  Additionally, tasks which may have a variable amount of IO with the FTDI output device are likely to see unrepresentative results compared to the actual execution of tasks.  Finally it is also important to note that all data fits into the L2 cache and thus pipeline stalls involved when fetching from main memory are limited the initial cold start.  \textbf{TODO: talk about the L2 cache in conclusion as it amplifies performance penalty}
 
-\begin{table}[h!]
-    \centering
-    \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
-        Type & Total & User & Kernel \\
-        \hline
-        Instrs & 467617788 & 466380022 & 1237766 \\ 
-        Cycles & 693267321 & 691411106 & 1856215 \\ 
-        Access & 264291472 & 263665636 & 625836 \\ 
-        Refill & 1539 & 1340 & 199 \\ 
-        Runtime & 45374884 & - & - \\ 
-        \hline
-    \end{tabular}}
-    \caption{single core - matrix 1x utilization}
-\end{table}
 
-\begin{table}[h!]
-    \centering
-    \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
-        Type & Total & User & Kernel \\
-        \hline
-        Instrs & 1858506765 & 1853566311 & 4940454 \\ 
-        Cycles & 2768987855 & 2760678046 & 8309809 \\ 
-        Access & 1050488228 & 1047990323 & 2497905 \\ 
-        Refill & 1389770 & 1293188 & 96582 \\ 
-        Runtime & 178608294 & - & - \\ 
-        \hline
-    \end{tabular}}
-    \caption{single core - matrix 4x utilization}
-\end{table}
+\begin{figure*}[h]
+	\centering
+	% \makebox[\linewidth][c]{
+	\begin{subtable}{.48\linewidth}
+		\centering
+		\begin{tabular}{ l|rrr }
+			Type    & Total     & User      & Kernel  \\
+			\hline
+			Instrs  & 467617788 & 466380022 & 1237766 \\ 
+			Cycles  & 693267321 & 691411106 & 1856215 \\ 
+			Access  & 264291472 & 263665636 & 625836  \\ 
+			Refill  & 1539      & 1340      & 199     \\ 
+			Runtime & 45374884  & -         & -       \\ 
+			\hline
+		\end{tabular}
+		\caption{single core - matrix 1x utilization}
+	\end{subtable}
+	\hfill
+	\begin{subtable}{.48\linewidth}
+		\centering
+		\begin{tabular}{ l|rrr }
+			Type    & Total      & User       & Kernel  \\
+			\hline
+			Instrs  & 1858506765 & 1853566311 & 4940454 \\ 
+			Cycles  & 2768987855 & 2760678046 & 8309809 \\ 
+			Access  & 1050488228 & 1047990323 & 2497905 \\ 
+			Refill  & 1389770    & 1293188    & 96582   \\ 
+			Runtime & 178608294  & -          & -       \\ 
+			\hline
+		\end{tabular}
+		\caption{single core - matrix 4x utilization}
+	\end{subtable}
+\end{figure*}
 
 This initial example aims to show the stark difference between process cache utilization.  Each example operates on a matrix fully utilizes the L1 cache and one which overloads the cache.  It is important to note that while the cycle count is nearly 4x larger as expected, the refill rate for the larger matrix is larger by a factor of nearly 900.  In these examples the most noticeable difference is the instructions per cycle in the kernel being roughly 11\% slower, due to the frequent thrashing of kernel memory. 
 
-TODO: note about how to improve global runtime in userspace programs
+\textbf{TODO: note about how to improve global runtime in userspace programs}
 
-\begin{table}[h!]
-    \centering
-    \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
-        Type & Total & User & Kernel \\
-        \hline
-        Instrs & 354249559 & 353629318 & 620241 \\ 
-        Cycles & 527538552 & 526403550 & 1135002 \\ 
-        Access & 200305644 & 199963039 & 342605 \\ 
-        Refill & 125708 & 116722 & 8986 \\ 
-        Runtime & 41175374 & - & - \\ 
-        \hline
-    \end{tabular}}
-    \caption{multi core - global queue}
-\end{table}
-
-\begin{table}[h!]
-    \centering
-    \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
-        Type & Total & User & Kernel \\
-        \hline
-        Instrs & 375176881 & 374755150 & 421731 \\ 
-        Cycles & 556693572 & 556049701 & 643871 \\ 
-        Access & 212114934 & 211903384 & 211550 \\ 
-        Refill & 15332 & 14735 & 597 \\ 
-        Runtime & 40603738 & - & - \\ 
-        \hline
-    \end{tabular}}
-    \caption{multi core - cpu queue (affinity)}
-\end{table}
+\begin{figure*}[h]
+	\centering
+	% \makebox[\linewidth][c]{
+	\begin{subtable}{.48\linewidth}
+		\centering
+		\begin{tabular}{ l|rrr }
+			Type    & Total     & User      & Kernel  \\
+			\hline
+			Instrs  & 354249559 & 353629318 & 620241  \\ 
+			Cycles  & 527538552 & 526403550 & 1135002 \\ 
+			Access  & 200305644 & 199963039 & 342605  \\ 
+			Refill  & 125708    & 116722    & 8986    \\ 
+			Runtime & 41175374  & -         & -       \\ 
+			\hline
+		\end{tabular}
+		\caption{multi core - global queue}
+	\end{subtable}
+	\begin{subtable}{.48\linewidth} 
+		\centering        
+		\begin{tabular}{ l|rrr }
+			Type    & Total     & User      & Kernel \\
+			\hline
+			Instrs  & 375176881 & 374755150 & 421731 \\ 
+			Cycles  & 556693572 & 556049701 & 643871 \\ 
+			Access  & 212114934 & 211903384 & 211550 \\ 
+			Refill  & 15332     & 14735     & 597    \\ 
+			Runtime & 40603738  & -         & -      \\ 
+			\hline
+		\end{tabular}
+		\caption{multi core - cpu queue (affinity)}    
+	\end{subtable}
+	% }
+\end{figure*}
 
 Extending the trivial example to multicore serves as a demonstration of easily parallelizable code and the benefit of process affinity.  When processor affinity is specified the number of kernel cycles is $76\%$ less than without which results in a $20\%$ improvement in instructions per cycle.  Again the improvement in kernel runtime is due to reduced thrashing of the kernel cores as evident in the lower APR.  However, there is also a $5\%$ loss in number of cycles, \textbf{TODO}.  Additionally it is important to note that the number of kernel instructions executed for the per core runqueue is $47\%$ less, owing to less scheduler lock contention between cores during a context switch.
 
-\begin{table}[h!]
-    \centering
-    \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
-        Type & Total & User & Kernel \\
-        \hline
-        Instrs & 1543135939 & 1396850683 & 146285256 \\ 
-        Cycles & 3146576481 & 2076522276 & 1070054205 \\ 
-        Access & 845516444 & 789349384 & 56167060 \\ 
-        Refill & 7653514 & 112360 & 7541154 \\ 
-        Runtime & 152657484 & - & - \\
-        \hline
-    \end{tabular}}
-    \caption{death - no pull sm}
-\end{table}
+\begin{figure*}[h]
+	\centering
+	% \makebox[\linewidth]{
+	\begin{subtable}{.48\linewidth}
+		\centering                 
+		\begin{tabular}{l|rrr}
+			Type    & Total      & User       & Kernel     \\
+			\hline
+			Instrs  & 1543135939 & 1396850683 & 146285256  \\ 
+			Cycles  & 3146576481 & 2076522276 & 1070054205 \\ 
+			Access  & 845516444  & 789349384  & 56167060   \\ 
+			Refill  & 7653514    & 112360     & 7541154    \\ 
+			Runtime & 152657484  & -          & -          \\
+			\hline 
+		\end{tabular}
+		\caption{death - no pull (sm)}
+	\end{subtable}
+	\hfill
+	\begin{subtable}{.48\linewidth}
+		\begin{tabular}{l|rrr}
+			Type    & Total      & User       & Kernel    \\
+			\hline
+			Instrs  & 1468299596 & 1398454567 & 69845029  \\ 
+			Cycles  & 2552848279 & 2079318879 & 473529400 \\ 
+			Access  & 816022596  & 790256656  & 25765940  \\ 
+			Refill  & 3126952    & 140213     & 2986739   \\ 
+			Runtime & 156804356  & -          & -         \\
+			\hline
+		\end{tabular}
+		\caption{death - pulled (sm)}
+	\end{subtable}
+	% }
+\end{figure*}
 
-\begin{table}[h!]
-    \centering
-    \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
-        Type & Total & User & Kernel \\
-        \hline
-        Instrs & 1468299596 & 1398454567 & 69845029 \\ 
-        Cycles & 2552848279 & 2079318879 & 473529400 \\ 
-        Access & 816022596 & 790256656 & 25765940 \\ 
-        Refill & 3126952 & 140213 & 2986739 \\ 
-        Runtime & 156804356 & - & - \\ 
-        \hline
-    \end{tabular}}
-    \caption{death - pulled sm}
-\end{table}
+\begin{figure*}[h]
+	% \makebox[\textwidth][c]{
+	\begin{subtable}{.48\textwidth}
+		\centering                 
+		\begin{tabular}{l|rrr}       
+			Type    & Total      & User       & Kernel     \\
+			\hline
+			Instrs  & 1613944771 & 1404552990 & 209391781  \\ 
+			Cycles  & 3491698429 & 2086636583 & 1405061846 \\ 
+			Access  & 873214573  & 793699999  & 79514574   \\ 
+			Refill  & 9792188    & 28820      & 9763368    \\ 
+			Runtime & 152321428  & -          & -          \\ 
+			\hline
+		\end{tabular}
+		\caption{death - no pull (md)}
+	\end{subtable}
+	\hfill
+	\begin{subtable}{.48\textwidth}
+		\centering                 
+		\begin{tabular}{l|rrr}  
+			Type    & Total      & User       & Kernel    \\
+			\hline
+			Instrs  & 1520575475 & 1445743126 & 74832349  \\ 
+			Cycles  & 2574353547 & 2147872630 & 426480917 \\ 
+			Access  & 843643737  & 816978128  & 26665609  \\ 
+			Refill  & 2283806    & 34930      & 2248876   \\ 
+			Runtime & 161631896  & -          & -         \\ 
+			\hline
+		\end{tabular}
+		\caption{death - pulled (md)}        
+	\end{subtable}
+	% }
+\end{figure*}
 
-\textbf{TODO}
-Need to discuss this case..., may involve a bit of non-determinism...
+% % TODO: Mention how the refill rate is significantly lower, instead of processes jumping around when they die, processes are moved which generally have lower cache impact as they are at the tail of runqueues
 
-Notes:  lower cache locality leads to fewer lost cycles, additionally migration without pull migration tends to lead to more kernel contention.  Likely because full cores try to migrate to the local core...
+% A common pattern for distributing workload is to create many short lived processes which can perform independent computation before returning to a longer lived process.
 
-\begin{table}[h!]
-    \centering
-    \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
-        Type & Total & User & Kernel \\
-        \hline
-        Instrs & 1613944771 & 1404552990 & 209391781 \\ 
-        Cycles & 3491698429 & 2086636583 & 1405061846 \\ 
-        Access & 873214573 & 793699999 & 79514574 \\ 
-        Refill & 9792188 & 28820 & 9763368 \\ 
-        Runtime & 152321428 & - & - \\ 
-        \hline
-    \end{tabular}}
-    \caption{death - no-pull}
-\end{table}
+For these examples, the impact of pull migration is immediately evident in the reduced cycle count of 75-80\% and a maximum reduction to 25\% of the original l1 refill rate to the same tests running without push migration.  Despite the apparent cache benefit it is important to note that the cycles spent in userspace tend to remain around the same meaning that the more important improvement ends up in the kernel.  When investigated more, it is noticable that the kernel cycle count and number of instructions executed drops significantly with pull migration.  Since the change in the kernel refill rate more insignificant this decrease in kernel overhead seems to be highly related to decreased lock contention between the cores.
 
-\begin{table}[h!]
-    \centering
-    \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
-        Type & Total & User & Kernel \\
-        \hline
-        Instrs & 1520575475 & 1445743126 & 74832349 \\ 
-        Cycles & 2574353547 & 2147872630 & 426480917 \\ 
-        Access & 843643737 & 816978128 & 26665609 \\ 
-        Refill & 2283806 & 34930 & 2248876 \\ 
-        Runtime & 161631896 & - & - \\ 
-        \hline
-    \end{tabular}}
-    \caption{death - pulled}
-\end{table}
+This contention is derived from the scenario of multiple busy queues attempting to rapidly push work onto an idle queue.  In these cases, the added lock contention will inhibit processes from being scheduled on all cores since they are all effectively being serialized by the idle queue runqueue lock.  With pull migration, instead of having many repeated requests to the idle cores runqueue, a busy core elects to offload a larger amount of work until the idle core is no longer considered idle.  This prevents other cores from offloading work unnecesarily leading to improved userspace cache behaivour for those cores as well as reduced lock contention and minimal serialization.  Additionally, pulling processes from the end of the runqueue; instead of migrating recently executed processes, provides the opportunity to exhibit temporal locality and less cache pollution from more processes being executed. 
 
-\textbf{TODO}
-Again same as above...
-specific pattern likely samples of the same matrix get flushed to the idle cores.  May want to repeat these tests with affinity for the idle procs.
+\textbf{TODO: cleanup these paragraphs}
 
-\begin{table}[h!]
-    \centering
-    \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
-        Type & Total & User & Kernel \\
-        \hline
-        Instrs & 2945961318 & 2829092653 & 116868665 \\ 
-        Cycles & 4881259967 & 4206238780 & 675021187 \\ 
-        Access & 1642115209 & 1598721424 & 43393785 \\ 
-        Refill & 4570467 & 298213 & 4272254 \\ 
-        Runtime & 175864992 & - & - \\
-        \hline
-    \end{tabular}}
-    \caption{runtime - no pull}
-\end{table}
-
-\begin{table}[h!]
-    \centering
-    \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
-        Type & Total & User & Kernel \\
-        \hline
-        Instrs & 2727027846 & 2625810066 & 101217780 \\ 
-        Cycles & 4421745433 & 3903078399 & 518667034 \\ 
-        Access & 1520521397 & 1483845439 & 36675958 \\ 
-        Refill & 3226996 & 222090 & 3004906 \\ 
-        Runtime & 171909144 & - & - \\
-        \hline
-    \end{tabular}}
-    \caption{runtime - pulled}
-\end{table}
+\begin{figure*}[h]
+	\centering
+	% \makebox[\linewidth][c]{
+	\begin{subtable}[b]{.48\linewidth}
+		\centering                 
+		\begin{tabular}{ l|rrr }
+			Type    & Total      & User       & Kernel    \\
+			\hline
+			Instrs  & 2945961318 & 2829092653 & 116868665 \\ 
+			Cycles  & 4881259967 & 4206238780 & 675021187 \\ 
+			Access  & 1642115209 & 1598721424 & 43393785  \\ 
+			Refill  & 4570467    & 298213     & 4272254   \\ 
+			Runtime & 175864992  & -          & -         \\
+			\hline
+		\end{tabular}
+		\caption{runtime - no pull}    
+	\end{subtable}
+	\hfill
+	\begin{subtable}[b]{.48\linewidth}
+		\centering
+		\begin{tabular}{ l|rrr }
+			Type    & Total      & User       & Kernel    \\
+			\hline
+			Instrs  & 2727027846 & 2625810066 & 101217780 \\ 
+			Cycles  & 4421745433 & 3903078399 & 518667034 \\ 
+			Access  & 1520521397 & 1483845439 & 36675958  \\ 
+			Refill  & 3226996    & 222090     & 3004906   \\ 
+			Runtime & 171909144  & -          & -         \\
+			\hline
+		\end{tabular}
+		\caption{runtime - pulled}
+	\end{subtable}
+	% }
+\end{figure*}
 
 This case is important at showing the benefits of pull migration in relation to long term scheduling.  Specifically, since processes which execute for longer periods of time will undergo more context switches which incurs performance and leads to more kernel thrashing.  This example allows work to be migrated sooner and hence the total runtime decreases as well as the number of context switches.  In addition, since processes are moved from busy to idle cores, the user process cache utilization is more likely to be equally distributed across the processors \textbf{TODO: this sentence a little misworded}.  \textbf{TODO: mention size of data}
 
-\begin{table}[h!]
-    \centering
-    \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
-        Type & Total & User & Kernel \\
-        \hline
-        Instrs & 836416320 & 753346040 & 83070280 \\ 
-        Cycles & 1724034904 & 1123196400 & 600838504 \\ 
-        Access & 456170314 & 426134109 & 30036205 \\ 
-        Refill & 4027452 & 231590 & 3795862 \\ 
-        Runtime & 165276806 & - & - \\
-        \hline
-    \end{tabular}}
-    \caption{pool - unpooled sm}
-\end{table}
+\begin{figure*}[h]
+	\centering
+	% \makebox[\textwidth][c]{
+	\begin{subtable}{.48\textwidth}
+		\centering
+		\begin{tabular}{ l|rrr }
+			Type    & Total      & User       & Kernel    \\
+			\hline
+			Instrs  & 836416320  & 753346040  & 83070280  \\ 
+			Cycles  & 1724034904 & 1123196400 & 600838504 \\ 
+			Access  & 456170314  & 426134109  & 30036205  \\ 
+			Refill  & 4027452    & 231590     & 3795862   \\ 
+			Runtime & 165276806  & -          & -         \\
+			\hline
+		\end{tabular}
+		\caption{pool - unpooled sm}
+	\end{subtable}
+	\hfill
+	\begin{subtable}{.48\textwidth} 
+		\centering
+		\begin{tabular}{ l|rrr }
+			Type    & Total      & User       & Kernel    \\
+			\hline
+			Instrs  & 811243405  & 741653152  & 69590253  \\ 
+			Cycles  & 1789217832 & 1113471653 & 675746179 \\ 
+			Access  & 444450115  & 419398612  & 25051503  \\ 
+			Refill  & 4540858    & 379326     & 4161532   \\ 
+			Runtime & 66534692   & -          & -         \\
+			\hline
+		\end{tabular}
+		\caption{pool - pooled sm}        
+	\end{subtable}
+	% }
+\end{figure*}
 
-\begin{table}[h!]
-    \centering
-    \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
-        Type & Total & User & Kernel \\
-        \hline
-        Instrs & 811243405 & 741653152 & 69590253 \\ 
-        Cycles & 1789217832 & 1113471653 & 675746179 \\ 
-        Access & 444450115 & 419398612 & 25051503 \\ 
-        Refill & 4540858 & 379326 & 4161532 \\ 
-        Runtime & 66534692 & - & - \\
-        \hline
-    \end{tabular}}
-    \caption{pool - pooled sm}
-\end{table}
-
-\begin{table}[h!]
-    \centering
-    \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
-        Type & Total & User & Kernel \\
-        \hline
-        Instrs & 819345284 & 755845609 & 63499675 \\ 
-        Cycles & 1672284752 & 1125235476 & 547049276 \\ 
-        Access & 450878090 & 427546852 & 23331238 \\ 
-        Refill & 3740754 & 148469 & 3592285 \\ 
-        Runtime & 167143162 & - & - \\ 
-        \hline
-    \end{tabular}}
-    \caption{pool - unpooled}
-\end{table}
-
-\begin{table}[h!]
-    \centering
-    \adjustbox{max width=\columnwidth}{\begin{tabular}{ l|rrr }
-        Type & Total & User & Kernel \\
-        \hline
-        Instrs & 840132648 & 753613514 & 86519134 \\ 
-        Cycles & 1849770029 & 1127098953 & 722671076 \\ 
-        Access & 457128942 & 426166739 & 30962203 \\ 
-        Refill & 4435166 & 143616 & 4291550 \\ 
-        Runtime & 66158114 & - & - \\ 
-        \hline
-    \end{tabular}}
-    \caption{pool - pooled}
-\end{table}
+\begin{figure*}[h]
+	\begin{subtable}{.48\textwidth} 
+		\centering
+		\begin{tabular}{ l|rrr }
+			Type    & Total      & User       & Kernel    \\
+			\hline
+			Instrs  & 819345284  & 755845609  & 63499675  \\
+			Cycles  & 1672284752 & 1125235476 & 547049276 \\
+			Access  & 450878090  & 427546852  & 23331238  \\
+			Refill  & 3740754    & 148469     & 3592285   \\
+			Runtime & 167143162  & -          & -         \\
+			\hline
+		\end{tabular}
+		\caption{pool - unpooled}
+	\end{subtable}
+	\hfill
+	\begin{subtable}{.48\textwidth} 
+		\centering
+		\begin{tabular}{ l|rrr }
+			Type    & Total      & User       & Kernel    \\
+			\hline
+			Instrs  & 840132648  & 753613514  & 86519134  \\
+			Cycles  & 1849770029 & 1127098953 & 722671076 \\
+			Access  & 457128942  & 426166739  & 30962203  \\
+			Refill  & 4435166    & 143616     & 4291550   \\
+			Runtime & 66158114   & -          & -         \\
+			\hline
+		\end{tabular}
+		\caption{pool - pooled}
+	\end{subtable}
+\end{figure*}
 
 \textbf{TODO: remeasure runtimes? repeat tests with different MD case?}
 \textbf{TODO: mention that these were unexpected, was expecting much better performance with the pooled - md}
 This example has ipc larger in both cases.    However, one noticeable factor is that for larger sample size there is less l1 thrashing relavent in the APR (contributing factor for larger runtimes).  Instead for the smaller case the caches are able to be fully utilized.
 
+\section{Lessons Learned}
+\label{sec:lessons}
 
 \section{Conclusion}
 \label{sec:conclusion}
 
 Conclusions here \cite{freebsd} \cite{unix}.
 
+\section{Future Work}
+\label{sec:future}
+
 % \section{Acknowledgements} 
 
 \onecolumn
 \begin{sloppypar}
-\bibliographystyle{acm}
-\bibliography{biblio}
+	\bibliographystyle{acm}
+	\bibliography{biblio}
 \end{sloppypar}
 
 % \end{multicols}
 \end{document}
-
