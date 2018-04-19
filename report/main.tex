@@ -487,26 +487,41 @@ In Fig. 7, a work sized at 25\% of the L1 data cache is distributed to 64 thread
 \textbf{TODO: mention that these were unexpected, was expecting much better performance with the pooled - md}
 This example has ipc larger in both cases.    However, one noticeable factor is that for larger sample size there is less l1 thrashing relevant in the APR (contributing factor for larger runtimes).  Instead for the smaller case the caches are able to be fully utilized.
 
-\section{Lessons Learned}
-\label{sec:lessons}
-Since the development of the operating system was done from the ground up there were plenty of learning opportunities along the way.  
-
-
-Measuring success or failure in a bare metal environment can prove to be quite difficult; thus it became important to progressively escalate to better debugging utilities.  Initially, bare minimum assembly required to toggle an LED gave limited success or failure output.  The jump to FTDI was helpful in debugging simple conditions and CPU registers.  Finally, for tracing complex execution, having a proper debugging protocol with JLink + OpenOCD + GDB enabled better debugging for context switching, exception handling and multicore execution.
-
-While the intial JLink setup was incredibly difficult due to incompatability with the current version of OpenOCD, mismatched toolchain and microcontroller runtime, and a poorly configured microcontroller, the end result was incredibly important to establishing a sucessfull development workflow.  Instead of having to perform a careful SD card dance between my computer and the Pi, the ability to directly flash to RAM allowed for much quicker development.  Initially, I had looked into alternative bootloaders (UBoot, GRUB) which can work over ethernet, WIFI, or serial connections; however, in general the end result of having proper host debugging utilities proved invaluable.
-
-Relating to some of the issues of toolchain incompatability; initially code was compiled using the \texttt{arm-none-eabi} toolchain which is used for cross compiling to 32-bit arm.  While, the Pi offers compatability with the older architecture, the generic debug interface is less compatible with the 32-bit toolchain.  Thus it is important to recognize that despite older systems often having more documentation; the complexity of developing on a compatability layer is not worth the extra effort.  In addition, in the aarch64 architecture proved to have clear and more thought out semantics especially when relating to exception handling.  The exception model for aarch64 is standardized across four types; whereas, the arm32 architecture requires storing and restoring a different subsets of registers as well as having different methods to return from interrupts.  Additionally, the addition of a unified exception status register (ESR) was much more helpful with determing the cause of a processor fault.
-
-Newlib itegration
-
 \section{Conclusion}
 \label{sec:conclusion}
 
 Conclusions here \cite{freebsd} \cite{unix}.
 
+\section{Lessons Learned}
+\label{sec:lessons}
+Since the development of the operating system was done from the ground up there were plenty of learning opportunities along the way.  
+
+Measuring success in a bare metal environment can prove to be quite difficult; thus it became important to progressively escalate to better debugging utilities.  Initially, bare minimum assembly required to toggle an LED gave limited success or failure output.  The jump to FTDI was helpful in debugging simple conditions and CPU registers.  Finally, for tracing complex execution; having a proper debugging protocol with JLink, OpenOCD and GDB enabled better debugging for context switching, exception handling and multicore execution.
+
+While the intial JLink setup was incredibly difficult due to incompatability with the current version of OpenOCD, mismatched toolchain and microcontroller runtime, and a poorly configured microcontroller, the end result was incredibly important to establishing a sucessfull development workflow.  Instead of having to perform a careful SD card dance between my computer and the Pi, the ability to directly flash to RAM allowed for much quicker development.  Initially, I had looked into alternative bootloaders (UBoot, GRUB) which can work over ethernet, WIFI, or serial connections; however, in general the end result of having proper host debugging utilities proved invaluable.
+
+Relating to some of the issues of toolchain incompatability; initially code was compiled using the \texttt{arm-none-eabi} toolchain which is used for cross compiling to 32-bit arm.  While, the Pi offers compatability with the older architecture, the generic debug interface is less compatible with the 32-bit toolchain.  Thus it is important to recognize that despite older systems often having more documentation; the complexity of developing on a compatability layer is not worth the extra effort.  In addition, in the aarch64 architecture proved to have clear and more thought out semantics especially when relating to exception handling.  The exception model for aarch64 is standardized across four types; whereas, the arm32 architecture requires storing and restoring a different subsets of registers as well as having different methods to return from interrupts.  Additionally, the addition of a unified exception status register (ESR) was much more helpful with determing the cause of a processor fault.
+
+Newlib was designed to provide the C library on embedded systems \cite{newlib} with system support of a few low level functions.  For example, the overhead of implementing the \texttt{malloc} and \texttt{printf} routines was reduced to simply stubbing out \texttt{sbrk} and establishing a minimal device descriptor table for \texttt{stdout}.  As I built the system with the design of having POSIX compliancy, I additionally included the \texttt{<sys>} headers from Newlib; which often imposed lower level structure restrictions.  When implementing CPU sets I wanted to follow the same type of implementation as embedding the affinity set in the \texttt{pthread\_attr\_t} which was hidden around several macro guards; which when enabled led to conflicts in other libraries.  Thus for long term kernel development; having custom POSIX headers is beneficial in the customizablility of the system and allows the system to not be constrianed by ``immutable'' headers.
+
 \section{Future Work}
 \label{sec:future}
+- exception higherarchy from EL0 up to EL1
+
+- better POSIX compliancy thus port more complex programs to run tests against.
+eg. real programs; what would the necessary components be?, networked bounded programs, file bounded programs
+
+- device drivers in multicore domain, network drivers would likely be interesting to explore.  also sockets and their implementation
+
+- user virtual address space and compare the performance penalty for TLB reloads
+
+- slab allocation algorithms for a more complex system
+
+- implementation of the linux rb-tree scheduler with implications for migration, variable quantum size + penalizing bad programs
+
+- better migration policies with book-keeping.
+
+- microkernel architecture + performance
 
 % \section{Acknowledgements} 
 
