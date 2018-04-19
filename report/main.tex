@@ -15,7 +15,6 @@
     compatibility=false
 }
 
-\usepackage{tabularx}
 \usepackage{graphicx}
 \usepackage{tikz}
 
@@ -50,7 +49,7 @@
 \label{sec:introduction}
 Hardware has evolved to become increasingly more complex and efficient, through areas such as processor frequency and memory latency.  Amdhal's law gives diminishing returns on the impact of parallelizing computation.  However, with respect to symmetric multiprocessing (SMP) in the kernel, Gustafon's law proves as now as a \textbf{scheduler?} can run ``in the same time with a larger workload'' \cite{gustafon}.  Thus as new system architectures take advantage of these processors.  They also require new approaches for system software and applications that run on top of this hardware \cite{nitrd}.
 
-Within an operating system, the task scheduler is responsible for running user tasks and determining an execution order.  Yet with multiprocessing the scheduler offers an oporunity to distribute work across multiple cores.  In a preemptive system, the scheduler may migrate tasks between different cores which generally will incur a local penalty in cache performance yet may improve global performance.  Thus for this report several variations on the classical task scheduler will be compared to their impact on system performance and task scheduling.
+Within an operating system, the task scheduler is responsible for running user tasks and determining an execution order.  Yet with multiprocessing the scheduler offers an opportunity to distribute work across multiple cores.  In a preemptive system, the scheduler may migrate tasks between different cores which generally will incur a local penalty in cache performance yet may improve global performance.  Thus for this report several variations on the classical task scheduler will be compared to their impact on system performance and task scheduling.
 
 A run-queue will consist of a FIFO list of tasks and will be protected by a run-queue specific lock.  The performance of several tasks will be measured using a single global run-queue, a per-core run-queue without pull migration, and a per-core run-queue with pull migration.  Pull migration refers to periodically re-balancing the load on two run-queues.  In addition, some tasks will be constrained to a smaller set of CPUs and thus may be fixed to a single process or not undergo push migration.  This paper will demonstrate the performance implications that various scheduling algorithms have on both local and global task execution.
 
@@ -68,8 +67,7 @@ A naieve implementation for a SMP scheduler involves a global ready queue which 
 \begin{figure*}[h!]
 	\centering
 	\begin{subfigure}{.48\linewidth}
-		% \subfloat[Global Ready Queue]{
-		% \centering
+		\centering
 		\begin{tikzpicture}[shorten >=1pt,node distance=1.0cm,on grid,auto,
 				running/.style={circle, draw=green!100, fill=green!30},
 				ready/.style={circle, draw=orange!100, fill=orange!30}
@@ -83,9 +81,9 @@ A naieve implementation for a SMP scheduler involves a global ready queue which 
 			\node[state,rectangle] (q_0) [fit={(p_4) (p_5) (p_6) (p_7)}] [label=Ready Queue] {};
 			
 			\node[running] (r_0) [right=of q_0, xshift=24mm] {P0};
-			\node[running] (r_1) [below=of r_0] {P1};
-			\node[running] (r_2) [below=of r_1] {P2};
-			\node[running] (r_3) [below=of r_2] {P3};
+			\node[running] (r_1) [below=of r_0, yshift=-2mm] {P1};
+			\node[running] (r_2) [below=of r_1, yshift=-2mm] {P2};
+			\node[running] (r_3) [below=of r_2, yshift=-2mm] {P3};
 			
 			\node[state,rectangle] (q_1) [fit={(r_0) (r_1) (r_2) (r_3)}] [label=Running] {};
 			
@@ -109,6 +107,7 @@ A naieve implementation for a SMP scheduler involves a global ready queue which 
 	\end{subfigure}
 	% 
 	\begin{subfigure}{.48\linewidth}
+		\centering
 		\begin{tikzpicture}[shorten >=1pt,node distance=1.0cm,on grid,auto,
 				running/.style={circle, draw=green!100, fill=green!30},
 				ready/.style={circle, draw=orange!100, fill=orange!30}
@@ -152,8 +151,9 @@ A naieve implementation for a SMP scheduler involves a global ready queue which 
 			\draw[->] (r_2.east) -- ++(10mm,0) node[near end] {exited};
 			\draw[->] (r_3.east) -- ++(10mm,0) node[near end] {exited};
 		\end{tikzpicture}
-		\caption{Per Core Ready Queue}
+		\caption{Core Ready Queue}
 	\end{subfigure}
+	\caption{Scheduler Structures}
 \end{figure*}
 
 Under the current scheduler, a process, if eligible, is migrated during preemption.  In general the scheduler will opt to keep a process on the same CPU unless another core is sufficiently empty or its affinity set dictates otherwise.  In essence this rebalancing means that as processes are rescheduled, the cores will tend towards a balanced configuration.  However, it is also possible that a core will have a stream of processes terminate leading to a load imbalance between ready queues (fig. 3).
@@ -199,7 +199,7 @@ Under the current scheduler, a process, if eligible, is migrated during preempti
 	\caption{Unbalanced Scheduling}
 \end{figure}
 
-Pull migration is an effort to improve the rebalancing latency for queues which exhibit the behaivour in fig. 3.  Periodically, an idle core will search for an overloaded core and pull eligible processes from the tail of its queue.  This task requires locking the busy queue for a longer period of time; while, the idle queue tends to have have its lock acquired more frequently.  This task leads to high lock contention for both queues which can negatively impact the time spent in the kernel.  Specifically, while iterating, the busy core will be unable to retrieve the next runnable process.  Thus it is important to pick a large enough interval to do the rebalancing that it does not cause much strain on performance.  However, in most cases, if a core is not sufficiently loaded the pull migration task will instead exit prematurely instead of locking both cores.
+Pull migration is an effort to improve the re-balancing latency for queues which exhibit the behaviour in fig. 3.  Periodically, an idle core will search for an overloaded core and pull eligible processes from the tail of its queue.  This task requires locking the busy queue for a longer period of time; while, the idle queue tends to have have its lock acquired more frequently.  This task leads to high lock contention for both queues which can negatively impact the time spent in the kernel.  Specifically, while iterating, the busy core will be unable to retrieve the next runnable process.  Thus it is important to pick a large enough interval to do the re-balancing that it does not cause much strain on performance.  However, in most cases, if a core is not sufficiently loaded the pull migration task will instead exit prematurely instead of locking both cores.
 
 \textbf{TODO: Process Fairness}
 
@@ -210,10 +210,30 @@ Different user programs were tested against the variations of the OS scheduler d
 
 While the actual measured runtime is presented in jiffies, these measurements should rarely be compared as they are rough measurements based on the CPU timer.  Additionally, tasks which may have a variable amount of IO with the FTDI output device are likely to see unrepresentative results compared to the actual execution of tasks.  Finally it is also important to note that all data fits into the L2 cache and thus pipeline stalls involved when fetching from main memory are limited the initial cold start.  \textbf{TODO: talk about the L2 cache in conclusion as it amplifies performance penalty}
 
+To describe the behaviour for execution some terms should be defined.
+\begin{itemize}
+	\item \textbf{Work}: the local size of data available for execution in a single thread, specifically related to the dimensions of the L1 data cache.
+	\begin{itemize}
+		\item uint64\_t[20][25] 	= 25\% L1 data cache
+		\item uint64\_t[40][50] 	= 100\% L1 data cache
+		\item uint64\_t[80][100] 	= 400\% L1 data cache
+	\end{itemize}
+	\item \textbf{Samples}: the global number of work entries available for execution by \textbf{all} threads
+	\begin{itemize}
+		\item 4 independent work entries 	= high spatial locality
+		\item 16 independent work entries 	= low spatial locality
+	\end{itemize}
+	\item \textbf{Difficulty}: a relative measure of bounded execution time by a single thread
+	\begin{itemize}
+		\item $10^2$ repeated computations = easy
+		\item $10^3$ repeated computations = normal
+		\item $10^4$ repeated computations = hard
+	\end{itemize}
+\end{itemize}
 
 \begin{figure*}[h]
+	\caption{single core baseline comparison}
 	\centering
-	% \makebox[\linewidth][c]{
 	\begin{subtable}{.48\linewidth}
 		\centering
 		\begin{tabular}{ l|rrr }
@@ -245,13 +265,13 @@ While the actual measured runtime is presented in jiffies, these measurements sh
 	\end{subtable}
 \end{figure*}
 
-This initial example aims to show the stark difference between process cache utilization.  Each example operates on a matrix fully utilizes the L1 cache and one which overloads the cache.  It is important to note that while the cycle count is nearly 4x larger as expected, the refill rate for the larger matrix is larger by a factor of nearly 900.  In these examples the most noticeable difference is the instructions per cycle in the kernel being roughly 11\% slower, due to the frequent thrashing of kernel memory. 
+These initial examples were designed to demonstrate the performance penalty of poor cache utilization in user programs.  The first example will fill up the L1 data cache while the second will overfill the cache, thus requiring a refill on each iteration.  It is important to note that while the cycle count is 4x larger as expected, the refill rate is larger by nearly 900\% with the overfilled cache.  The most notable performance comparisons comes from the number of instructions per cycle in the kernel being roughly 11\% slower, due to frequent thrashing of kernel memory.  Thus, the overloaded example will be executed in a trivially parallelizable manner for the following two tests.
 
 \textbf{TODO: note about how to improve global runtime in userspace programs}
 
 \begin{figure*}[h]
+	\caption{strided matrix multiplication running against different schedulers}		
 	\centering
-	% \makebox[\linewidth][c]{
 	\begin{subtable}{.48\linewidth}
 		\centering
 		\begin{tabular}{ l|rrr }
@@ -280,14 +300,13 @@ This initial example aims to show the stark difference between process cache uti
 		\end{tabular}
 		\caption{multi core - cpu queue (affinity)}    
 	\end{subtable}
-	% }
 \end{figure*}
 
-Extending the trivial example to multicore serves as a demonstration of easily parallelizable code and the benefit of process affinity.  When processor affinity is specified the number of kernel cycles is $76\%$ less than without which results in a $20\%$ improvement in instructions per cycle.  Again the improvement in kernel runtime is due to reduced thrashing of the kernel cores as evident in the lower APR.  However, there is also a $5\%$ loss in number of cycles, \textbf{TODO}.  Additionally it is important to note that the number of kernel instructions executed for the per core runqueue is $47\%$ less, owing to less scheduler lock contention between cores during a context switch.
+Extending the previous examples to a multicore system serves as a demonstration to the benefit of well thought out parallelization.  A single sample operating on 400\% of a processors cache at hard difficulty was executed against the global scheduler and the core scheduler with process affinity to separate computation onto each of the four cores.  Despite having a 94\% APR improvement in userspace, the difference in IPC is nearly insignificant.  However, in kernel execution there is a 76\% improvement in cycles which results in a cumulative 20\% improvment in kernel IPC.  This is likely due to predictable cache access patterns leading to much fewer kernel refills and hence fewer wasted cycles.  Additionally, the number of kernel instructions is 47\% less when running with a per core runqueue, owing to no lock contention between cores during a context switch.
 
 \begin{figure*}[h]
+	\caption{60 threads consisting of 48 hard processes and 12 easy processes}	
 	\centering
-	% \makebox[\linewidth]{
 	\begin{subtable}{.48\linewidth}
 		\centering                 
 		\begin{tabular}{l|rrr}
@@ -300,7 +319,7 @@ Extending the trivial example to multicore serves as a demonstration of easily p
 			Runtime & 152657484  & -          & -          \\
 			\hline 
 		\end{tabular}
-		\caption{death - no pull (sm)}
+		\caption{without pull migration (high locality)}
 	\end{subtable}
 	\hfill
 	\begin{subtable}{.48\linewidth}
@@ -314,13 +333,10 @@ Extending the trivial example to multicore serves as a demonstration of easily p
 			Runtime & 156804356  & -          & -         \\
 			\hline
 		\end{tabular}
-		\caption{death - pulled (sm)}
+		\caption{with pull migration (high locality)}
 	\end{subtable}
-	% }
-\end{figure*}
-
-\begin{figure*}[h]
-	% \makebox[\textwidth][c]{
+% \end{figure*}
+% \begin{figure*}[h]
 	\begin{subtable}{.48\textwidth}
 		\centering                 
 		\begin{tabular}{l|rrr}       
@@ -333,7 +349,7 @@ Extending the trivial example to multicore serves as a demonstration of easily p
 			Runtime & 152321428  & -          & -          \\ 
 			\hline
 		\end{tabular}
-		\caption{death - no pull (md)}
+		\caption{without pull migration (low locality)}
 	\end{subtable}
 	\hfill
 	\begin{subtable}{.48\textwidth}
@@ -348,24 +364,23 @@ Extending the trivial example to multicore serves as a demonstration of easily p
 			Runtime & 161631896  & -          & -         \\ 
 			\hline
 		\end{tabular}
-		\caption{death - pulled (md)}        
+		\caption{with pull migration (low locality)}        
 	\end{subtable}
-	% }
 \end{figure*}
 
 % % TODO: Mention how the refill rate is significantly lower, instead of processes jumping around when they die, processes are moved which generally have lower cache impact as they are at the tail of runqueues
 
-% A common pattern for distributing workload is to create many short lived processes which can perform independent computation before returning to a longer lived process.
+To test the behaviour of the system under a rapid stream of terminating processes difficulty was split into 12 hard threads and 60 easy threads designed to quickly terminate.  Each matrix would operate on 25\% of the cache and the examples were under each of the sample data locality cases.
 
 For these examples, the impact of pull migration is immediately evident in the reduced cycle count of 75-80\% and a maximum reduction to 25\% of the original l1 refill rate to the same tests running without push migration.  Despite the apparent cache benefit it is important to note that the cycles spent in userspace tend to remain around the same meaning that the more important improvement ends up in the kernel.  When investigated more, it is noticable that the kernel cycle count and number of instructions executed drops significantly with pull migration.  Since the change in the kernel refill rate more insignificant this decrease in kernel overhead seems to be highly related to decreased lock contention between the cores.
 
-This contention is derived from the scenario of multiple busy queues attempting to rapidly push work onto an idle queue.  In these cases, the added lock contention will inhibit processes from being scheduled on all cores since they are all effectively being serialized by the idle queue runqueue lock.  With pull migration, instead of having many repeated requests to the idle cores runqueue, a busy core elects to offload a larger amount of work until the idle core is no longer considered idle.  This prevents other cores from offloading work unnecesarily leading to improved userspace cache behaivour for those cores as well as reduced lock contention and minimal serialization.  Additionally, pulling processes from the end of the runqueue; instead of migrating recently executed processes, provides the opportunity to exhibit temporal locality and less cache pollution from more processes being executed. 
+This contention is derived from the scenario of multiple busy queues attempting to rapidly push work onto an idle queue.  In these cases, the added lock contention will inhibit processes from being scheduled on all cores since they are all effectively being serialized by the idle queue runqueue lock.  With pull migration, instead of having many repeated requests to the idle cores runqueue, a busy core elects to offload a larger amount of work until the idle core is no longer considered idle.  This prevents other cores from offloading work unnecessarily leading to improved userspace cache behaviour for those cores as well as reduced lock contention and minimal serialization.  Additionally, pulling processes from the end of the runqueue; instead of migrating recently executed processes, provides the opportunity to exhibit temporal locality and less cache pollution from more processes being executed. 
 
 \textbf{TODO: cleanup these paragraphs}
 
 \begin{figure*}[h]
+	\caption{even distribution of easy, normal and hard threads}
 	\centering
-	% \makebox[\linewidth][c]{
 	\begin{subtable}[b]{.48\linewidth}
 		\centering                 
 		\begin{tabular}{ l|rrr }
@@ -378,7 +393,7 @@ This contention is derived from the scenario of multiple busy queues attempting 
 			Runtime & 175864992  & -          & -         \\
 			\hline
 		\end{tabular}
-		\caption{runtime - no pull}    
+		\caption{without pull migration}    
 	\end{subtable}
 	\hfill
 	\begin{subtable}[b]{.48\linewidth}
@@ -393,16 +408,15 @@ This contention is derived from the scenario of multiple busy queues attempting 
 			Runtime & 171909144  & -          & -         \\
 			\hline
 		\end{tabular}
-		\caption{runtime - pulled}
+		\caption{with pull migration}
 	\end{subtable}
-	% }
 \end{figure*}
 
-This case is important at showing the benefits of pull migration in relation to long term scheduling.  Specifically, since processes which execute for longer periods of time will undergo more context switches which incurs performance and leads to more kernel thrashing.  This example allows work to be migrated sooner and hence the total runtime decreases as well as the number of context switches.  In addition, since processes are moved from busy to idle cores, the user process cache utilization is more likely to be equally distributed across the processors \textbf{TODO: this sentence a little misworded}.  \textbf{TODO: mention size of data}
+While the previous example demonstrated the immediate benefit of pull migration, this case utilizes an even difficulty distribution of 25\% of the L1 data cache, with low spatial locality across all cores to demonstrate long term scheduling benefits.  Specifically, despite lower lock contention with pull scheduling, the processors are able to minimize the migration overhead relating to cache invalidation.  Since tasks are migrated from the end of the runqueue, it is highly probable that a tasks would have its cache fully polluted on a busy core by the time it was next executed.  Thus migrating to an idle queue helps distribute evenly distribute memory access across all cores reducing the impact on any one individual core.  Additionally, the higher cache utilization leads to fewer stalled cycles and thus more opportunity to complete work earlier in userspace leading to fewer preemption context switching.
 
 \begin{figure*}[h]
+	\caption{comparison between thread pool and fully threaded execution}
 	\centering
-	% \makebox[\textwidth][c]{
 	\begin{subtable}{.48\textwidth}
 		\centering
 		\begin{tabular}{ l|rrr }
@@ -415,7 +429,7 @@ This case is important at showing the benefits of pull migration in relation to 
 			Runtime & 165276806  & -          & -         \\
 			\hline
 		\end{tabular}
-		\caption{pool - unpooled sm}
+		\caption{threads (high locality)}
 	\end{subtable}
 	\hfill
 	\begin{subtable}{.48\textwidth} 
@@ -430,9 +444,8 @@ This case is important at showing the benefits of pull migration in relation to 
 			Runtime & 66534692   & -          & -         \\
 			\hline
 		\end{tabular}
-		\caption{pool - pooled sm}        
+		\caption{pooled (high locality)}        
 	\end{subtable}
-	% }
 \end{figure*}
 
 \begin{figure*}[h]
@@ -448,7 +461,7 @@ This case is important at showing the benefits of pull migration in relation to 
 			Runtime & 167143162  & -          & -         \\
 			\hline
 		\end{tabular}
-		\caption{pool - unpooled}
+		\caption{threads (low locality)}
 	\end{subtable}
 	\hfill
 	\begin{subtable}{.48\textwidth} 
@@ -463,16 +476,29 @@ This case is important at showing the benefits of pull migration in relation to 
 			Runtime & 66158114   & -          & -         \\
 			\hline
 		\end{tabular}
-		\caption{pool - pooled}
+		\caption{pooled (low locality)}
 	\end{subtable}
 \end{figure*}
 
+In Fig. 7, a work sized at 25\% of the L1 data cache is distributed to 64 threads scheduled into independent threads assigned work \textbf{or} 16 worker threads pulling work from a protected queue.  They run under the same difficulty; however, locality between the two classes of samples is evaluated separately.
+
+\textbf{TODO: try this with semaphore}
 \textbf{TODO: remeasure runtimes? repeat tests with different MD case?}
 \textbf{TODO: mention that these were unexpected, was expecting much better performance with the pooled - md}
-This example has ipc larger in both cases.    However, one noticeable factor is that for larger sample size there is less l1 thrashing relavent in the APR (contributing factor for larger runtimes).  Instead for the smaller case the caches are able to be fully utilized.
+This example has ipc larger in both cases.    However, one noticeable factor is that for larger sample size there is less l1 thrashing relevant in the APR (contributing factor for larger runtimes).  Instead for the smaller case the caches are able to be fully utilized.
 
 \section{Lessons Learned}
 \label{sec:lessons}
+Since the development of the operating system was done from the ground up there were plenty of learning opportunities along the way.  
+
+
+Measuring success or failure in a bare metal environment can prove to be quite difficult; thus it became important to progressively escalate to better debugging utilities.  Initially, bare minimum assembly required to toggle an LED gave limited success or failure output.  The jump to FTDI was helpful in debugging simple conditions and CPU registers.  Finally, for tracing complex execution, having a proper debugging protocol with JLink + OpenOCD + GDB enabled better debugging for context switching, exception handling and multicore execution.
+
+While the intial JLink setup was incredibly difficult due to incompatability with the current version of OpenOCD, mismatched toolchain and microcontroller runtime, and a poorly configured microcontroller, the end result was incredibly important to establishing a sucessfull development workflow.  Instead of having to perform a careful SD card dance between my computer and the Pi, the ability to directly flash to RAM allowed for much quicker development.  Initially, I had looked into alternative bootloaders (UBoot, GRUB) which can work over ethernet, WIFI, or serial connections; however, in general the end result of having proper host debugging utilities proved invaluable.
+
+Relating to some of the issues of toolchain incompatability; initially code was compiled using the \texttt{arm-none-eabi} toolchain which is used for cross compiling to 32-bit arm.  While, the Pi offers compatability with the older architecture, the generic debug interface is less compatible with the 32-bit toolchain.  Thus it is important to recognize that despite older systems often having more documentation; the complexity of developing on a compatability layer is not worth the extra effort.  In addition, in the aarch64 architecture proved to have clear and more thought out semantics especially when relating to exception handling.  The exception model for aarch64 is standardized across four types; whereas, the arm32 architecture requires storing and restoring a different subsets of registers as well as having different methods to return from interrupts.  Additionally, the addition of a unified exception status register (ESR) was much more helpful with determing the cause of a processor fault.
+
+Newlib itegration
 
 \section{Conclusion}
 \label{sec:conclusion}
