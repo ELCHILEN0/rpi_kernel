@@ -35,9 +35,12 @@
 \begin{document}
 \maketitle
 
-\begin{abstract}
-	As algorithms become larger and more resource intensive, computer hardware must become increasingly efficient to effectively run such programs.  In particular the capability for multiprocessing allows systems to distribute work across multiple CPUs.  Modern operating systems and their respective schedulers have the opportunity to make policy decisions, such as load balancing and locality of access to shared memory, when distributing programs that can influence the performance of both the kernel and user programs.
-\end{abstract}
+% \begin{abstract}
+    % \normalsize
+\section*{Abstract}
+\label{sec:abstract}
+As algorithms become larger and more resource intensive, computer hardware must become increasingly efficient to effectively run such programs.  In particular the capability for multiprocessing allows systems to distribute work across multiple CPUs.  Modern operating systems and their respective schedulers have the opportunity to make policy decisions, such as load balancing and locality of access to shared memory, when distributing programs that can influence the performance of both the kernel and user programs.
+% \end{abstract}
 
 % \begin{keywords} 
 % Word1, word2, word3.
@@ -158,7 +161,7 @@ A naieve implementation for a SMP scheduler involves a global ready queue which 
 
 Under the current scheduler, a process, if eligible, is migrated during preemption.  In general the scheduler will opt to keep a process on the same CPU unless another core is sufficiently empty or its affinity set dictates otherwise.  In essence this rebalancing means that as processes are rescheduled, the cores will tend towards a balanced configuration.  However, it is also possible that a core will have a stream of processes terminate leading to a load imbalance between ready queues (fig. 3).
 
-\begin{figure}[h]
+\begin{figure}[!h]
 	\centering
 	\begin{tikzpicture}[shorten >=1pt,node distance=1.0cm,on grid,auto,
 			running/.style={circle, draw=green!100, fill=green!30},
@@ -231,7 +234,7 @@ To describe the behaviour for execution some terms should be defined.
 	\end{itemize}
 \end{itemize}
 
-\begin{figure*}[h]
+\begin{figure*}[!h]
 	\caption{single core baseline comparison}
 	\centering
 	\begin{subtable}{.48\linewidth}
@@ -265,11 +268,13 @@ To describe the behaviour for execution some terms should be defined.
 	\end{subtable}
 \end{figure*}
 
-These initial examples were designed to demonstrate the performance penalty of poor cache utilization in user programs.  The first example will fill up the L1 data cache while the second will overfill the cache, thus requiring a refill on each iteration.  It is important to note that while the cycle count is 4x larger as expected, the refill rate is larger by nearly 900\% with the overfilled cache.  The most notable performance comparisons comes from the number of instructions per cycle in the kernel being roughly 11\% slower, due to frequent thrashing of kernel memory.  Thus, the overloaded example will be executed in a trivially parallelizable manner for the following two tests.
+These initial examples were designed to demonstrate the performance penalty of poor cache utilization in user programs. \textbf{TODO: reword intro}  The first example will operate on 100\% of the cache while the second will use 400\% thus requiring a full cache refill for each iteration (with some degree of randomness relating to the replacment policy).  These examples serve as important baselines for demonstrating predicable behaivour when scaling a problem up to multiple cores; having a 4 times larger cycle count and nearly 900\% larger refill rate when the L1 cache is consistently overfilled.  This results in frequent thrashing of kernel memory leading to roughly 11\% less IPC.  For the next example, the highly utilized ...
+
+% It is important to note that while the cycle count is 4x larger as expected, the refill rate is larger by nearly 900\% with the overfilled cache.  The most notable performance comparisons comes from the number of instructions per cycle in the kernel being roughly 11\% slower, due to frequent thrashing of kernel memory.  Thus, the overloaded example will be executed in a trivially parallelizable manner for the following two tests.
 
 \textbf{TODO: note about how to improve global runtime in userspace programs}
 
-\begin{figure*}[h]
+\begin{figure*}[!h]
 	\caption{strided matrix multiplication running against different schedulers}		
 	\centering
 	\begin{subtable}{.48\linewidth}
@@ -277,11 +282,11 @@ These initial examples were designed to demonstrate the performance penalty of p
 		\begin{tabular}{ l|rrr }
 			Type    & Total     & User      & Kernel  \\
 			\hline
-			Instrs  & 354249559 & 353629318 & 620241  \\ 
-			Cycles  & 527538552 & 526403550 & 1135002 \\ 
-			Access  & 200305644 & 199963039 & 342605  \\ 
-			Refill  & 125708    & 116722    & 8986    \\ 
-			Runtime & 41175374  & -         & -       \\ 
+            Instrs & 1316124843 & 1313462560 & 2662283 \\
+            Cycles & 1960863928 & 1956137419 & 4726509 \\
+            Access & 744181293 & 742708916 & 1472377 \\
+            Refill & 537874 & 509212 & 28662 \\
+            Runtime & 41175374 & - & - \\
 			\hline
 		\end{tabular}
 		\caption{multi core - global queue}
@@ -291,20 +296,27 @@ These initial examples were designed to demonstrate the performance penalty of p
 		\begin{tabular}{ l|rrr }
 			Type    & Total     & User      & Kernel \\
 			\hline
-			Instrs  & 375176881 & 374755150 & 421731 \\ 
-			Cycles  & 556693572 & 556049701 & 643871 \\ 
-			Access  & 212114934 & 211903384 & 211550 \\ 
-			Refill  & 15332     & 14735     & 597    \\ 
-			Runtime & 40603738  & -         & -      \\ 
+            Instrs & 1168350039 & 1164789764 & 3560275 \\
+            Cycles & 1734415365 & 1728844371 & 5570994 \\
+            Access & 660416972 & 658632902 & 1784070 \\
+            Refill & 69361 & 47662 & 21699 \\
+            Runtime & 40603738 & - & - \\
 			\hline
 		\end{tabular}
 		\caption{multi core - cpu queue (affinity)}    
 	\end{subtable}
 \end{figure*}
 
-Extending the previous examples to a multicore system serves as a demonstration to the benefit of well thought out parallelization.  A single sample operating on 400\% of a processors cache at hard difficulty was executed against the global scheduler and the core scheduler with process affinity to separate computation onto each of the four cores.  Despite having a 94\% APR improvement in userspace, the difference in IPC is nearly insignificant.  However, in kernel execution there is a 76\% improvement in cycles which results in a cumulative 20\% improvment in kernel IPC.  This is likely due to predictable cache access patterns leading to much fewer kernel refills and hence fewer wasted cycles.  Additionally, the number of kernel instructions is 47\% less when running with a per core runqueue, owing to no lock contention between cores during a context switch.
+% Extending the previous examples to a multicore system serves as a demonstration to the benefit of well thought out parallelization.  A single sample operating on 400\% of a processors cache at hard difficulty was executed against the global scheduler and the core scheduler with process affinity to separate computation onto each of the four cores.  Despite having a 94\% APR improvement in userspace, the difference in IPC is nearly insignificant.  However, in kernel execution there is a 76\% improvement in cycles which results in a cumulative 20\% improvment in kernel IPC.  This is likely due to predictable cache access patterns leading to fewer kernel refills and wasted cycles.  Additionally, the number of kernel instructions is 47\% less when running with a per core runqueue, owing to no lock contention between cores at each a context switch.
 
-\begin{figure*}[h]
+Extending the previous examples to a multicore system serves as a demonstartion to the benefit of well thought out parallelization.  A single sample executing on 400\% of a processors cache at hard difficulty was executed against the global scheduler and the core scheduler with fixed process affinity to separate computation onto each of the four cores.  Even without comparing the difference between the two schedulers, the global queue outperforms the single core example working on a matrix of the same size.  This was particularily interesting since it is not inherently obvious what may be causing this superliner speedup.  
+
+However, this is likely a result of data being precached in the L2 cache by the other processors.  As a result of striding the computation, the innermost edges of data will exhibit high spatial locality despite having low temporal locality.  However, having low temporal locality effectively acts as a form of prefetching for subsequent accesses.  This prefetching results in data being present in the L2 cache well before its equivalent access to main memory would be made.  Since the single core example does not perform inner striding, these performance gains cannot be made.  Although, the stride length was chosen to be quite large for these examples, decreasing the stride length would allow more data to be prefetched in the L2 cache depending on scheduling and process execution order.
+
+Aside from locality improvements from the single core example, there is a notable difference between multicore scheduling types.  Primarily there is a 13\% decrease in cycles which can be attributed to the \textbf{TODO: 700\%} difference in cache refills and the 12\% decrease in total instructions, primarily in userspsace.
+\textbf{calculate better...}
+
+\begin{figure*}[!h]
 	\caption{60 threads consisting of 48 hard processes and 12 easy processes}	
 	\centering
 	\begin{subtable}{.48\linewidth}
@@ -336,7 +348,7 @@ Extending the previous examples to a multicore system serves as a demonstration 
 		\caption{with pull migration (high locality)}
 	\end{subtable}
 % \end{figure*}
-% \begin{figure*}[h]
+% \begin{figure*}[!h]
 	\begin{subtable}{.48\textwidth}
 		\centering                 
 		\begin{tabular}{l|rrr}       
@@ -378,7 +390,7 @@ This contention is derived from the scenario of multiple busy queues attempting 
 
 \textbf{TODO: cleanup these paragraphs}
 
-\begin{figure*}[h]
+\begin{figure*}[!h]
 	\caption{even distribution of easy, normal and hard threads}
 	\centering
 	\begin{subtable}[b]{.48\linewidth}
@@ -412,9 +424,9 @@ This contention is derived from the scenario of multiple busy queues attempting 
 	\end{subtable}
 \end{figure*}
 
-While the previous example demonstrated the immediate benefit of pull migration, this case utilizes an even difficulty distribution of 25\% of the L1 data cache, with low spatial locality across all cores to demonstrate long term scheduling benefits.  Specifically, despite lower lock contention with pull scheduling, the processors are able to minimize the migration overhead relating to cache invalidation.  Since tasks are migrated from the end of the runqueue, it is highly probable that a tasks would have its cache fully polluted on a busy core by the time it was next executed.  Thus migrating to an idle queue helps distribute evenly distribute memory access across all cores reducing the impact on any one individual core.  Additionally, the higher cache utilization leads to fewer stalled cycles and thus more opportunity to complete work earlier in userspace leading to fewer preemption context switching.
+While the previous example demonstrated the immediate benefit of pull migration, this case utilizes an even difficulty distribution with each thread using 25\% of the L1 data cache and low spatial locality across all cores to demonstrate long term scheduling benefits.  Specifically, despite lower lock contention with pull scheduling, the processors are able to minimize the migration overhead relating to cache invalidation.  Since tasks are migrated from the end of the runqueue, it is highly probable that a tasks would have its cache fully polluted on a busy core by the time it was next executed.  Thus migrating to an idle queue helps distribute evenly distribute memory access across all cores reducing the impact on any one individual core.  Additionally, the higher cache utilization leads to fewer stall cycles and thus more opportunity to complete work earlier in userspace leading to fewer preemption context switching.
 
-\begin{figure*}[h]
+\begin{figure*}[!h]
 	\caption{comparison between thread pool and fully threaded execution}
 	\centering
 	\begin{subtable}{.48\textwidth}
@@ -448,7 +460,7 @@ While the previous example demonstrated the immediate benefit of pull migration,
 	\end{subtable}
 \end{figure*}
 
-\begin{figure*}[h]
+\begin{figure*}[!h]
 	\begin{subtable}{.48\textwidth} 
 		\centering
 		\begin{tabular}{ l|rrr }
@@ -494,15 +506,16 @@ Conclusions here \cite{freebsd} \cite{unix}.
 
 \section{Lessons Learned}
 \label{sec:lessons}
-Since the development of the operating system was done from the ground up there were plenty of learning opportunities along the way.  
+Since the development of the operating system was done from the ground up there were plenty of learning opportunities along the way. 
+\textbf{TODO} 
 
 Measuring success in a bare metal environment can prove to be quite difficult; thus it became important to progressively escalate to better debugging utilities.  Initially, bare minimum assembly required to toggle an LED gave limited success or failure output.  The jump to FTDI was helpful in debugging simple conditions and CPU registers.  Finally, for tracing complex execution; having a proper debugging protocol with JLink, OpenOCD and GDB enabled better debugging for context switching, exception handling and multicore execution.
 
-While the intial JLink setup was incredibly difficult due to incompatability with the current version of OpenOCD, mismatched toolchain and microcontroller runtime, and a poorly configured microcontroller, the end result was incredibly important to establishing a sucessfull development workflow.  Instead of having to perform a careful SD card dance between my computer and the Pi, the ability to directly flash to RAM allowed for much quicker development.  Initially, I had looked into alternative bootloaders (UBoot, GRUB) which can work over ethernet, WIFI, or serial connections; however, in general the end result of having proper host debugging utilities proved invaluable.
+The initial JLink setup proved to be quite tricky due to incompatability with the current version of OpenOCD, mismatched toolchain and microcontroller architecture/configuration.  However, the end result was incredibly important to establishing a sucessfull development workflow.  Instead of having to perform a careful SD card dance between my computer and the Pi, having the capability to flash to RAM allowed for much quicker development cycles.  Initially, I had looked into alternative bootloaders (UBoot, GRUB) which can work over ethernet, WIFI, or serial connections; however, in general the end result of having proper host debugging utilities was invaluable.
 
-Relating to some of the issues of toolchain incompatability; initially code was compiled using the \texttt{arm-none-eabi} toolchain which is used for cross compiling to 32-bit arm.  While, the Pi offers compatability with the older architecture, the generic debug interface is less compatible with the 32-bit toolchain.  Thus it is important to recognize that despite older systems often having more documentation; the complexity of developing on a compatability layer is not worth the extra effort.  In addition, in the aarch64 architecture proved to have clear and more thought out semantics especially when relating to exception handling.  The exception model for aarch64 is standardized across four types; whereas, the arm32 architecture requires storing and restoring a different subsets of registers as well as having different methods to return from interrupts.  Additionally, the addition of a unified exception status register (ESR) was much more helpful with determing the cause of a processor fault.
+On the topic of toolchain incompatability, code was initially compiled using \texttt{arm-none-eabi} which is used for cross compiling to 32-bit ARM and while aarch64 offeres compatability with older architecture, the generid debug interface is much less compatible.  Thus it is important to recognize that despite older systems often having more documentation; the complexity of developing on a compatability layer is not worth the extra effort.  Additionally, the aarch64 architecture proved to have clear and better structured semantics especially related to exception handling.  The exception model for aarch64 is standardized across four types; whereas, the ARMv7-A architecture had various subsets of banked registers and return instructions depedent on the interrupt source.  Additionally, the addition of a unified exception status register (ESR) was much more helpful with determing the cause of a processor fault.
 
-Newlib was designed to provide the C library on embedded systems \cite{newlib} with system support of a few low level functions.  For example, the overhead of implementing the \texttt{malloc} and \texttt{printf} routines was reduced to simply stubbing out \texttt{sbrk} and establishing a minimal device descriptor table for \texttt{stdout}.  As I built the system with the design of having POSIX compliancy, I additionally included the \texttt{<sys>} headers from Newlib; which often imposed lower level structure restrictions.  When implementing CPU sets I wanted to follow the same type of implementation as embedding the affinity set in the \texttt{pthread\_attr\_t} which was hidden around several macro guards; which when enabled led to conflicts in other libraries.  Thus for long term kernel development; having custom POSIX headers is beneficial in the customizablility of the system and allows the system to not be constrianed by ``immutable'' headers.
+Newlib was designed to provide the C library on embedded systems \cite{newlib} with minimal system support handled by low level functions.  For example, the overhead of implementing the \texttt{malloc} and \texttt{printf} routines was reduced to simply stubbing out \texttt{sbrk} and establishing a minimal device descriptor table for \texttt{stdout}.  As I built the system with the design of having POSIX compliancy, I additionally included the \texttt{<sys>} headers from Newlib; which often imposed lower level structure restrictions.  For example, when implenting CPU sets I wanted to follow the same type of implementation as embedding the affinity set in the \texttt{pthread\_attr\_t} which was hidden around several macro guards; which when enabled led to conflicts in other areas.  Thus for long term kernel development; having custom POSIX headers is beneficial to customizablility of the system and allows the system to not be constrianed by ``immutable'' or \textbf{static} headers.
 
 \section{Future Work}
 \label{sec:future}
@@ -522,6 +535,8 @@ eg. real programs; what would the necessary components be?, networked bounded pr
 - better migration policies with book-keeping.
 
 - microkernel architecture + performance
+
+- run to idle then pull, with idle sleeping
 
 % \section{Acknowledgements} 
 
