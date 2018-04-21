@@ -1,4 +1,4 @@
-Jnanis-iMac :: embedded/mkernel/logs ‹master*› » perl parse.pl pool1/single-low.log 4
+Jnanis-iMac :: embedded/mkernel/logs ‹master*› » perl parse.pl pool/single-low.log 4
 summary (usr, sys, total):
 instrs: ----------
 757440549
@@ -30,7 +30,7 @@ apr: -------------
 6.77965905364686
 87.7149069530471
 
-Jnanis-iMac :: embedded/mkernel/logs ‹master*› » perl parse.pl pool1/single-high.log 4
+Jnanis-iMac :: embedded/mkernel/logs ‹master*› » perl parse.pl pool/single-high.log 4
 summary (usr, sys, total):
 instrs: ----------
 753437017
