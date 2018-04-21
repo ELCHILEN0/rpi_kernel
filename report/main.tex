@@ -498,6 +498,14 @@ This example has ipc larger in both cases.    However, one noticeable factor is 
 Conclusions here \cite{freebsd} \cite{unix}.
 \textbf{TODO: talk about the L2 cache in conclusion as it amplifies performance penalty}
 
+At the core of most systems, an OS facilitates process execution with synchonization primitives and multiprocessing.  Compared to a coopoerative OS, a preemptive OS presents additional challenges relating to scheduling and cache performance.  In general since a process may be preempted at any point during execution it can be difficult to reason about performance in a local context.  From a global context, a preemptive system will incur additional costs relating to the frequency of context switching and cache pollution when not dealing with shared memory.  The scheduler plays an important role in determining execution order and CPU binding to minimize this overhead.  In SMP systems, the general goal to balance execution across cores tends to be a fairly good approach.  However, it does not address the costs related to preemption.  Primarily with cache pollution, naieve balancing will tend to over-pollute cores.  Thus more robust approaches involving CPU binding can help minimize this cross core pollution; yet, easily reintroduces the problem of unbalanced computation.
+
+To maintain the benefit of CPU binding while attempting to keep computation balanced, process migration plays an important role.  A short term and long term load balancer provide different benefits to global performance.  The short term load balancer, ensures that work is consistently evenly distributed across cores; however, it suffers performance penalties when migrating many processes.  Specifically there tends to be a high cache penalty when migrating processes with the short term scheduler.  For long term load balancing, pull migration tends to migrate tasks which have a lower cache penalty.
+
+% These migration policies generally work well for the simplification that 
+
+It is important to note that for all tests, despite having a cache penalty; much was offset by the ARM prefetch module and all data fitting in the L2 data cache.  This is important since other programs may not be easily classified by the prefetch module and in larger systems there is often a larger cache penalty since data is less likely to be cached in the L2 cache.
+
 \section{Lessons Learned}
 \label{sec:lessons}
 Since the development of the operating system was done from the ground up there were plenty of learning opportunities along the way. 
