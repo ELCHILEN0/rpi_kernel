@@ -40,15 +40,15 @@ void *yield_proc(void *arg) {
 // #define MATRIX_M 80
 // #define MATRIX_N 100
 
-// #define PERF_SAMPLES 4
+#define PERF_SAMPLES 4
 // #define PERF_SAMPLES 8
-#define PERF_SAMPLES 16
+// #define PERF_SAMPLES 16
 
 #define STRIDE 2
 #define SECTIONS (STRIDE * STRIDE)
 
-#define THREAD_POOL
-#define NUM_THREADS 64
+// #define THREAD_POOL
+#define NUM_THREADS 50
 #define NUM_WORKERS 16
 
 #define LOW_RUNTIME 100
@@ -219,9 +219,7 @@ work_queue_t work_queue = {
 };
 
 void *pooled_worker(void *arg) {
-    char buf[128];
-    sprintf(buf, "pooled_worker - %d\r\n", *(int *) arg);
-    puts(buf);
+    // puts("pooled_worker\r\n"); // TODO: Remove ...
 
     while (true) {
         __spin_lock(&work_queue.lock);
@@ -232,7 +230,7 @@ void *pooled_worker(void *arg) {
             if (work_queue.finished)
                 break;
             else {
-                puts("empty\r\n");
+                // puts("empty\r\n"); // TODO: Remove...
                 continue;
             }   
         }
@@ -247,12 +245,12 @@ void *pooled_worker(void *arg) {
         }
     }
 
-    // sys_settrace(1);
+    sys_settrace(1);
     return NULL;
 }
 
 void *single_worker(void *arg) {
-    puts("single_worker\r\n");
+    // puts("single_worker\r\n"); // TODO: Remove ...
     
     work_t *work = arg;
 
@@ -260,7 +258,7 @@ void *single_worker(void *arg) {
         scalar_multiply(work->matrix, 2, work->m_start, work->m_end, work->n_start, work->n_end);
     }
 
-    // sys_settrace(1);
+    sys_settrace(1);
     return NULL;
 }
 
@@ -269,11 +267,6 @@ void *perf_thread_pool(void *arg) {
     
     #ifdef THREAD_POOL
         pthread_t threads[NUM_WORKERS];
-        for (int i = 0; i < NUM_WORKERS; i++) {
-            int *arg = sys_malloc(sizeof(int));
-            *arg = i;
-            pthread_create(&threads[i], NULL, &pooled_worker, arg);
-        }
     #else
         pthread_t threads[NUM_THREADS]; 
     #endif
@@ -295,6 +288,10 @@ void *perf_thread_pool(void *arg) {
         #ifdef THREAD_POOL
             INIT_LIST_HEAD(&work->entry);              
             list_add_tail(&work->entry, &work_queue.head);
+
+            if (i < NUM_WORKERS) {
+                pthread_create(&threads[i], NULL, &pooled_worker, NULL);
+            }
         #else
             pthread_create(&threads[i], NULL, &single_worker, work);
         #endif
@@ -312,7 +309,7 @@ void *perf_thread_pool(void *arg) {
         }
     #else
         for (int i = 0; i < NUM_THREADS; i++) {
-            sprintf(buf, "waiting (%d/%d)\r\n", i, NUM_THREADS);
+            // sprintf(buf, "waiting (%d/%d)\r\n", i, NUM_THREADS);
             puts(buf); 
             pthread_join(threads[i], NULL);
         }
@@ -423,14 +420,6 @@ void *perf_death(void *arg) {
 
 void *perf_root(void *arg) {
     size_t core_id = get_core_id();
-    // puts(buf);
-    // for (int i = 0; i < SECTIONS/NUM_CORES; i++) {
-    //     pthread_t thread_id;
-    //     // pthread_create(&thread_id, NULL, perf_scalar_multiply, NULL);
-    //     pthread_create(&thread_id, NULL, perf_strided_scalar_multiply, NULL);
-    //     pthread_join(thread_id, NULL);
-    // }
-
 
     if (core_id == 0) {
         char buf[256];
@@ -438,9 +427,9 @@ void *perf_root(void *arg) {
         puts(buf);
 
         // Pool
-        // pthread_t thread_id;        
-        // pthread_create(&thread_id, NULL, &perf_thread_pool, NULL);
-        // pthread_join(thread_id, NULL);
+        pthread_t thread_id;        
+        pthread_create(&thread_id, NULL, &perf_thread_pool, NULL);
+        pthread_join(thread_id, NULL);
 
         // Baseline single-core
         // pthread_t thread_id;                
@@ -465,9 +454,9 @@ void *perf_root(void *arg) {
         // pthread_join(thread_id, NULL);
 
         // Runtime
-        pthread_t thread_id;
-        pthread_create(&thread_id, NULL, &perf_runtime, NULL);
-        pthread_join(thread_id, NULL);
+        // pthread_t thread_id;
+        // pthread_create(&thread_id, NULL, &perf_runtime, NULL);
+        // pthread_join(thread_id, NULL);
 
         sprintf(buf, "perf_root - death (%d)\r\n", core_timer_count());
         puts(buf);  

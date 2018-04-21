@@ -46,6 +46,7 @@ enum return_state proc_create(pthread_t *thread, void *(*start_routine)(void *),
     __spin_unlock(&newlib_lock);
     if (!process || !stack_base) {
         // TODO: is this free of races...
+        while(true);
         free(process);
         free(stack_base);
 
@@ -195,8 +196,10 @@ enum return_state proc_exit(void *status) {
     list_del(&current->process_hash_list);
     list_del(&current->sched_list);
 
-    free(current->stack_base);
-    free(current);
+    // __spin_lock(&newlib_lock);
+    // free(current->stack_base);
+    // free(current);
+    // __spin_unlock(&newlib_lock);  
     return EXIT;
 }
 
