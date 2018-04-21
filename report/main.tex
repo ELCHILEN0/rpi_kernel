@@ -215,11 +215,11 @@ While the actual measured runtime is presented in jiffies, these measurements sh
 
 To describe the behaviour for execution some terms should be defined.
 \begin{itemize}
-	\item \textbf{Work}: the local size of data available for execution in a single thread, specifically related to the dimensions of the L1 data cache.
+	\item \textbf{Work}: the local size of data available for execution in a single thread, specifically related to the dimensions of a processors L1 data cache.
 	\begin{itemize}
-		\item uint64\_t[20][25] 	= 25\% L1 data cache
-		\item uint64\_t[40][50] 	= 100\% L1 data cache
-		\item uint64\_t[80][100] 	= 400\% L1 data cache
+		\item uint64\_t[20][25] 	= 25\% L1 data cache	= small matrix
+		\item uint64\_t[40][50] 	= 100\% L1 data cache	= medium matrix
+		\item uint64\_t[80][100] 	= 400\% L1 data cache	= large matrix
 	\end{itemize}
 	\item \textbf{Samples}: the global number of work entries available for execution by \textbf{all} threads
 	\begin{itemize}
@@ -268,11 +268,9 @@ To describe the behaviour for execution some terms should be defined.
 	\end{subtable}
 \end{figure*}
 
-These initial examples were designed to demonstrate the performance penalty of poor cache utilization in user programs. \textbf{TODO: reword intro}  The first example will operate on 100\% of the cache while the second will use 400\% thus requiring a full cache refill for each iteration (with some degree of randomness relating to the replacment policy).  These examples serve as important baselines for demonstrating predicable behaivour when scaling a problem up to multiple cores; having a 4 times larger cycle count and nearly 900\% larger refill rate when the L1 cache is consistently overfilled.  This results in frequent thrashing of kernel memory leading to roughly 11\% less IPC.  For the next example, the highly utilized ...
+The examples serve as baselines for comparing behaivour when scaling the problem to multiple cores.  The first example will operate on a small matrix while the second uses a large requiring a full cache refill on every iteration (with some degree of randomness relating to the replacement policy).  On the second data set, the results are predictably much larger due to frequent data thrashing.  However, despite a large difference in cache access per refill (APR), the total relative runtime seems to be fairly independent.
 
-% It is important to note that while the cycle count is 4x larger as expected, the refill rate is larger by nearly 900\% with the overfilled cache.  The most notable performance comparisons comes from the number of instructions per cycle in the kernel being roughly 11\% slower, due to frequent thrashing of kernel memory.  Thus, the overloaded example will be executed in a trivially parallelizable manner for the following two tests.
-
-\textbf{TODO: note about how to improve global runtime in userspace programs}
+\textbf{TODO: more here? maybe not its not too relavent}
 
 \begin{figure*}[!h]
 	\caption{strided matrix multiplication running against different schedulers}		
@@ -307,14 +305,13 @@ These initial examples were designed to demonstrate the performance penalty of p
 	\end{subtable}
 \end{figure*}
 
-% Extending the previous examples to a multicore system serves as a demonstration to the benefit of well thought out parallelization.  A single sample operating on 400\% of a processors cache at hard difficulty was executed against the global scheduler and the core scheduler with process affinity to separate computation onto each of the four cores.  Despite having a 94\% APR improvement in userspace, the difference in IPC is nearly insignificant.  However, in kernel execution there is a 76\% improvement in cycles which results in a cumulative 20\% improvment in kernel IPC.  This is likely due to predictable cache access patterns leading to fewer kernel refills and wasted cycles.  Additionally, the number of kernel instructions is 47\% less when running with a per core runqueue, owing to no lock contention between cores at each a context switch.
+Extending the previous examples to a multicore system serves as a demonstrate to the benefit of well thought out parallelization.  A large matrix is separated into four medium strided matrices and will execute at hard difficulty.  They will be executed against the global scheduler and the core scheduler with fixed process affinity to separate computation onto each of the four cores.  Without comparing the differences between the two schedulers, they both outperform the single core computation on the same problem size.  This was particularily interesting since it is not inherently obvious what may be causing this superlinear speedup.  
 
-Extending the previous examples to a multicore system serves as a demonstartion to the benefit of well thought out parallelization.  A single sample executing on 400\% of a processors cache at hard difficulty was executed against the global scheduler and the core scheduler with fixed process affinity to separate computation onto each of the four cores.  Even without comparing the difference between the two schedulers, the global queue outperforms the single core example working on a matrix of the same size.  This was particularily interesting since it is not inherently obvious what may be causing this superliner speedup.  
-
-However, this is likely a result of data being precached in the L2 cache by the other processors.  As a result of striding the computation, the innermost edges of data will exhibit high spatial locality despite having low temporal locality.  However, having low temporal locality effectively acts as a form of prefetching for subsequent accesses.  This prefetching results in data being present in the L2 cache well before its equivalent access to main memory would be made.  Since the single core example does not perform inner striding, these performance gains cannot be made.  Although, the stride length was chosen to be quite large for these examples, decreasing the stride length would allow more data to be prefetched in the L2 cache depending on scheduling and process execution order.
+Likely the biggest factor to this speedup is the result of data being precached in the L2 cache by the other processors.  As a result of striding the computation, the innermost matrix edges will exhibit high spatial locality; while having low temporal locality.  This low temporal locality effectively acts as a form of prefetching for subsequent accesses.  This then results in data being present in the L2 cache well before the other processor would request access to nearby data from main memory.  % Since the single core example does not perform inner striding, these performance gains cannot be made.  Although the stride length was chosen to be quite large for these examples, decreasing the stride length would allow for more L2 data prefetching depending on the process scheduling.
 
 Aside from locality improvements from the single core example, there is a notable difference between multicore scheduling types.  Primarily there is a 13\% decrease in cycles which can be attributed to the \textbf{TODO: 700\%} difference in cache refills and the 12\% decrease in total instructions, primarily in userspsace.
-\textbf{calculate better...}
+\textbf{calculate better..., last paragraph needs help}
+\textbf{TODO: kernel performance decreasing...????}
 
 \begin{figure*}[!h]
 	\caption{60 threads consisting of 48 hard processes and 12 easy processes}	
@@ -380,15 +377,13 @@ Aside from locality improvements from the single core example, there is a notabl
 	\end{subtable}
 \end{figure*}
 
-% % TODO: Mention how the refill rate is significantly lower, instead of processes jumping around when they die, processes are moved which generally have lower cache impact as they are at the tail of runqueues
+% DONE
+To test the behaviour of the system under a rapid stream of terminating processes difficulty was split into 12 hard threads and 60 easy threads designed to quickly terminate.  For each example, small matrices were tested under both cases for spatial locality.
 
-To test the behaviour of the system under a rapid stream of terminating processes difficulty was split into 12 hard threads and 60 easy threads designed to quickly terminate.  Each matrix would operate on 25\% of the cache and the examples were under each of the sample data locality cases.
+The impact of pull migration is immediately evident in a 15-20\% cycle count and 25\% refill rate differentials with push migration.  Despite having apparent cache benefit, the significant improvement is actually in the kernel.  With pull migration, the total number of kernel instructions and cycles drops significantly.  This is likely related to decreased core lock contention.
 
-For these examples, the impact of pull migration is immediately evident in the reduced cycle count of 75-80\% and a maximum reduction to 25\% of the original l1 refill rate to the same tests running without push migration.  Despite the apparent cache benefit it is important to note that the cycles spent in userspace tend to remain around the same meaning that the more important improvement ends up in the kernel.  When investigated more, it is noticable that the kernel cycle count and number of instructions executed drops significantly with pull migration.  Since the change in the kernel refill rate more insignificant this decrease in kernel overhead seems to be highly related to decreased lock contention between the cores.
-
-This contention is derived from the scenario of multiple busy queues attempting to rapidly push work onto an idle queue.  In these cases, the added lock contention will inhibit processes from being scheduled on all cores since they are all effectively being serialized by the idle queue runqueue lock.  With pull migration, instead of having many repeated requests to the idle cores runqueue, a busy core elects to offload a larger amount of work until the idle core is no longer considered idle.  This prevents other cores from offloading work unnecessarily leading to improved userspace cache behaviour for those cores as well as reduced lock contention and minimal serialization.  Additionally, pulling processes from the end of the runqueue; instead of migrating recently executed processes, provides the opportunity to exhibit temporal locality and less cache pollution from more processes being executed. 
-
-\textbf{TODO: cleanup these paragraphs}
+When a core quickly empties, the remaining cores will attempt to push work onto that idle queue under normal scheduling.  Since all cores are competing for the idle cores lock, the cores effectively serialize themselves until they are balanced.  Since a full balancing may require several context switches this affect can be quite common.  However, with pull migration, instead of having many repeated requests to the idle core runqueue, a busy queue will offload work until both are balanced, hence decreasing the number of context switches and lock contention required to balance the queues.
+% DONE
 
 \begin{figure*}[!h]
 	\caption{even distribution of easy, normal and hard threads}
@@ -424,7 +419,9 @@ This contention is derived from the scenario of multiple busy queues attempting 
 	\end{subtable}
 \end{figure*}
 
-While the previous example demonstrated the immediate benefit of pull migration, this case utilizes an even difficulty distribution with each thread using 25\% of the L1 data cache and low spatial locality across all cores to demonstrate long term scheduling benefits.  Specifically, despite lower lock contention with pull scheduling, the processors are able to minimize the migration overhead relating to cache invalidation.  Since tasks are migrated from the end of the runqueue, it is highly probable that a tasks would have its cache fully polluted on a busy core by the time it was next executed.  Thus migrating to an idle queue helps distribute evenly distribute memory access across all cores reducing the impact on any one individual core.  Additionally, the higher cache utilization leads to fewer stall cycles and thus more opportunity to complete work earlier in userspace leading to fewer preemption context switching.
+% DONE
+While the previous example demonstrated the short term benefit of pull migration, this case utilizes an even distribution of difficulty operating on a small matrix with low spatial locality between threads to demonstrate long term scheduling benefits.  Processes at the end of a runqueue will exhibit poor temporal locality and hence are less likely to have valid cache data by the time they run.  Thus moving a process from the tail of a runqueue will end up minimizing the migration penalty of moving a recently executed process.  In this case, when a group of processes dies, the cache space that they used can now be evenly distributed across fewer processes resulting in better utilization while decreasing thrashing.  This decrease in cache pollution enables more work per time slice and leads to fewer context switches; thus resulting in quicker execution time.
+% DONE
 
 \begin{figure*}[!h]
 	\caption{comparison between thread pool and fully threaded execution}
