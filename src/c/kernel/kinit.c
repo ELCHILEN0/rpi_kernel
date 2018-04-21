@@ -47,8 +47,8 @@ void *yield_proc(void *arg) {
 #define STRIDE 2
 #define SECTIONS (STRIDE * STRIDE)
 
-// #define THREAD_POOL
-#define NUM_THREADS 50
+#define THREAD_POOL
+#define NUM_THREADS 64
 #define NUM_WORKERS 16
 
 #define LOW_RUNTIME 100
@@ -219,7 +219,13 @@ work_queue_t work_queue = {
 };
 
 void *pooled_worker(void *arg) {
-    // puts("pooled_worker\r\n"); // TODO: Remove ...
+    // char buf[128];
+    // sprintf(buf, "pooled_worker - %d\r\n", *(int *) arg);
+    // puts(buf);
+    puts("pooled_worker\r\n");
+    puts("pooled_worker\r\n");
+    puts("pooled_worker\r\n");
+    puts("pooled_worker\r\n");
 
     while (true) {
         __spin_lock(&work_queue.lock);
@@ -250,7 +256,7 @@ void *pooled_worker(void *arg) {
 }
 
 void *single_worker(void *arg) {
-    // puts("single_worker\r\n"); // TODO: Remove ...
+    puts("single_worker\r\n"); // TODO: Remove ...
     
     work_t *work = arg;
 
@@ -305,11 +311,14 @@ void *perf_thread_pool(void *arg) {
         for (int i = 0; i < NUM_WORKERS; i++) {
             sprintf(buf, "waiting (%d/%d)\r\n", i, NUM_WORKERS);
             puts(buf);            
+            puts(buf);            
+            puts(buf);            
+            puts(buf);            
             pthread_join(threads[i], NULL);
         }
     #else
         for (int i = 0; i < NUM_THREADS; i++) {
-            // sprintf(buf, "waiting (%d/%d)\r\n", i, NUM_THREADS);
+            sprintf(buf, "waiting (%d/%d)\r\n", i, NUM_THREADS);
             puts(buf); 
             pthread_join(threads[i], NULL);
         }

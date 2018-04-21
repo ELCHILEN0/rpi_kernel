@@ -87,7 +87,7 @@ for my $pid (@pids) {
     @$total_refill[1] += @{$refill{$pid}}[1];
 }
 
-if (0) {
+if (1) {
     print "summary (usr, sys, total):\n";
     print "instrs: ----------\n";
     print "@$total_instrs[0]\n";
