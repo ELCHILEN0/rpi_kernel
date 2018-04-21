@@ -58,7 +58,7 @@ A run-queue will consist of a FIFO list of tasks and will be protected by a run-
 
 \section{Environment?}
 \label{sec:environment?}
-The OS will be compiled for the ARMv8 (aarch64) instruction set and will be executed on the Raspberry Pi 3 B.  The device includes a 1.2 GHz 64-bit quad-core ARM Cortex-A53 processor and consists of a 16KB L1 data cache, a 16KB L1 instruction cache, and a 128KB L2 cache.  Intra-core cache coherency is enabled and uses the MOESI protocol \cite{arm-dcache-coherency}.  The memory address space is configured using a linear two level translation table with accessible memory configured as normal outer and inner write-back, write-allocate and device register memory configured as device nGnRnE.  Performance will be measured using the ARM Performance Monitor Unit (PMU) and the core timer.  The timer executes at a frequency of 19.2 MHz \cite{bcm2386} and each core maintains its own core timer which will preempt the current task each MS.  Both the kernel and pseudo-user processes will execute in EL1; however, the kernel will use SPx and the user processes will use SP0.
+The OS will be compiled for the ARMv8 (aarch64) instruction set and will be executed on the Raspberry Pi 3 B.  The device includes a 1.2 GHz 64-bit quad-core ARM Cortex-A53 processor where each core has a 16KB L1 data cache, a 16KB L1 instruction cache, and a shared 128KB L2 cache \cite{arm-l1-about} \cite{arm-l2-about}.  The caches operate using the MOESI protocol with intra-core cache coherency and each have a fixed line length of 64 bytes in addition to a data side prefetch engine \cite{arm-l1-coherency} \cite{arm-l1-prefetch}.  The memory address space is configured using a linear two level translation table with accessible memory configured as normal outer and inner write-back, write-allocate and device register memory configured as device nGnRnE.  Performance will be measured using the ARM Performance Monitor Unit (PMU) and the core timer.  The timer executes at a frequency of 19.2 MHz \cite{bcm2386} and each core maintains its own core timer which will preempt the current task each MS.  Both the kernel and pseudo-user processes will execute in EL1; however, the kernel will use SPx and the user processes will use SP0.
 
 \section{Definitions?}
 \label{sec:definitions?}
@@ -211,7 +211,7 @@ Pull migration is an effort to improve the re-balancing latency for queues which
 \label{sec:performance}
 Different user programs were tested against the variations of the OS scheduler described previously.  In general the tests consist of performing a scalar multiply for a specified runtime.  These tests aim to simulate process cache access and utilization and provide repeatable results for user and kernel event counters.  For example, some examples heavily utilize memory while others operate on smaller subsets of data.  Additionally other processes are designed to run for longer or shorter periods of time to represent variability in task runtime.
 
-While the actual measured runtime is presented in jiffies, these measurements should rarely be compared as they are rough measurements based on the CPU timer.  Additionally, tasks which may have a variable amount of IO with the FTDI output device are likely to see unrepresentative results compared to the actual execution of tasks.  Finally it is also important to note that all data fits into the L2 cache and thus pipeline stalls involved when fetching from main memory are limited the initial cold start.  \textbf{TODO: talk about the L2 cache in conclusion as it amplifies performance penalty}
+While the actual measured runtime is presented in jiffies, these measurements should rarely be compared as they are rough measurements based on the CPU timer.  Additionally, tasks which may have a variable amount of IO with the FTDI output device are likely to see unrepresentative results compared to the actual execution of tasks.  Finally it is also important to note that all data fits into the L2 cache and thus pipeline stalls involved when fetching from main memory are limited the initial cold start.
 
 To describe the behaviour for execution some terms should be defined.
 \begin{itemize}
@@ -268,9 +268,9 @@ To describe the behaviour for execution some terms should be defined.
 	\end{subtable}
 \end{figure*}
 
-The examples serve as baselines for comparing behaivour when scaling the problem to multiple cores.  The first example will operate on a small matrix while the second uses a large requiring a full cache refill on every iteration (with some degree of randomness relating to the replacement policy).  On the second data set, the results are predictably much larger due to frequent data thrashing.  However, despite a large difference in cache access per refill (APR), the total relative runtime seems to be fairly independent.
-
-\textbf{TODO: more here? maybe not its not too relavent}
+% DONE
+The examples serve as baselines for comparing behaivour when scaling the problem to multiple cores.  The first example will operate on a small matrix while the second uses a large requiring a full cache refill on every iteration (with some degree of randomness relating to the replacement policy).  On the second data set, the results are predictably much larger due to frequent data thrashing.  However, despite a huge difference in APR, the total relative runtime seems to be fairly independent.  This is likely a side effect of the L1 automatic prefetcher which when a pattern is detected, will start linefills in the background \cite{arm-l1-prefetch}.  This prefetcher likely will cause skewed results for most of the computation since the tests have a very consistent access pattern.  Thus in general, cache APR will have a higher impact especially from the schedulers perspective; where there is unlikely to be similar patterns between user processes.
+% DONE
 
 \begin{figure*}[!h]
 	\caption{strided matrix multiplication running against different schedulers}		
@@ -309,9 +309,9 @@ Extending the previous examples to a multicore system serves as a demonstrate to
 
 Likely the biggest factor to this speedup is the result of data being precached in the L2 cache by the other processors.  As a result of striding the computation, the innermost matrix edges will exhibit high spatial locality; while having low temporal locality.  This low temporal locality effectively acts as a form of prefetching for subsequent accesses.  This then results in data being present in the L2 cache well before the other processor would request access to nearby data from main memory.  % Since the single core example does not perform inner striding, these performance gains cannot be made.  Although the stride length was chosen to be quite large for these examples, decreasing the stride length would allow for more L2 data prefetching depending on the process scheduling.
 
-Aside from locality improvements from the single core example, there is a notable difference between multicore scheduling types.  Primarily there is a 13\% decrease in cycles which can be attributed to the \textbf{TODO: 700\%} difference in cache refills and the 12\% decrease in total instructions, primarily in userspsace.
-\textbf{calculate better..., last paragraph needs help}
-\textbf{TODO: kernel performance decreasing...????}
+% Aside from locality improvements from the single core example, there is a notable difference between multicore scheduling types.  Primarily there is a 13\% decrease in cycles which can be attributed to the \textbf{TODO: 700\%} difference in cache refills and the 12\% decrease in total instructions, primarily in userspsace.
+% \textbf{calculate better..., last paragraph needs help}
+% \textbf{TODO: kernel performance decreasing...????}
 
 \begin{figure*}[!h]
 	\caption{60 threads consisting of 48 hard processes and 12 easy processes}	
@@ -344,8 +344,6 @@ Aside from locality improvements from the single core example, there is a notabl
 		\end{tabular}
 		\caption{with pull migration (high locality)}
 	\end{subtable}
-% \end{figure*}
-% \begin{figure*}[!h]
 	\begin{subtable}{.48\textwidth}
 		\centering                 
 		\begin{tabular}{l|rrr}       
@@ -500,6 +498,7 @@ This example has ipc larger in both cases.    However, one noticeable factor is 
 \label{sec:conclusion}
 
 Conclusions here \cite{freebsd} \cite{unix}.
+\textbf{TODO: talk about the L2 cache in conclusion as it amplifies performance penalty}
 
 \section{Lessons Learned}
 \label{sec:lessons}
