@@ -114,6 +114,7 @@ A naive implementation for a SMP scheduler involves a global ready queue which a
 			\draw[->] (q_1.south) |- ++(0,-5mm) -| (q_0.south) node[near end] {preemted};
 		\end{tikzpicture}
 		\caption{Global Ready Queue}
+		\label{fig:global-queue}
 	\end{subfigure}
 	% 
 	\begin{subfigure}{.48\linewidth}
@@ -162,12 +163,13 @@ A naive implementation for a SMP scheduler involves a global ready queue which a
 			\draw[->] (r_3.east) -- ++(10mm,0) node[near end] {exited};
 		\end{tikzpicture}
 		\caption{Core Ready Queue}
+		\label{fig:core-queue}
 	\end{subfigure}
 	\caption{Scheduler Structures}
 \end{figure*}
 
 % DONE
-Under the current scheduler, a process, if eligible, is migrated during preemption.  In general, the scheduler will opt to keep a process on the same CPU unless another core is sufficiently empty or its affinity set dictates otherwise.  In essence, as processes are rescheduled, the cores will tend towards a balanced configuration.  However, it is also possible that a core will have a stream of processes terminate leading to a load imbalance between ready queues (fig. 3).
+Under the current scheduler, a process, if eligible, is migrated during preemption.  In general, the scheduler will opt to keep a process on the same CPU unless another core is sufficiently empty or its affinity set dictates otherwise.  In essence, as processes are rescheduled, the cores will tend towards a balanced configuration.  However, it is also possible that a core will have a stream of processes terminate leading to a load imbalance between ready queues (fig. \ref{fig:unbalanced-queues}).
 % DONE
 
 \begin{figure}[!h]
@@ -209,11 +211,11 @@ Under the current scheduler, a process, if eligible, is migrated during preempti
 		\draw[->] (r_1.east) -- ++(10mm,0) node[near end] {exited};
 	\end{tikzpicture}
 	\caption{Unbalanced Scheduling}
+	\label{fig:unbalanced-queues}
 \end{figure}
 
 % DONE
-\textbf{FIG}
-Pull migration is an effort to improve the re-balancing latency for queues which exhibit the behavior in fig. 3.  Periodically, an idle core will search for an overloaded core and pull eligible processes from the tail of its queue.  This task requires locking the busy queue for a longer period of time; while, the idle queue tends to have its lock acquired more frequently.  This task leads to high lock contention for both queues which can negatively impact the time spent in the kernel.  Specifically, while iterating, the busy core will be unable to retrieve the next runnable process.  Thus, it is important to pick a large enough interval to do the re-balancing that it does not cause much strain on performance.  However, in most cases, if a core is not sufficiently loaded the pull migration task will instead exit prematurely instead of locking both cores.
+Pull migration is an effort to improve the re-balancing latency for queues which exhibit the behavior in fig. \ref{fig:unbalanced-queues}.  Periodically, an idle core will search for an overloaded core and pull eligible processes from the tail of its queue.  This task requires locking the busy queue for a longer period of time; while, the idle queue tends to have its lock acquired more frequently.  This task leads to high lock contention for both queues which can negatively impact the time spent in the kernel.  Specifically, while iterating, the busy core will be unable to retrieve the next runnable process.  Thus, it is important to pick a large enough interval to do the re-balancing that it does not cause much strain on performance.  However, in most cases, if a core is not sufficiently loaded the pull migration task will instead exit prematurely instead of locking both cores.
 
 With respect to fairness, there are several areas which should be discussed.  With the global queue, all processes are allocated the same time slice and have no core preference to help distribute the cache load.  Effectively, this means that all process share the same level of execution fairness; however, with per-core runqueues, core queue imbalance leads to execution latency on busy queues compared to that of an idle queue.  Migration aims to reduce the latency due to imbalance; yet it introduces migration unfairness.  For example, migrating a process will lead to a full L1 cache reload on the new core.  Thus, the initial form of migration during preemption tends to be relatively unfair towards recently executed processes, because they are the most affected by a cache reload.  Since processes are migrated from the end of the queue, a process is guaranteed to execute sooner on the idle queue.  Additionally, processes at the end of a queue exhibit poor temporal locality relative to the rest of the queue; and hence the cache penalty on migration is minimized as a partial reload may be required by the time the process is scheduled.
 % DONE
@@ -247,8 +249,11 @@ To describe the behavior for execution some terms should be defined.
 	\end{itemize}
 \end{itemize}
 
+\subsection{Trivial Multiprocessing}
+
 \begin{figure*}[!h]
 	\caption{single core baseline comparison}
+	\label{fig:score-matrix}	 
 	\centering
 	\begin{subtable}{.48\linewidth}
 		\centering
@@ -282,11 +287,12 @@ To describe the behavior for execution some terms should be defined.
 \end{figure*}
 
 % DONE
-The examples serve as baselines for comparing behaivour when scaling the problem to multiple cores.  The first example will operate on a small matrix, while the second uses a large matrix requiring a full cache refill on each iteration (with some degree of randomness relating to the replacement policy).  On the second data set, the results are predictably much larger due to frequent data thrashing.  However, despite a huge difference in APR, the total relative runtime seems to be fairly independent.  This is likely a side effect of the L1 automatic prefetcher which when a pattern is detected, will start linefills in the background \cite{arm-l1-prefetch}.  This prefetcher likely will cause skewed results for most of the computation since the tests have a very consistent access pattern.  Thus, in general, cache APR will have a higher impact especially from the schedulers perspective; where there is unlikely to be similar patterns between user processes.
+Fig. \ref{fig:score-matrix} serves as a baseline for comparing behaivour when scaling the problem to multiple cores.  The example operates on a small matrix, while the second uses a large matrix requiring a full cache refill on each iteration (with some degree of randomness relating to the replacement policy).  On the second data set, the results are predictably much larger due to frequent data thrashing.  However, despite a huge difference in APR, the total relative runtime seems to be fairly independent.  This is likely a side effect of the L1 automatic prefetcher which when a pattern is detected, will start linefills in the background \cite{arm-l1-prefetch}.  This prefetcher likely will cause skewed results for most of the computation since the tests have a very consistent access pattern.  Thus, in general, cache APR will have a higher impact especially from the schedulers perspective; where there is unlikely to be similar patterns between user processes. 
 % DONE
 
 \begin{figure*}[!h]
-	\caption{strided matrix multiplication running against different schedulers}		
+	\caption{strided matrix multiplication running against different schedulers}
+	\label{fig:mcore-matrix}		
 	\centering
 	\begin{subtable}{.48\linewidth}
 		\centering
@@ -319,15 +325,15 @@ The examples serve as baselines for comparing behaivour when scaling the problem
 \end{figure*}
 
 % DONE
-Extending the previous examples to a multicore system demonstrates the benefit of well thought out parallelization.  A large matrix is separated into four medium strided matrices and will execute at hard difficulty.  They will be executed against both the global scheduler and the core scheduler with fixed process affinity to separate computation onto each of the four cores.  Without comparing the differences between the two schedulers, they both outperform the single core computation on the same problem size.  Surprisingly, both exhibit superlinear speedup.
+Extending the previous examples to a multicore system demonstrates the benefit of well thought out parallelization.  A large matrix is separated into four medium strided matrices and will execute at hard difficulty.  They will be executed against both the global scheduler and the core scheduler with fixed process affinity to separate computation onto each of the four cores (fig. \ref{fig:mcore-matrix}.  Without comparing the differences between the two schedulers, they both outperform the single core computation on the same problem size.  Surprisingly, both exhibit superlinear speedup.
 
 Likely, the biggest factor to this speedup is the result of data being precached in the L2 cache by the other processors.  As a result of striding, the innermost matrix edges will exhibit high spatial locality; while having low temporal locality.  This temporal locality effectively acts as a form of prefetching for subsequent accesses by other threads to the L2 cache.
 % DONE
 
-% \textbf{TODO: Possibly mention kernel decrease in performance... this was suprising}
-
+\subsection{Pull Migration}
 \begin{figure*}[!h]
 	\caption{60 threads consisting of 48 hard processes and 12 easy processes}	
+	\label{fig:pull-stream-high}			
 	\centering
 	\begin{subtable}{.48\linewidth}
 		\centering                 
@@ -357,6 +363,10 @@ Likely, the biggest factor to this speedup is the result of data being precached
 		\end{tabular}
 		\caption{with pull migration (high locality)}
 	\end{subtable}
+\end{figure*}
+\begin{figure*}
+	\caption{\textbf{TODO}}	
+	\label{fig:pull-stream-low}				
 	\begin{subtable}{.48\textwidth}
 		\centering                 
 		\begin{tabular}{l|rrr}       
@@ -389,7 +399,7 @@ Likely, the biggest factor to this speedup is the result of data being precached
 \end{figure*}
 
 % DONE
-To test the behavior of the system under a rapid stream of terminating processes difficulty was split into 12 hard threads and 60 easy threads designed to quickly terminate.  For each example, small matrices were tested under both cases for spatial locality.
+To test the behavior of the system under a rapid stream of terminating processes difficulty was split into 12 hard threads and 60 easy threads designed to quickly terminate.  Small matrices were tested with high (fig. \ref{fig:pull-stream-high}) and low (fig. \ref{fig:pull-stream-low}) spatial locality.
 
 The impact of pull migration is immediately evident in a 15-20\% cycle count and 25\% refill rate differentials with push migration.  Despite having apparent cache benefit, the significant improvement is in the kernel.  With pull migration, the total number of kernel instructions and cycles drops significantly.  This is likely related to decreased core lock contention.
 
@@ -398,6 +408,7 @@ When a core quickly empties, the remaining cores will attempt to push work onto 
 
 \begin{figure*}[!h]
 	\caption{even distribution of easy, normal and hard threads}
+	\label{fig:pull-runtime}
 	\centering
 	\begin{subtable}[b]{.48\linewidth}
 		\centering                 
@@ -431,11 +442,14 @@ When a core quickly empties, the remaining cores will attempt to push work onto 
 \end{figure*}
 
 % DONE
-While the previous example demonstrated the short-term benefit of pull migration, this case utilizes an even distribution of difficulty operating on a small matrix with low spatial locality between threads to demonstrate long-term scheduling benefits.  Processes at the end of a runqueue will exhibit poor temporal locality and hence are less likely to have valid cache data by the time they run.  Thus, moving a process from the tail of a runqueue will end up minimizing the migration penalty of moving a recently executed process.  In this case, when a group of processes dies, the cache space that they used can now be evenly distributed across fewer processes resulting in better utilization while decreasing thrashing.  This decrease in cache pollution enables more work per time slice and leads to fewer context switches; thus, resulting in quicker execution time.
+While the previous example demonstrated the short-term benefit of pull migration, this case (fig. \ref{fig:pull-runtime}) utilizes an even distribution of difficulty operating on a small matrix with low spatial locality between threads to demonstrate long-term scheduling benefits.  Processes at the end of a runqueue will exhibit poor temporal locality and hence are less likely to have valid cache data by the time they run.  Thus, moving a process from the tail of a runqueue will end up minimizing the migration penalty of moving a recently executed process.  In this case, when a group of processes dies, the cache space that they used can now be evenly distributed across fewer processes resulting in better utilization while decreasing thrashing.  This decrease in cache pollution enables more work per time slice and leads to fewer context switches; thus, resulting in quicker execution time.
 % DONE
 
+\subsection{Thread Pool}
+
 \begin{figure*}[!h]
-	\caption{comparison between thread pool and fully threaded execution}
+	\caption{thread pool vs fully threaded execution with varying spatial locality}
+	\label{fig:pooling}
 	\centering
 	\begin{subtable}{.48\textwidth}
 		\centering
@@ -466,9 +480,9 @@ While the previous example demonstrated the short-term benefit of pull migration
 		\end{tabular}
 		\caption{pooled (high locality)}        
 	\end{subtable}
-\end{figure*}
-
-\begin{figure*}[!h]
+% \end{figure*}
+% \begin{figure*}[!h]
+% 	\caption{thread pool vs fully threaded execution with low spatial locality}	
 	\begin{subtable}{.48\textwidth} 
 		\centering
 		\begin{tabular}{ l|rrr }
@@ -497,11 +511,12 @@ While the previous example demonstrated the short-term benefit of pull migration
 			\hline
 		\end{tabular}
 		\caption{pooled (low locality)}
+		\label{fig:test}
 	\end{subtable}
 \end{figure*}
 
 % DONE
-In Fig. 7, 64 threads operating on a small matrix are scheduled into independent threads assigned work \textbf{or} 16 worker threads pulling work from a protected queue.  They run under the same difficulty; however, locality between the two classes of samples is evaluated separately.
+In fig. \ref{fig:pooling}, 64 threads operating on a small matrix are scheduled into independent threads assigned work \textbf{or} 16 worker threads pulling work from a protected queue.  They run under the same difficulty; however, locality between the two classes of samples is evaluated separately.
 
 For these examples, the primary difference is evident in the thrashing in the kernel.  As more processes become preempted, the total amount of active memory increases leading to full cache utilization by user processes.  In general, this leads to eviction of kernel cache lines; resulting in a 20-30\% increase in kernel IPC.  However, pooling does result in poorer performance with regards to shared memory.  Since the active subset of work is much more constrained, two processes which may be working on the same subset of data are unlikely to be scheduled on the same core.  When there is relatively low locality between workers, the difference between single threaded and pooled is minimal; however, with high locality, pooling results in a 40\% reduction in APR.
 % DONE
@@ -531,24 +546,12 @@ Newlib was designed to provide the C library on embedded systems \cite{newlib} w
 
 \section{Future Work}
 \label{sec:future}
-
+\subsection{Lower}
 If I were to continue with this project, there are a couple aspects which would be worth exploring. It would be interesting to implement communication routines and implementing a microkernel architecture and comparing some of the differences between the two architectures.  Additionally various forms of asymetric multiprocessing would be interesting to learn, especially with regards to measuring other performance metrics.  For example, instead of focusing on total throughput, power might be an important aspect to focus on, utilizing lower power \texttt{WFE/SEV} combination to sleep processors.  Since a master-slave kernel ``preserves the uniprocessor execution environment from the kernel's point of view'' and thus can ``run on an SMP system without race conditions'', comparing the kernel performance to that of a spin-locked kernel would be interesting.
 
-Areas of interest that do not nesecarily involve much design modification might include migrating userspace to EL0 and implementing user virtual address space.  This would likely add another level of performance comparision on context switching related to reloading the TLB and possible cache invalidation on MMU-less architectures.  Additionally, implementing further POSIX compliancy such as file I/O would allow tests ot be run on more interesting programs.  For example, the design of applications which stream data over a network
+Areas of interest that do not nesecarily involve much design modification might include migrating userspace to EL0 and implementing user virtual address space.  This would likely add another level of performance comparision on context switching related to reloading the TLB and possible cache invalidation on MMU-less architectures.
 
-- exception higherarchy from EL0 up to EL1
-
-- better POSIX compliancy thus port more complex programs to run tests against.
-eg. real programs; what would the necessary components be?, networked bounded programs, file bounded programs
-
-- device drivers in multicore domain, network drivers would likely be interesting to explore.  also sockets and their implementation
-
-
-- slab allocation algorithms for a more complex system
-
-- implementation of the linux rb-tree scheduler with implications for migration, variable quantum size + penalizing bad programs
-
-- better migration policies with book-keeping.
+With regards to process migration, individual proceses could be benchmarked by the kernel and this could be used to improve execution by dtermining a scheduling which minimizes thrashing.  Additionally, impementing variable quantum size could provide variable quantum as a method of adjusting execution fairness.
 
 % \section{Acknowledgements} 
 
