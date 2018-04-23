@@ -3,7 +3,6 @@
 \usepackage[utf8]{inputenc}
 \usepackage[english]{babel}
 
-\usepackage{breakurl}
 \usepackage{url}
 
 \usepackage{adjustbox}
@@ -18,35 +17,19 @@
 \usepackage{graphicx}
 \usepackage{tikz}
 
-\usetikzlibrary{automata,positioning,fit}
+\usetikzlibrary{automata, positioning, fit}
 
 \title{Analysis of SMP Kernel Scheduling}
-
-\author{Jnaneshwar Weibel}
-
-% \affil{ 
-% University of British Columbia, \authorcr
-% Country             
-% \authorcr \authorcr
-% author1@xxx.xx
-% \authorcr  \authorcr
-% }
+\author{Jnaneshwar Weibel\\University of British Columbia}
 
 \begin{document}
 \maketitle
 
-% \begin{abstract}
-    % \normalsize
 \section*{Abstract}
 \label{sec:abstract}
 % DONE
 Algorithms have become more distributed and more resource intensive; thus, requiring computer hardware to become increasingly efficient to effectively run modern programs.  In particular, the capability for multiprocessing allows systems to distribute work across multiple CPUs.  Modern operating systems and their respective schedulers have the opportunity to make policy decisions, with respect to load balancing and locality of access to shared memory, when distributing programs that can influence the performance in both kernel and user programs.
 % DONE
-% \end{abstract}
-
-% \begin{keywords} 
-% Word1, word2, word3.
-% \end{keywords} 
 
 % \tableofcontents
 
@@ -267,7 +250,7 @@ To describe the behavior for execution some terms should be defined.
 			Runtime & 45374884  & -         & -       \\ 
 			\hline
 		\end{tabular}
-		\caption{single core - matrix 1x utilization}
+		\caption{single core - medium matrix}
 	\end{subtable}
 	\hfill
 	\begin{subtable}{.48\linewidth}
@@ -282,7 +265,7 @@ To describe the behavior for execution some terms should be defined.
 			Runtime & 178608294  & -          & -       \\ 
 			\hline
 		\end{tabular}
-		\caption{single core - matrix 4x utilization}
+		\caption{single core - large matrix}
 	\end{subtable}
 \end{figure*}
 
@@ -332,7 +315,7 @@ Likely, the biggest factor to this speedup is the result of data being precached
 
 \subsection{Pull Migration}
 \begin{figure*}[!h]
-	\caption{60 threads consisting of 48 hard processes and 12 easy processes}	
+	\caption{threads with high spatial locality with a subset that quickly terminates}	
 	\label{fig:pull-stream-high}			
 	\centering
 	\begin{subtable}{.48\linewidth}
@@ -347,7 +330,7 @@ Likely, the biggest factor to this speedup is the result of data being precached
 			Runtime & 152657484  & -          & -          \\
 			\hline 
 		\end{tabular}
-		\caption{without pull migration (high locality)}
+		\caption{without pull migration}
 	\end{subtable}
 	\hfill
 	\begin{subtable}{.48\linewidth}
@@ -361,11 +344,11 @@ Likely, the biggest factor to this speedup is the result of data being precached
 			Runtime & 156804356  & -          & -         \\
 			\hline
 		\end{tabular}
-		\caption{with pull migration (high locality)}
+		\caption{with pull migration}
 	\end{subtable}
 \end{figure*}
 \begin{figure*}
-	\caption{\textbf{TODO}}	
+	\caption{threads with low spatial locality with a subset that quickly terminates}	
 	\label{fig:pull-stream-low}				
 	\begin{subtable}{.48\textwidth}
 		\centering                 
@@ -379,7 +362,7 @@ Likely, the biggest factor to this speedup is the result of data being precached
 			Runtime & 152321428  & -          & -          \\ 
 			\hline
 		\end{tabular}
-		\caption{without pull migration (low locality)}
+		\caption{without pull migration}
 	\end{subtable}
 	\hfill
 	\begin{subtable}{.48\textwidth}
@@ -394,7 +377,7 @@ Likely, the biggest factor to this speedup is the result of data being precached
 			Runtime & 161631896  & -          & -         \\ 
 			\hline
 		\end{tabular}
-		\caption{with pull migration (low locality)}        
+		\caption{with pull migration}        
 	\end{subtable}
 \end{figure*}
 
@@ -448,7 +431,7 @@ While the previous example demonstrated the short-term benefit of pull migration
 \subsection{Thread Pool}
 
 \begin{figure*}[!h]
-	\caption{thread pool vs fully threaded execution with varying spatial locality}
+	\caption{thread pool vs individually threaded execution with varying spatial locality}
 	\label{fig:pooling}
 	\centering
 	\begin{subtable}{.48\textwidth}
@@ -480,9 +463,6 @@ While the previous example demonstrated the short-term benefit of pull migration
 		\end{tabular}
 		\caption{pooled (high locality)}        
 	\end{subtable}
-% \end{figure*}
-% \begin{figure*}[!h]
-% 	\caption{thread pool vs fully threaded execution with low spatial locality}	
 	\begin{subtable}{.48\textwidth} 
 		\centering
 		\begin{tabular}{ l|rrr }
@@ -533,34 +513,26 @@ It is important to note that despite some tests having a large cache penalty; mu
 
 \section{Lessons Learned}
 \label{sec:lessons}
-Since the development of the operating system was done from the ground up there were plenty of learning opportunities along the way. 
-\textbf{TODO} 
-
 Measuring success in a bare metal environment can prove to be quite difficult; thus, it became important to progressively escalate to better debugging utilities.  Initially, bare minimum assembly required to toggle an LED gave limited success or failure output.  The jump to FTDI was helpful in debugging simple conditions and CPU registers.  Finally, for tracing complex execution; having a proper debugging protocol with JLink, OpenOCD and GDB enabled better debugging for context switching, exception handling and multicore execution.
 
-The initial JLink setup proved to be quite tricky due to incompatibility with the current version of OpenOCD, mismatched toolchain and microcontroller architecture/configuration.  However, the end result was incredibly important to establishing a successful development workflow.  Instead of having to perform a careful SD card dance between my computer and the Pi, having the capability to flash to RAM allowed for much quicker development cycles.  Initially, I had looked into alternative bootloaders (UBoot, GRUB) which can work over ethernet or serial connections; however, in general the end result of having proper host debugging utilities was invaluable. \textbf{TODO: Semihosting}
+The initial JLink setup proved to be quite tricky due to incompatibility with the current version of OpenOCD, mismatched toolchain and microcontroller architecture/configuration.  However, the end result was incredibly important to establishing a successful development workflow.  Instead of having to perform a careful SD card dance between my computer and the Pi, having the capability to flash to RAM allowed for much quicker development cycles.  Initially, I had looked into alternative bootloaders (UBoot, GRUB) which can work over ethernet or serial connections; however, in general the end result of having proper host debugging utilities was invaluable. Having had debugging utilities from the beginning, compiling with semihosting support \texttt{--specs=rdimon.specs -lc -lrdimon} might have been a good alternative to have POSIX compliancy and to get up and running quicker.
 
 On the topic of toolchain incompatibility, code was initially compiled using \texttt{arm-none-eabi} which is used for cross compiling to 32-bit ARMv7-A and while ARMv8-A (aarch64) offers compatibility with older architecture, the generic debug interface is much less compatible.  Thus, it is important to recognize that despite older systems often having more documentation; the complexity of developing on a compatibility layer is not worth the extra effort.  Additionally, the aarch64 architecture proved to have clear and better structured semantics especially related to exception handling.  The exception model for aarch64 is standardized across four types; whereas, the ARMv7-A architecture had various subsets of banked registers and return instructions dependent on the interrupt source.  Additionally, the addition of a unified exception status register (ESR) was much more helpful with determining the cause of a processor fault.
 
-Newlib was designed to provide the C library on embedded systems \cite{newlib} with minimal system support handled by low level functions.  For example, the overhead of implementing the \texttt{malloc} and \texttt{printf} routines was reduced to simply stubbing out \texttt{sbrk} and establishing a minimal device descriptor table to redirect \texttt{stdout} to the serial output.  As I built the system with the design of having POSIX compliancy, I additionally included the \texttt{<sys>} headers from Newlib; which often imposed lower level structure restrictions.  For example, when implementing CPU sets I wanted to follow the same type of implementation as embedding the affinity set in the \texttt{pthread\_attr\_t} which was hidden around several macro guards; which when enabled led to conflicts in other areas.  Thus, for long-term kernel development; having custom POSIX headers is beneficial to customizability of the system and allows the system to not be constrained by ``immutable'' or \textbf{static} headers.
+Newlib was designed to provide the C library on embedded systems \cite{newlib} with minimal system support handled by low level functions.  For example, the overhead of implementing the \texttt{malloc} and \texttt{printf} routines was reduced to simply stubbing out \texttt{sbrk} and establishing a minimal device descriptor table to redirect \texttt{stdout} to the serial output.  As I built the system with the design of having POSIX compliancy, I additionally included the \texttt{<sys>} headers from Newlib; which often imposed lower level structure restrictions.  For example, when implementing CPU sets I wanted to follow the same type of implementation as embedding the affinity set in the \texttt{pthread\_attr\_t} which was hidden around several macro guards; which when enabled led to conflicts in other areas.  Thus, for long-term kernel development; having custom POSIX headers is beneficial to customizability of the system and allows the system to not be constrained by ``immutable'' headers.
 
 \section{Future Work}
 \label{sec:future}
-Since the end result of this project, was a very barebones kernel, there are many areas in which future work could be done.
+Initially, some easier goals that do not necessarily involve much design modification include, migrating user execution to EL0 and implementing user virtual address space.  This may adds additional overhead on context switching relating to reloading the TLB and possible cache invalidation on MMU-less architectures that would be interesting to investigate.  Additionally, adding exception handlers for EL2 would be useful for adding double fault handlers and warm-reset functionality for smoother development workflows.
 
-Initially, some easier goals that do not nesecarily involve much design modification include, migrating user execution to EL0 and implementing user virtual address space.  This may adds additional overhead on context switching relating to reloading the TLB and possible cache invalidation on MMU-less architectures that would be interesting to investigate.  Additionally, adding exception handlers for EL2 would be useful for adding double fault handlers and warm-reset functionality for smoother development workflows.
+From the metrics gathered from this project, process migration is an area that could benefit from improvements.  For example, as the kernel benchmarks process execution, the scheduler could adapt to determine an execution order which minimizes thrashing.  Additionally, moving to a scheduler system such as Linux CFS based on red-black trees and and variable quantum size as a method of adjusting execution fairness.  In particular, fairness may be able to be represented as a function of cache performance and hence the quantum could be scaled in order to achieve better global performance.  Additionally, as kernel complexity is added, it would be useful to look into kernel cache optimization including applications of slab allocation.
 
-From the metrics gathered from this project, process migration is an area that could benefit from improvements.  For example, as the kernel benchmarks process execution, the scheduler could adapt to determine an execution order which minimizes thrashing.  Additionally, moving to a scheduler system such as Linux CFS based on red-black trees and and variable quantum size as a method of adjusting execution fairness.  In particular, fairness may be able to be represented as a function of cache performance and hence the quantum could be scaled in order to achieve better global performance.
+Finally, some topics which will require large amounts of structural refactoring include implementing communication routines to implement a microkernel or comparing execution to asymmetric multiprocessing.  For asymmetric multiprocessing, instead of focusing on throughput; comparisons in power consumption utilizing the ARM \texttt{WFE/WFI} + \texttt{SEV} instructions; which enable the processor to be placed into a very low power sleep mode.  This could be used in conjunction with a master-slave kernel which preserves the uniprocessor execution environment from the kernel's point of view and thus can run on an SMP system without race conditions \cite{unix}.  A master-slave processor would could allow most cores to sleep until the master detects work.  In addition, the master may chose to disable cores when there is minimal work.  Since locking primitives are also not required, lock contention in a spin-locked kernel could be compared to bottleknecks in a master-processor.  In all a kernel is a very complex system that offers boundless opportunities for optimization and experimentation.
 
-Finally, some topics which will require large amounts of structural refactoring include implementing communication routines to implement a microkernel or comparing execution to asymetric multiprocessing.  Likely, porting a microkernel such as the F9 Microkernel to Cortex-A would likely require the least amount of refactoring.  For asymetric multiprocessing, instead of soley focusing on throughput; power consumption might be an important comparison topic.  For example, ARM supports the \texttt{WFE/WFI} + \texttt{SEV} instructions which enables the processor to be placed into a very low power sleep mode.  This could be used in conjunction with a master-slave kernel which ``preserves the uniprocessor execution environment from the kernel's point of view'' and thus can ``run on an SMP system without race conditions''.  With regards to low power execution, a master-slave processor would allow most cores to sleep until the master detects work.  In addition, the master may chose to disable cores when there is minimal work.  Since locking primitives are also not required, lock contention in a spin-locked kernel could be compared to bottleknecks in a master-processor.
-
-% \section{Acknowledgements} 
-
-\onecolumn
+\pagebreak
 \begin{sloppypar}
 	\bibliographystyle{acm}
 	\bibliography{biblio}
 \end{sloppypar}
 
-% \end{multicols}
 \end{document}
