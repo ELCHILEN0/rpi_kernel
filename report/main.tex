@@ -308,7 +308,7 @@ Fig. \ref{fig:score-matrix} serves as a baseline for comparing behaivour when sc
 \end{figure*}
 
 % DONE
-Extending the previous examples to a multicore system demonstrates the benefit of well thought out parallelization.  A large matrix is separated into four medium strided matrices and will execute at hard difficulty.  They will be executed against both the global scheduler and the core scheduler with fixed process affinity to separate computation onto each of the four cores (fig. \ref{fig:mcore-matrix}.  Without comparing the differences between the two schedulers, they both outperform the single core computation on the same problem size.  Surprisingly, both exhibit superlinear speedup.
+Extending the previous examples to a multicore system demonstrates the benefit of well thought out parallelization.  A large matrix is separated into four medium strided matrices and will execute at hard difficulty.  They will be executed against both the global scheduler and the core scheduler with fixed process affinity to separate computation onto each of the four cores (fig. \ref{fig:mcore-matrix}).  Without comparing the differences between the two schedulers, they both outperform the single core computation on the same problem size.  Surprisingly, both exhibit superlinear speedup.
 
 Likely, the biggest factor to this speedup is the result of data being precached in the L2 cache by the other processors.  As a result of striding, the innermost matrix edges will exhibit high spatial locality; while having low temporal locality.  This temporal locality effectively acts as a form of prefetching for subsequent accesses by other threads to the L2 cache.
 % DONE
